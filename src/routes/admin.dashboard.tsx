@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRequireRole } from "@/lib/use-require-role";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Admin Dashboard — SkillForge" }] }),
@@ -9,29 +9,7 @@ export const Route = createFileRoute("/admin/dashboard")({
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  const [name, setName] = useState<string>("");
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        navigate({ to: "/login" });
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name, role")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (!profile || profile.role !== "admin") {
-        navigate({ to: "/login" });
-        return;
-      }
-      setName(profile.name);
-      setChecking(false);
-    })();
-  }, [navigate]);
+  const { checking, name } = useRequireRole("admin");
 
   if (checking) return null;
 

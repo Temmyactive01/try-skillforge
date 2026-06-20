@@ -14,16 +14,256 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assignments: {
+        Row: {
+          course_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          status: Database["public"]["Enums"]["assignment_status"]
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      courses: {
+        Row: {
+          category: string | null
+          company_id: string
+          content_type: string | null
+          content_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          category?: string | null
+          company_id: string
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          category?: string | null
+          company_id?: string
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["user_role"]
+          team_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          role?: Database["public"]["Enums"]["user_role"]
+          team_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: string
+          course_id: string
+          created_at: string
+          id: string
+          options: Json
+          question_text: string
+        }
+        Insert: {
+          correct_answer: string
+          course_id: string
+          created_at?: string
+          id?: string
+          options?: Json
+          question_text: string
+        }
+        Update: {
+          correct_answer?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          options?: Json
+          question_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_results: {
+        Row: {
+          assignment_id: string
+          completed_at: string
+          id: string
+          passed: boolean
+          score: number
+        }
+        Insert: {
+          assignment_id: string
+          completed_at?: string
+          id?: string
+          passed?: boolean
+          score: number
+        }
+        Update: {
+          assignment_id?: string
+          completed_at?: string
+          id?: string
+          passed?: boolean
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      assignment_status: "not_started" | "in_progress" | "complete"
+      user_role: "admin" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +390,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assignment_status: ["not_started", "in_progress", "complete"],
+      user_role: ["admin", "employee"],
+    },
   },
 } as const

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
+import { AssignCourseModal } from "@/components/AssignCourseModal";
 
 export const Route = createFileRoute("/admin/courses")({
   head: () => ({ meta: [{ title: "Courses — SkillForge" }] }),
@@ -33,6 +34,7 @@ function AdminCoursesPage() {
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [assignCourse, setAssignCourse] = useState<{ id: string; title: string } | null>(null);
 
   async function refresh() {
     setLoading(true);
@@ -91,18 +93,19 @@ function AdminCoursesPage() {
                 <th className="px-4 py-2 font-medium">Title</th>
                 <th className="px-4 py-2 font-medium">Category</th>
                 <th className="px-4 py-2 font-medium">Assignments</th>
+                <th className="px-4 py-2 font-medium"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-4 text-slate-500">
+                  <td colSpan={4} className="px-4 py-4 text-slate-500">
                     Loading…
                   </td>
                 </tr>
               ) : courses.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-4 py-4 text-slate-500">
+                  <td colSpan={4} className="px-4 py-4 text-slate-500">
                     No courses yet.
                   </td>
                 </tr>
@@ -112,6 +115,14 @@ function AdminCoursesPage() {
                     <td className="px-4 py-2 text-slate-900">{c.title}</td>
                     <td className="px-4 py-2 text-slate-700">{c.category ?? "—"}</td>
                     <td className="px-4 py-2 text-slate-700">{c.assignment_count}</td>
+                    <td className="px-4 py-2 text-right">
+                      <button
+                        onClick={() => setAssignCourse({ id: c.id, title: c.title })}
+                        className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
+                      >
+                        Assign
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -119,6 +130,17 @@ function AdminCoursesPage() {
           </table>
         </div>
       </div>
+      {assignCourse && (
+        <AssignCourseModal
+          courseId={assignCourse.id}
+          courseTitle={assignCourse.title}
+          onClose={() => setAssignCourse(null)}
+          onAssigned={() => {
+            setAssignCourse(null);
+            refresh();
+          }}
+        />
+      )}
     </AdminShell>
   );
 }

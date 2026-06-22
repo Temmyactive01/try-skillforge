@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
+import { AssignCourseModal } from "@/components/AssignCourseModal";
 
 export const Route = createFileRoute("/admin/courses")({
   head: () => ({ meta: [{ title: "Courses — SkillForge" }] }),

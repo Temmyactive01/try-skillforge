@@ -46,29 +46,33 @@ function AdminDashboard() {
     if (checking) return;
     (async () => {
       setLoading(true);
-      const [{ data: a }, { data: t }, { data: c }] = await Promise.all([
+      const [{ data: a }, { data: t }, { data: c }, { data: p }] = await Promise.all([
         supabase
           .from("assignments")
-          .select(
-            "id, status, due_date, user_id, course_id, profiles!assignments_user_id_fkey(name, team_id), courses(title)",
-          )
+          .select("id, status, due_date, user_id, course_id, courses(title)")
           .order("due_date", { ascending: true, nullsFirst: false }),
         supabase.from("teams").select("id, name").order("name"),
         supabase.from("courses").select("id, title").order("title"),
+        supabase.from("profiles").select("id, name, team_id"),
       ]);
+      const profMap = new Map<string, { name: string; team_id: string | null }>();
+      (p ?? []).forEach((row: any) => profMap.set(row.id, { name: row.name, team_id: row.team_id }));
       setTeams(t ?? []);
       setCourses(c ?? []);
       setRows(
-        (a ?? []).map((r: any) => ({
-          id: r.id,
-          status: r.status,
-          due_date: r.due_date,
-          user_id: r.user_id,
-          employee_name: r.profiles?.name ?? "—",
-          team_id: r.profiles?.team_id ?? null,
-          course_id: r.course_id,
-          course_title: r.courses?.title ?? "—",
-        })),
+        (a ?? []).map((r: any) => {
+          const prof = profMap.get(r.user_id);
+          return {
+            id: r.id,
+            status: r.status,
+            due_date: r.due_date,
+            user_id: r.user_id,
+            employee_name: prof?.name ?? "—",
+            team_id: prof?.team_id ?? null,
+            course_id: r.course_id,
+            course_title: r.courses?.title ?? "—",
+          };
+        }),
       );
       setLoading(false);
     })();

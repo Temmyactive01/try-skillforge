@@ -177,18 +177,19 @@ function AdminDashboard() {
                 <th className="px-4 py-2 font-medium">Course</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Due date</th>
+                <th className="px-4 py-2 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-4 text-slate-500">
+                  <td colSpan={5} className="px-4 py-4 text-slate-500">
                     Loading…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-4 text-slate-500">
+                  <td colSpan={5} className="px-4 py-4 text-slate-500">
                     No assignments match these filters.
                   </td>
                 </tr>
@@ -209,6 +210,26 @@ function AdminDashboard() {
                         className={`px-4 py-2 ${overdue ? "font-medium text-red-600" : "text-slate-700"}`}
                       >
                         {r.due_date ? new Date(r.due_date).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Are you sure you want to remove this assignment?")) return;
+                            const prev = rows;
+                            setRows((curr) => curr.filter((x) => x.id !== r.id));
+                            const { error } = await supabase
+                              .from("assignments")
+                              .delete()
+                              .eq("id", r.id);
+                            if (error) {
+                              alert("Failed to remove assignment: " + error.message);
+                              setRows(prev);
+                            }
+                          }}
+                          className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700"
+                        >
+                          Cancel
+                        </button>
                       </td>
                     </tr>
                   );

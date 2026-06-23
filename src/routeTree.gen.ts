@@ -14,6 +14,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmployeeHomeRouteImport } from './routes/employee.home'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
+import { Route as EmployeeCourseAssignmentIdRouteImport } from './routes/employee.course.$assignmentId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -40,6 +41,12 @@ const AdminCoursesRoute = AdminCoursesRouteImport.update({
   path: '/admin/courses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmployeeCourseAssignmentIdRoute =
+  EmployeeCourseAssignmentIdRouteImport.update({
+    id: '/employee/course/$assignmentId',
+    path: '/employee/course/$assignmentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +54,7 @@ export interface FileRoutesByFullPath {
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/employee/home': typeof EmployeeHomeRoute
+  '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +62,7 @@ export interface FileRoutesByTo {
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/employee/home': typeof EmployeeHomeRoute
+  '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +71,7 @@ export interface FileRoutesById {
   '/admin/courses': typeof AdminCoursesRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/employee/home': typeof EmployeeHomeRoute
+  '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,8 +81,15 @@ export interface FileRouteTypes {
     | '/admin/courses'
     | '/admin/dashboard'
     | '/employee/home'
+    | '/employee/course/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/admin/courses' | '/admin/dashboard' | '/employee/home'
+  to:
+    | '/'
+    | '/login'
+    | '/admin/courses'
+    | '/admin/dashboard'
+    | '/employee/home'
+    | '/employee/course/$assignmentId'
   id:
     | '__root__'
     | '/'
@@ -80,6 +97,7 @@ export interface FileRouteTypes {
     | '/admin/courses'
     | '/admin/dashboard'
     | '/employee/home'
+    | '/employee/course/$assignmentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -88,6 +106,7 @@ export interface RootRouteChildren {
   AdminCoursesRoute: typeof AdminCoursesRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   EmployeeHomeRoute: typeof EmployeeHomeRoute
+  EmployeeCourseAssignmentIdRoute: typeof EmployeeCourseAssignmentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -127,6 +146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCoursesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/employee/course/$assignmentId': {
+      id: '/employee/course/$assignmentId'
+      path: '/employee/course/$assignmentId'
+      fullPath: '/employee/course/$assignmentId'
+      preLoaderRoute: typeof EmployeeCourseAssignmentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -136,6 +162,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCoursesRoute: AdminCoursesRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   EmployeeHomeRoute: EmployeeHomeRoute,
+  EmployeeCourseAssignmentIdRoute: EmployeeCourseAssignmentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 const nav = [
   { to: "/admin/dashboard", label: "Dashboard" },
   { to: "/admin/courses", label: "Courses" },
+  { to: "/admin/employees", label: "Employees" },
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {

@@ -31,17 +31,24 @@ function EmployeeHome() {
       const { data } = await supabase
         .from("assignments")
         .select(
-          "id, due_date, status, course:courses(id, title, category), quiz_results(score)",
+          "id, due_date, status, course:courses(id, title, category), quiz_results(score, completed_at)",
         )
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false });
-      const mapped: Row[] = (data ?? []).map((a: any) => ({
-        id: a.id,
-        due_date: a.due_date,
-        status: a.status,
-        course: a.course,
-        score: a.quiz_results?.[0]?.score ?? null,
-      }));
+      const mapped: Row[] = (data ?? []).map((a: any) => {
+        const latest = (a.quiz_results ?? [])
+          .slice()
+          .sort((x: any, y: any) =>
+            (y.completed_at ?? "").localeCompare(x.completed_at ?? ""),
+          )[0];
+        return {
+          id: a.id,
+          due_date: a.due_date,
+          status: a.status,
+          course: a.course,
+          score: latest?.score ?? null,
+        };
+      });
       setRows(mapped);
     })();
   }, [checking]);

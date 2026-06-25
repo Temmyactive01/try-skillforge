@@ -254,12 +254,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_company_id: { Args: { _user_id: string }; Returns: string }
-      get_user_role: {
-        Args: { _user_id: string }
-        Returns: Database["public"]["Enums"]["user_role"]
-      }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
       assignment_status: "not_started" | "in_progress" | "complete"

@@ -34,6 +34,7 @@ type Assignment = {
 };
 
 function CoursePage() {
+  const submitQuizFn = useServerFn(submitQuiz);
   const { assignmentId } = Route.useParams();
   const { checking, name } = useRequireRole("employee");
   const navigate = useNavigate();

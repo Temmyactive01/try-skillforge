@@ -224,7 +224,7 @@ function CoursePage() {
             ))
           )}
           <button
-            onClick={submitQuiz}
+            onClick={handleSubmit}
             disabled={
               submitting ||
               questions.length === 0 ||

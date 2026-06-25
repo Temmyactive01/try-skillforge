@@ -106,10 +106,16 @@ function CoursePage() {
     });
     await supabase
       .from("assignments")
-      .update({ status: "complete" })
+      .update({ status: passed ? "complete" : "in_progress" })
       .eq("id", assignment.id);
     setResult({ score, passed });
     setSubmitting(false);
+  }
+
+  function retakeQuiz() {
+    setResult(null);
+    setAnswers({});
+    setShowQuiz(true);
   }
 
   if (loading) {
@@ -156,20 +162,37 @@ function CoursePage() {
       {result ? (
         <div className="rounded-lg border border-slate-200 p-4">
           <h2 className="mb-2 text-lg font-semibold text-slate-900">
-            Quiz {result.passed ? "Passed" : "Submitted"}
+            Quiz {result.passed ? "Passed" : "Not Passed"}
           </h2>
           <p className="mb-4 text-sm text-slate-700">
             You scored <span className="font-medium">{result.score}%</span>
-            {result.passed ? " — nice work!" : "."}
+            {result.passed
+              ? " — nice work!"
+              : " — a passing score of 70% is required. You can retake the quiz."}
           </p>
-          <button
-            onClick={() => navigate({ to: "/employee/home" })}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            Back to my learning
-          </button>
+          <div className="flex gap-2">
+            {!result.passed && (
+              <button
+                onClick={retakeQuiz}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+              >
+                Retake Quiz
+              </button>
+            )}
+            <button
+              onClick={() => navigate({ to: "/employee/home" })}
+              className={
+                result.passed
+                  ? "rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                  : "rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              }
+            >
+              Back to my learning
+            </button>
+          </div>
         </div>
       ) : showQuiz ? (
+
         <div className="space-y-4 rounded-lg border border-slate-200 p-4">
           <h2 className="text-lg font-semibold text-slate-900">Quiz</h2>
           {questions.length === 0 ? (

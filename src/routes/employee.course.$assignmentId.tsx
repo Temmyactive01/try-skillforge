@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
+import { submitQuiz } from "@/lib/quiz.functions";
 
 export const Route = createFileRoute("/employee/course/$assignmentId")({
   head: () => ({ meta: [{ title: "Course — SkillForge" }] }),
@@ -21,8 +23,8 @@ type Question = {
   id: string;
   question_text: string;
   options: string[];
-  correct_answer: string;
 };
+
 
 type Assignment = {
   id: string;
@@ -32,6 +34,7 @@ type Assignment = {
 };
 
 function CoursePage() {
+  const submitQuizFn = useServerFn(submitQuiz);
   const { assignmentId } = Route.useParams();
   const { checking, name } = useRequireRole("employee");
   const navigate = useNavigate();
@@ -64,7 +67,7 @@ function CoursePage() {
         if (a.course) {
           const { data: qs } = await supabase
             .from("quiz_questions")
-            .select("id, question_text, options, correct_answer")
+            .select("id, question_text, options")
             .eq("course_id", a.course.id);
           setQuestions(
             (qs ?? []).map((q: any) => ({
@@ -90,26 +93,19 @@ function CoursePage() {
     }
   }
 
-  async function submitQuiz() {
+  async function handleSubmit() {
     if (!assignment || questions.length === 0) return;
     setSubmitting(true);
-    let correct = 0;
-    for (const q of questions) {
-      if (answers[q.id] === q.correct_answer) correct++;
+    try {
+      const res = await submitQuizFn({
+        data: { assignment_id: assignment.id, answers },
+      });
+      setResult({ score: res.score, passed: res.passed });
+    } catch (err) {
+      console.error("Quiz submission failed", err);
+    } finally {
+      setSubmitting(false);
     }
-    const score = Math.round((correct / questions.length) * 100);
-    const passed = score >= 70;
-    await supabase.from("quiz_results").insert({
-      assignment_id: assignment.id,
-      score,
-      passed,
-    });
-    await supabase
-      .from("assignments")
-      .update({ status: passed ? "complete" : "in_progress" })
-      .eq("id", assignment.id);
-    setResult({ score, passed });
-    setSubmitting(false);
   }
 
   function retakeQuiz() {
@@ -228,7 +224,7 @@ function CoursePage() {
             ))
           )}
           <button
-            onClick={submitQuiz}
+            onClick={handleSubmit}
             disabled={
               submitting ||
               questions.length === 0 ||

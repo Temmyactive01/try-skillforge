@@ -106,10 +106,16 @@ function CoursePage() {
     });
     await supabase
       .from("assignments")
-      .update({ status: "complete" })
+      .update({ status: passed ? "complete" : "in_progress" })
       .eq("id", assignment.id);
     setResult({ score, passed });
     setSubmitting(false);
+  }
+
+  function retakeQuiz() {
+    setResult(null);
+    setAnswers({});
+    setShowQuiz(true);
   }
 
   if (loading) {

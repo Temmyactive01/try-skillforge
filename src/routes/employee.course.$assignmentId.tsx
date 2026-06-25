@@ -66,7 +66,7 @@ function CoursePage() {
         if (a.course) {
           const { data: qs } = await supabase
             .from("quiz_questions")
-            .select("id, question_text, options, correct_answer")
+            .select("id, question_text, options")
             .eq("course_id", a.course.id);
           setQuestions(
             (qs ?? []).map((q: any) => ({

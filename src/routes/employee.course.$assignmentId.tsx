@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
+import { submitQuiz } from "@/lib/quiz.functions";
 
 export const Route = createFileRoute("/employee/course/$assignmentId")({
   head: () => ({ meta: [{ title: "Course — SkillForge" }] }),

@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "SkillForge" },
+      { name: "description", content: "SkillForge — assign training, track completion, and see who's done what. All in one place." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "SkillForge" },
+      { property: "og:description", content: "SkillForge — assign training, track completion, and see who's done what. All in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "SkillForge" },
+      { name: "twitter:description", content: "SkillForge — assign training, track completion, and see who's done what. All in one place." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf9b59e7-cca2-4908-bcda-97abde38ccf1/id-preview-7b774527--acbe6c6d-c3ce-4b37-bdca-d6e6b0f0db67.lovable.app-1782384997700.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/bf9b59e7-cca2-4908-bcda-97abde38ccf1/id-preview-7b774527--acbe6c6d-c3ce-4b37-bdca-d6e6b0f0db67.lovable.app-1782384997700.png" },
     ],
     links: [
       {

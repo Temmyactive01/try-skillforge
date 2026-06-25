@@ -23,8 +23,8 @@ type Question = {
   id: string;
   question_text: string;
   options: string[];
-  correct_answer: string;
 };
+
 
 type Assignment = {
   id: string;

@@ -23,12 +23,20 @@ function LandingPage() {
             <GraduationCap className="h-6 w-6 text-primary" />
             <span className="text-lg font-semibold text-foreground">SkillForge</span>
           </div>
-          <Link
-            to="/login"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Sign In
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Sign Up
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -41,12 +49,18 @@ function LandingPage() {
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             Assign courses, track completion, and see who’s done what — all in one place. No more scattered spreadsheets or chasing people down.
           </p>
-          <div className="mt-8">
+          <div className="mt-8 flex items-center justify-center gap-3">
             <Link
-              to="/login"
+              to="/signup"
               className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Sign In to SkillForge
+              Get started free
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Sign In
             </Link>
           </div>
         </div>

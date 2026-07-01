@@ -20,8 +20,8 @@ type Employee = {
 };
 
 const inputCls =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-const labelCls = "mb-1 block text-sm font-medium text-slate-700";
+  "w-full rounded-md border border-border px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+const labelCls = "mb-1 block text-sm font-medium text-foreground/80";
 
 function AdminEmployeesPage() {
   const { checking } = useRequireRole("admin");
@@ -67,7 +67,7 @@ function AdminEmployeesPage() {
       <div className="mx-auto max-w-4xl space-y-10">
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-slate-900">Teams</h1>
+            <h1 className="text-2xl font-semibold text-foreground">Teams</h1>
             {!showTeamForm && (
               <button
                 onClick={() => setShowTeamForm(true)}
@@ -88,9 +88,9 @@ function AdminEmployeesPage() {
             />
           )}
 
-          <div className="overflow-hidden rounded-md border border-slate-200">
+          <div className="overflow-hidden rounded-md border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-600">
+              <thead className="bg-muted/40 text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Name</th>
                 </tr>
@@ -98,16 +98,16 @@ function AdminEmployeesPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500">Loading…</td>
+                    <td className="px-4 py-4 text-muted-foreground">Loading…</td>
                   </tr>
                 ) : teams.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-4 text-slate-500">No teams yet.</td>
+                    <td className="px-4 py-4 text-muted-foreground">No teams yet.</td>
                   </tr>
                 ) : (
                   teams.map((t) => (
-                    <tr key={t.id} className="border-t border-slate-200">
-                      <td className="px-4 py-2 text-slate-900">{t.name}</td>
+                    <tr key={t.id} className="border-t border-border">
+                      <td className="px-4 py-2 text-foreground">{t.name}</td>
                     </tr>
                   ))
                 )}
@@ -118,7 +118,7 @@ function AdminEmployeesPage() {
 
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-slate-900">Employees</h2>
+            <h2 className="text-2xl font-semibold text-foreground">Employees</h2>
             {!showEmpForm && (
               <button
                 onClick={() => setShowEmpForm(true)}
@@ -140,9 +140,9 @@ function AdminEmployeesPage() {
             />
           )}
 
-          <div className="overflow-hidden rounded-md border border-slate-200">
+          <div className="overflow-hidden rounded-md border border-border">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-600">
+              <thead className="bg-muted/40 text-left text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Name</th>
                   <th className="px-4 py-2 font-medium">Email</th>
@@ -152,22 +152,22 @@ function AdminEmployeesPage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-slate-500">
+                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
                       Loading…
                     </td>
                   </tr>
                 ) : employees.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-slate-500">
+                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
                       No employees yet.
                     </td>
                   </tr>
                 ) : (
                   employees.map((e) => (
-                    <tr key={e.id} className="border-t border-slate-200">
-                      <td className="px-4 py-2 text-slate-900">{e.name}</td>
-                      <td className="px-4 py-2 text-slate-700">{e.email}</td>
-                      <td className="px-4 py-2 text-slate-700">{e.team_name ?? "—"}</td>
+                    <tr key={e.id} className="border-t border-border">
+                      <td className="px-4 py-2 text-foreground">{e.name}</td>
+                      <td className="px-4 py-2 text-foreground/80">{e.email}</td>
+                      <td className="px-4 py-2 text-foreground/80">{e.team_name ?? "—"}</td>
                     </tr>
                   ))
                 )}
@@ -219,7 +219,7 @@ function AddTeamForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-4 space-y-4 rounded-md border border-slate-200 bg-white p-5"
+      className="mb-4 space-y-4 rounded-md border border-border bg-card p-5"
     >
       <div>
         <label className={labelCls}>Team name</label>
@@ -233,7 +233,7 @@ function AddTeamForm({
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           {error}
         </div>
@@ -249,7 +249,7 @@ function AddTeamForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="rounded-md border border-border px-4 py-2 text-sm text-foreground/80 hover:bg-muted/40"
         >
           Cancel
         </button>
@@ -296,7 +296,7 @@ function AddEmployeeForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-4 space-y-4 rounded-md border border-slate-200 bg-white p-5"
+      className="mb-4 space-y-4 rounded-md border border-border bg-card p-5"
     >
       <div>
         <label className={labelCls}>Name</label>
@@ -335,7 +335,7 @@ function AddEmployeeForm({
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           {error}
         </div>
@@ -351,7 +351,7 @@ function AddEmployeeForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="rounded-md border border-border px-4 py-2 text-sm text-foreground/80 hover:bg-muted/40"
         >
           Cancel
         </button>

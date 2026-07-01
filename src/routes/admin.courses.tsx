@@ -65,7 +65,7 @@ function AdminCoursesPage() {
     <AdminShell>
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-slate-900">Courses</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Courses</h1>
           {!showForm && (
             <button
               onClick={() => setShowForm(true)}
@@ -86,9 +86,9 @@ function AdminCoursesPage() {
           />
         )}
 
-        <div className="mt-2 overflow-hidden rounded-md border border-slate-200">
+        <div className="mt-2 overflow-hidden rounded-md border border-border">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">Title</th>
                 <th className="px-4 py-2 font-medium">Category</th>
@@ -99,26 +99,26 @@ function AdminCoursesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-4 text-slate-500">
+                  <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                     Loading…
                   </td>
                 </tr>
               ) : courses.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-4 text-slate-500">
+                  <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                     No courses yet.
                   </td>
                 </tr>
               ) : (
                 courses.map((c) => (
-                  <tr key={c.id} className="border-t border-slate-200">
-                    <td className="px-4 py-2 text-slate-900">{c.title}</td>
-                    <td className="px-4 py-2 text-slate-700">{c.category ?? "—"}</td>
-                    <td className="px-4 py-2 text-slate-700">{c.assignment_count}</td>
+                  <tr key={c.id} className="border-t border-border">
+                    <td className="px-4 py-2 text-foreground">{c.title}</td>
+                    <td className="px-4 py-2 text-foreground/80">{c.category ?? "—"}</td>
+                    <td className="px-4 py-2 text-foreground/80">{c.assignment_count}</td>
                     <td className="px-4 py-2 text-right">
                       <button
                         onClick={() => setAssignCourse({ id: c.id, title: c.title })}
-                        className="rounded-md border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-50"
+                        className="rounded-md border border-border px-3 py-1 text-sm text-foreground/80 hover:bg-muted/40"
                       >
                         Assign
                       </button>
@@ -226,15 +226,15 @@ function CreateCourseForm({
   }
 
   const inputCls =
-    "w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-  const labelCls = "mb-1 block text-sm font-medium text-slate-700";
+    "w-full rounded-md border border-border px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+  const labelCls = "mb-1 block text-sm font-medium text-foreground/80";
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 space-y-5 rounded-md border border-slate-200 bg-white p-5"
+      className="mb-6 space-y-5 rounded-md border border-border bg-card p-5"
     >
-      <h2 className="text-lg font-semibold text-slate-900">New Course</h2>
+      <h2 className="text-lg font-semibold text-foreground">New Course</h2>
 
       <div>
         <label className={labelCls}>Title</label>
@@ -258,7 +258,7 @@ function CreateCourseForm({
 
       <div>
         <label className={labelCls}>Content Type</label>
-        <div className="flex gap-4 text-sm text-slate-700">
+        <div className="flex gap-4 text-sm text-foreground/80">
           {(["text", "video", "pdf"] as ContentType[]).map((t) => (
             <label key={t} className="flex items-center gap-2">
               <input
@@ -305,13 +305,13 @@ function CreateCourseForm({
         />
       </div>
 
-      <div className="border-t border-slate-200 pt-5">
+      <div className="border-t border-border pt-5">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-slate-900">Quiz Questions</h3>
+          <h3 className="text-base font-semibold text-foreground">Quiz Questions</h3>
           <button
             type="button"
             onClick={() => setQuestions((qs) => [...qs, emptyQuestion()])}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground/80 hover:bg-muted/40"
           >
             + Add question
           </button>
@@ -319,16 +319,16 @@ function CreateCourseForm({
 
         <div className="space-y-4">
           {questions.map((q, qi) => (
-            <div key={qi} className="rounded-md border border-slate-200 p-4">
+            <div key={qi} className="rounded-md border border-border p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-700">Question {qi + 1}</span>
+                <span className="text-sm font-medium text-foreground/80">Question {qi + 1}</span>
                 {questions.length > 1 && (
                   <button
                     type="button"
                     onClick={() =>
                       setQuestions((qs) => qs.filter((_, idx) => idx !== qi))
                     }
-                    className="text-xs text-slate-500 hover:text-red-600"
+                    className="text-xs text-muted-foreground hover:text-destructive"
                   >
                     Remove
                   </button>
@@ -359,7 +359,7 @@ function CreateCourseForm({
                   </label>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-slate-500">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Select the radio next to the correct answer.
               </p>
             </div>
@@ -370,7 +370,7 @@ function CreateCourseForm({
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
           {error}
         </div>
@@ -387,7 +387,7 @@ function CreateCourseForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          className="rounded-md border border-border px-4 py-2 text-sm text-foreground/80 hover:bg-muted/40"
         >
           Cancel
         </button>

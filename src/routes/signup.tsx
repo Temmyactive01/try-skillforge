@@ -82,10 +82,10 @@ function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-semibold text-slate-900">SkillForge</h1>
-        <p className="mb-6 text-sm text-slate-500">Create your company account</p>
+        <h1 className="mb-1 text-2xl font-semibold text-foreground">SkillForge</h1>
+        <p className="mb-6 text-sm text-muted-foreground">Create your company account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" />
@@ -95,7 +95,7 @@ function SignupPage() {
           <Field id="confirm" label="Confirm password" type="password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
 
           {error && (
-            <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -109,7 +109,7 @@ function SignupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link to="/login" className="font-medium text-primary hover:underline">
             Sign in
@@ -132,7 +132,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700">
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-foreground">
         {label}
       </label>
       <input
@@ -142,7 +142,7 @@ function Field({
         autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+        className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
       />
     </div>
   );

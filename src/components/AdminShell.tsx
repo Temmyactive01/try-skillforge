@@ -13,9 +13,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <aside className="flex w-56 flex-col border-r border-slate-200 bg-slate-50 p-4">
-        <div className="mb-6 px-2 text-lg font-semibold text-slate-900">SkillForge</div>
+    <div className="flex min-h-screen bg-background font-sans">
+      <aside className="flex w-56 flex-col bg-foreground p-4 text-background">
+        <div className="mb-6 px-2 font-serif text-lg font-semibold text-background">
+          SkillForge
+        </div>
         <nav className="flex flex-1 flex-col gap-1">
           {nav.map((item) => {
             const active = pathname === item.to;
@@ -23,10 +25,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`rounded-md px-3 py-2 text-sm ${
+                className={`rounded-md px-3 py-2 text-sm transition-colors ${
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "text-slate-700 hover:bg-slate-100"
+                    : "text-background/75 hover:bg-background/10 hover:text-background"
                 }`}
               >
                 {item.label}
@@ -39,7 +41,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             await supabase.auth.signOut();
             navigate({ to: "/login" });
           }}
-          className="mt-4 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+          className="mt-4 rounded-md border border-background/25 px-3 py-1.5 text-sm text-background/85 hover:bg-background/10 hover:text-background"
         >
           Sign out
         </button>

@@ -104,12 +104,12 @@ function AdminDashboard() {
   if (checking) return null;
 
   const selectCls =
-    "rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
+    "rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-sans";
 
   return (
     <AdminShell>
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-2xl font-semibold text-slate-900">Dashboard</h1>
+        <h1 className="mb-6 font-serif text-3xl font-semibold text-foreground">Dashboard</h1>
 
         <div className="mb-6 grid gap-4 sm:grid-cols-3">
           <StatCard label="Overall completion" value={`${stats.completionPct}%`} />
@@ -117,9 +117,9 @@ function AdminDashboard() {
           <StatCard label="Overdue assignments" value={stats.overdue} />
         </div>
 
-        <div className="rounded-md border border-slate-200 bg-white">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
-            <span className="text-sm font-medium text-slate-700">Filters:</span>
+        <div className="rounded-md border border-border bg-card">
+          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
+            <span className="text-sm font-medium text-foreground">Filters:</span>
             <select
               value={teamFilter}
               onChange={(e) => setTeamFilter(e.target.value)}
@@ -163,33 +163,33 @@ function AdminDashboard() {
                   setCourseFilter("");
                   setStatusFilter("");
                 }}
-                className="ml-auto text-sm text-slate-500 hover:text-slate-700"
+                className="ml-auto text-sm text-muted-foreground hover:text-foreground"
               >
                 Clear
               </button>
             )}
           </div>
 
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+          <table className="w-full font-sans text-sm">
+            <thead className="bg-muted/40 text-left text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">Employee</th>
                 <th className="px-4 py-2 font-medium">Course</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Due date</th>
-                <th className="px-4 py-2 font-medium text-right">Actions</th>
+                <th className="px-4 py-2 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-4 text-slate-500">
+                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
                     Loading…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-4 text-slate-500">
+                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
                     No assignments match these filters.
                   </td>
                 </tr>
@@ -200,14 +200,14 @@ function AdminDashboard() {
                     r.due_date &&
                     new Date(r.due_date).getTime() < Date.now();
                   return (
-                    <tr key={r.id} className="border-t border-slate-200">
-                      <td className="px-4 py-2 text-slate-900">{r.employee_name}</td>
-                      <td className="px-4 py-2 text-slate-700">{r.course_title}</td>
+                    <tr key={r.id} className="border-t border-border">
+                      <td className="px-4 py-2 text-foreground">{r.employee_name}</td>
+                      <td className="px-4 py-2 text-foreground/80">{r.course_title}</td>
                       <td className="px-4 py-2">
                         <StatusBadge status={r.status} />
                       </td>
                       <td
-                        className={`px-4 py-2 ${overdue ? "font-medium text-red-600" : "text-slate-700"}`}
+                        className={`px-4 py-2 ${overdue ? "font-medium text-destructive" : "text-foreground/80"}`}
                       >
                         {r.due_date ? new Date(r.due_date).toLocaleDateString() : "—"}
                       </td>
@@ -226,7 +226,7 @@ function AdminDashboard() {
                               setRows(prev);
                             }
                           }}
-                          className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700"
+                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
                         >
                           Cancel
                         </button>
@@ -245,23 +245,40 @@ function AdminDashboard() {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-5">
-      <p className="text-sm text-slate-600">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+    <div className="rounded-md border border-border bg-card p-5 shadow-sm">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-2 font-serif text-4xl font-semibold text-foreground tracking-tight">
+        {value}
+      </p>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: Status }) {
+  if (status === "complete") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+        <span
+          aria-hidden
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm"
+          style={{ transform: "rotate(-8deg)" }}
+        >
+          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2.5 6.5l2.5 2.5 4.5-5" />
+          </svg>
+        </span>
+        Complete
+      </span>
+    );
+  }
   const cls =
-    status === "complete"
-      ? "bg-green-100 text-green-700"
-      : status === "in_progress"
-        ? "bg-blue-100 text-blue-700"
-        : "bg-slate-100 text-slate-700";
+    status === "in_progress"
+      ? "bg-warning/20 text-foreground"
+      : "bg-muted text-muted-foreground";
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
       {statusLabel(status)}
     </span>
   );
 }
+

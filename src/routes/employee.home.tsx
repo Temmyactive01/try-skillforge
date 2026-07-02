@@ -62,16 +62,16 @@ function EmployeeHome() {
 
   return (
     <EmployeeShell name={name}>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">My Learning</h1>
+      <h1 className="mb-6 font-serif text-2xl font-semibold text-foreground">My Learning</h1>
 
-      <div className="mb-8 rounded-lg border border-slate-200 p-4">
-        <div className="mb-2 flex items-center justify-between text-sm text-slate-700">
+      <div className="mb-8 rounded-lg border border-border bg-card p-4">
+        <div className="mb-2 flex items-center justify-between text-sm text-foreground">
           <span>Overall progress</span>
           <span className="font-medium">
             {completed} / {total} completed ({pct}%)
           </span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full bg-primary transition-all"
             style={{ width: `${pct}%` }}
@@ -79,10 +79,11 @@ function EmployeeHome() {
         </div>
       </div>
 
+
       {rows === null ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-slate-500">No courses assigned yet.</p>
+        <p className="text-sm text-muted-foreground">No courses assigned yet.</p>
       ) : (
         <ul className="space-y-3">
           {rows.map((r) => {
@@ -95,26 +96,26 @@ function EmployeeHome() {
                 <Link
                   to="/employee/course/$assignmentId"
                   params={{ assignmentId: r.id }}
-                  className="block rounded-lg border border-slate-200 p-4 hover:border-primary hover:bg-slate-50"
+                  className="block rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-muted/40"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="font-medium text-slate-900">
+                      <div className="font-medium text-foreground">
                         {r.course?.title ?? "Untitled course"}
                       </div>
                       {r.course?.category && (
-                        <div className="mt-0.5 text-xs text-slate-500">
+                        <div className="mt-0.5 text-xs text-muted-foreground">
                           {r.course.category}
                         </div>
                       )}
-                      <div className="mt-2 text-xs text-slate-600">
+                      <div className="mt-2 text-xs text-foreground/80">
                         {r.due_date ? (
                           <>Due {new Date(r.due_date).toLocaleDateString()}</>
                         ) : (
                           <>No due date</>
                         )}
                         {overdue && (
-                          <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700">
+                          <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
                             Overdue
                           </span>
                         )}
@@ -135,20 +136,29 @@ function EmployeeHome() {
 function StatusBadge({ status, score }: { status: Status; score: number | null }) {
   if (status === "complete") {
     return (
-      <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+        <span
+          aria-hidden
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm"
+          style={{ transform: "rotate(-8deg)" }}
+        >
+          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2.5 6.5l2.5 2.5 4.5-5" />
+          </svg>
+        </span>
         Completed{score != null ? ` · ${score}%` : ""}
       </span>
     );
   }
   if (status === "in_progress") {
     return (
-      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+      <span className="inline-flex rounded-full bg-warning/20 px-2.5 py-1 text-xs font-medium text-foreground">
         In Progress
       </span>
     );
   }
   return (
-    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+    <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
       Not Started
     </span>
   );

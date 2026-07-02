@@ -117,7 +117,7 @@ function CoursePage() {
   if (loading) {
     return (
       <EmployeeShell name={name}>
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </EmployeeShell>
     );
   }
@@ -125,7 +125,7 @@ function CoursePage() {
   if (!assignment || !assignment.course) {
     return (
       <EmployeeShell name={name}>
-        <p className="text-sm text-slate-500">Course not found.</p>
+        <p className="text-sm text-muted-foreground">Course not found.</p>
         <Link to="/employee/home" className="text-sm text-primary underline">
           Back to home
         </Link>
@@ -139,16 +139,16 @@ function CoursePage() {
     <EmployeeShell name={name}>
       <Link
         to="/employee/home"
-        className="mb-4 inline-block text-sm text-slate-600 hover:text-slate-900"
+        className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
       >
         ← Back
       </Link>
-      <h1 className="mb-1 text-2xl font-semibold text-slate-900">{c.title}</h1>
+      <h1 className="mb-1 font-serif text-2xl font-semibold text-foreground">{c.title}</h1>
       {c.description && (
-        <p className="mb-6 text-sm text-slate-600">{c.description}</p>
+        <p className="mb-6 text-sm text-muted-foreground">{c.description}</p>
       )}
 
-      <div className="mb-6 rounded-lg border border-slate-200 p-4">
+      <div className="mb-6 rounded-lg border border-border bg-card p-4">
         <CourseContent
           type={c.content_type ?? "text"}
           content={c.content_url ?? ""}
@@ -156,11 +156,11 @@ function CoursePage() {
       </div>
 
       {result ? (
-        <div className="rounded-lg border border-slate-200 p-4">
-          <h2 className="mb-2 text-lg font-semibold text-slate-900">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h2 className="mb-2 font-serif text-lg font-semibold text-foreground">
             Quiz {result.passed ? "Passed" : "Not Passed"}
           </h2>
-          <p className="mb-4 text-sm text-slate-700">
+          <p className="mb-4 text-sm text-foreground">
             You scored <span className="font-medium">{result.score}%</span>
             {result.passed
               ? " — nice work!"
@@ -180,7 +180,7 @@ function CoursePage() {
               className={
                 result.passed
                   ? "rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-                  : "rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  : "rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/40"
               }
             >
               Back to my learning
@@ -189,23 +189,23 @@ function CoursePage() {
         </div>
       ) : showQuiz ? (
 
-        <div className="space-y-4 rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold text-slate-900">Quiz</h2>
+        <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+          <h2 className="font-serif text-lg font-semibold text-foreground">Quiz</h2>
           {questions.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               This course has no quiz questions.
             </p>
           ) : (
             questions.map((q, idx) => (
               <div key={q.id}>
-                <div className="mb-2 text-sm font-medium text-slate-900">
+                <div className="mb-2 text-sm font-medium text-foreground">
                   {idx + 1}. {q.question_text}
                 </div>
                 <div className="space-y-1.5">
                   {q.options.map((opt) => (
                     <label
                       key={opt}
-                      className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/40"
                     >
                       <input
                         type="radio"
@@ -256,7 +256,7 @@ function CoursePage() {
 
 function CourseContent({ type, content }: { type: string; content: string }) {
   if (!content) {
-    return <p className="text-sm text-slate-500">No content provided.</p>;
+    return <p className="text-sm text-muted-foreground">No content provided.</p>;
   }
   if (type === "video") {
     const embed = toEmbed(content);
@@ -298,7 +298,7 @@ function CourseContent({ type, content }: { type: string; content: string }) {
     );
   }
   return (
-    <div className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
+    <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
       {content}
     </div>
   );

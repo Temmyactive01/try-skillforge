@@ -23,7 +23,11 @@ function daysUntilDue(dueDate: string | null): number | null {
   if (!dueDate) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(dueDate);
+  // Parse date-only values as local midnight to avoid timezone shifts.
+  const dueStr = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
+    ? `${dueDate}T00:00:00`
+    : dueDate;
+  const due = new Date(dueStr);
   due.setHours(0, 0, 0, 0);
   const diff = due.getTime() - today.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));

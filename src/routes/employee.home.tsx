@@ -19,6 +19,16 @@ type Row = {
   score: number | null;
 };
 
+function daysUntilDue(dueDate: string | null): number | null {
+  if (!dueDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDate);
+  due.setHours(0, 0, 0, 0);
+  const diff = due.getTime() - today.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 function EmployeeHome() {
   const { checking, name } = useRequireRole("employee");
   const [rows, setRows] = useState<Row[] | null>(null);
@@ -58,7 +68,6 @@ function EmployeeHome() {
   const total = rows?.length ?? 0;
   const completed = rows?.filter((r) => r.status === "complete").length ?? 0;
   const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-  const today = new Date();
 
   return (
     <EmployeeShell name={name}>
@@ -79,7 +88,6 @@ function EmployeeHome() {
         </div>
       </div>
 
-
       {rows === null ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : rows.length === 0 ? (
@@ -87,10 +95,14 @@ function EmployeeHome() {
       ) : (
         <ul className="space-y-3">
           {rows.map((r) => {
+            const daysLeft = daysUntilDue(r.due_date);
             const overdue =
+              r.status !== "complete" && daysLeft != null && daysLeft < 0;
+            const dueSoon =
               r.status !== "complete" &&
-              r.due_date != null &&
-              new Date(r.due_date) < today;
+              daysLeft != null &&
+              daysLeft >= 0 &&
+              daysLeft <= 2;
             return (
               <li key={r.id}>
                 <Link
@@ -113,6 +125,13 @@ function EmployeeHome() {
                           <>Due {new Date(r.due_date).toLocaleDateString()}</>
                         ) : (
                           <>No due date</>
+                        )}
+                        {dueSoon && (
+                          <span className="ml-2 inline-flex items-center rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
+                            {daysLeft === 0
+                              ? "Due today"
+                              : `Due in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
+                          </span>
                         )}
                         {overdue && (
                           <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">

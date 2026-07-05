@@ -9,14 +9,15 @@ export default defineTool({
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_input, ctx) => {
-    if (!ctx.isAuthenticated()) {
+    const userId = ctx.getUserId();
+    if (!ctx.isAuthenticated() || !userId) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const sb = supabaseForUser(ctx);
     const { data, error } = await sb
       .from("profiles")
       .select("id, name, email, role, company_id, team_id, created_at")
-      .eq("id", ctx.getUserId())
+      .eq("id", userId)
       .maybeSingle();
     if (error) {
       return { content: [{ type: "text", text: error.message }], isError: true };

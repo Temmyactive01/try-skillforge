@@ -15,7 +15,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ status }, ctx) => {
-    if (!ctx.isAuthenticated()) {
+    const userId = ctx.getUserId();
+    if (!ctx.isAuthenticated() || !userId) {
       return { content: [{ type: "text", text: "Not authenticated" }], isError: true };
     }
     const sb = supabaseForUser(ctx);
@@ -24,7 +25,7 @@ export default defineTool({
       .select(
         "id, status, due_date, created_at, course:courses(id, title, description, category, content_type)",
       )
-      .eq("user_id", ctx.getUserId())
+      .eq("user_id", userId)
       .order("due_date", { ascending: true, nullsFirst: false });
     if (status) query = query.eq("status", status);
 

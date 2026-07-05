@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : "",
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — SkillForge" },
@@ -12,12 +15,20 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+function safeNext(next: string): string | null {
+  if (!next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
+
 function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const { next } = Route.useSearch();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -27,6 +38,11 @@ function LoginPage() {
   }, []);
 
   async function routeByRole(userId: string) {
+    const target = safeNext(next);
+    if (target) {
+      window.location.assign(target);
+      return;
+    }
     const { data: profile, error: pErr } = await supabase
       .from("profiles")
       .select("role")

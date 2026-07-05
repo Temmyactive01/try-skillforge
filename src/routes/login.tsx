@@ -28,6 +28,8 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const { next } = Route.useSearch();
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) routeByRole(data.session.user.id);
@@ -36,6 +38,11 @@ function LoginPage() {
   }, []);
 
   async function routeByRole(userId: string) {
+    const target = safeNext(next);
+    if (target) {
+      window.location.assign(target);
+      return;
+    }
     const { data: profile, error: pErr } = await supabase
       .from("profiles")
       .select("role")

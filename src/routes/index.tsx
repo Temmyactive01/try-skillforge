@@ -19,10 +19,18 @@ function LandingPage() {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold text-foreground">SkillForge</span>
-          </div>
+            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
+          </Link>
+          <nav className="hidden items-center gap-6 sm:flex">
+            <Link
+              to="/features"
+              className="text-sm font-medium text-foreground hover:text-muted-foreground"
+            >
+              Features
+            </Link>
+          </nav>
           <div className="flex items-center gap-2">
             <Link
               to="/login"

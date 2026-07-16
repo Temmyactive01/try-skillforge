@@ -84,10 +84,6 @@ function FeaturesPage() {
             title="Security"
             description="Role-based access keeps admin tools separate from the employee experience. Quiz answers and sensitive data are locked down by default."
           />
-          <FeatureCard
-            title="Built for Teams"
-            description="From small companies to growing organizations, SkillForge scales with your people. One place for onboarding, compliance, and ongoing skill building."
-          />
         </div>
       </section>
 

@@ -31,6 +31,12 @@ function FeaturesPage() {
             >
               Features
             </Link>
+            <Link
+              to="/about"
+              className="text-sm font-medium text-foreground hover:text-muted-foreground"
+            >
+              About
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link

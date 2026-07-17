@@ -283,6 +283,7 @@ function AddEmployeeForm({
           name: name.trim(),
           email: email.trim(),
           team_id: teamId || null,
+          redirect_origin: window.location.origin,
         },
       });
       onCreated();

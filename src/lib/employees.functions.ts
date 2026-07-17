@@ -6,7 +6,9 @@ const CreateEmployeeSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email(),
   team_id: z.string().uuid().nullable().optional(),
+  redirect_origin: z.string().url(),
 });
+
 
 export const createEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -30,6 +32,7 @@ export const createEmployee = createServerFn({ method: "POST" })
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
+        redirectTo: `${data.redirect_origin}/accept-invite`,
         data: {
           name: data.name,
           role: "employee",

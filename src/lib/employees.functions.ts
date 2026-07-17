@@ -26,22 +26,19 @@ export const createEmployee = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Random temp password — user will reset via email.
-    const tempPassword =
-      crypto.randomUUID().replace(/-/g, "") + "Aa1!";
-
-    const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        name: data.name,
-        role: "employee",
-        company_id: companyId,
+    // Send an invite email — user sets their own password via the secure link.
+    const { data: created, error: cErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      data.email,
+      {
+        data: {
+          name: data.name,
+          role: "employee",
+          company_id: companyId,
+        },
       },
-    });
+    );
     if (cErr || !created.user) {
-      throw new Error(cErr?.message ?? "Failed to create employee.");
+      throw new Error(cErr?.message ?? "Failed to invite employee.");
     }
 
     // Trigger creates the profile; set team_id if provided.

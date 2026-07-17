@@ -32,6 +32,7 @@ export const createEmployee = createServerFn({ method: "POST" })
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
       {
+        redirectTo: `${data.redirect_origin}/accept-invite`,
         data: {
           name: data.name,
           role: "employee",

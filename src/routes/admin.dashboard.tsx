@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
@@ -24,6 +24,7 @@ type Row = {
 
 type Team = { id: string; name: string };
 type Course = { id: string; title: string };
+type Profile = { id: string; name: string; team_id: string | null; role: string };
 
 const STATUSES: Status[] = ["not_started", "in_progress", "complete"];
 
@@ -36,6 +37,7 @@ function AdminDashboard() {
   const [rows, setRows] = useState<Row[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [teamFilter, setTeamFilter] = useState("");
@@ -53,12 +55,13 @@ function AdminDashboard() {
           .order("due_date", { ascending: true, nullsFirst: false }),
         supabase.from("teams").select("id, name").order("name"),
         supabase.from("courses").select("id, title").order("title"),
-        supabase.from("profiles").select("id, name, team_id"),
+        supabase.from("profiles").select("id, name, team_id, role"),
       ]);
       const profMap = new Map<string, { name: string; team_id: string | null }>();
       (p ?? []).forEach((row: any) => profMap.set(row.id, { name: row.name, team_id: row.team_id }));
       setTeams(t ?? []);
       setCourses(c ?? []);
+      setProfiles((p ?? []).map((row: any) => ({ ...row, role: row.role ?? "" })));
       setRows(
         (a ?? []).map((r: any) => {
           const prof = profMap.get(r.user_id);
@@ -77,6 +80,12 @@ function AdminDashboard() {
       setLoading(false);
     })();
   }, [checking]);
+
+  const employeeCount = useMemo(
+    () => profiles.filter((p) => p.role === "employee").length,
+    [profiles],
+  );
+  const showOnboarding = !loading && courses.length === 0 && employeeCount === 0;
 
   const stats = useMemo(() => {
     const total = rows.length;
@@ -109,137 +118,226 @@ function AdminDashboard() {
   return (
     <AdminShell>
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 font-serif text-3xl font-semibold text-foreground">Dashboard</h1>
+        {loading ? (
+          <div className="py-12 text-center text-muted-foreground">Loading…</div>
+        ) : showOnboarding ? (
+          <OnboardingView />
+        ) : (
+          <>
+            <h1 className="mb-6 font-serif text-3xl font-semibold text-foreground">Dashboard</h1>
 
-        <div className="mb-6 grid gap-4 sm:grid-cols-3">
-          <StatCard label="Overall completion" value={`${stats.completionPct}%`} />
-          <StatCard label="Active courses" value={stats.activeCourses} />
-          <StatCard label="Overdue assignments" value={stats.overdue} />
-        </div>
+            <div className="mb-6 grid gap-4 sm:grid-cols-3">
+              <StatCard label="Overall completion" value={`${stats.completionPct}%`} />
+              <StatCard label="Active courses" value={stats.activeCourses} />
+              <StatCard label="Overdue assignments" value={stats.overdue} />
+            </div>
 
-        <div className="rounded-md border border-border bg-card">
-          <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-            <span className="text-sm font-medium text-foreground">Filters:</span>
-            <select
-              value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value)}
-              className={selectCls}
-            >
-              <option value="">All teams</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={courseFilter}
-              onChange={(e) => setCourseFilter(e.target.value)}
-              className={selectCls}
-            >
-              <option value="">All courses</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={selectCls}
-            >
-              <option value="">All statuses</option>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {statusLabel(s)}
-                </option>
-              ))}
-            </select>
-            {(teamFilter || courseFilter || statusFilter) && (
-              <button
-                onClick={() => {
-                  setTeamFilter("");
-                  setCourseFilter("");
-                  setStatusFilter("");
-                }}
-                className="ml-auto text-sm text-muted-foreground hover:text-foreground"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+            <div className="rounded-md border border-border bg-card">
+              <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
+                <span className="text-sm font-medium text-foreground">Filters:</span>
+                <select
+                  value={teamFilter}
+                  onChange={(e) => setTeamFilter(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">All teams</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={courseFilter}
+                  onChange={(e) => setCourseFilter(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">All courses</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">All statuses</option>
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {statusLabel(s)}
+                    </option>
+                  ))}
+                </select>
+                {(teamFilter || courseFilter || statusFilter) && (
+                  <button
+                    onClick={() => {
+                      setTeamFilter("");
+                      setCourseFilter("");
+                      setStatusFilter("");
+                    }}
+                    className="ml-auto text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
 
-          <table className="w-full font-sans text-sm">
-            <thead className="bg-muted/40 text-left text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 font-medium">Employee</th>
-                <th className="px-4 py-2 font-medium">Course</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">Due date</th>
-                <th className="px-4 py-2 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
-                    Loading…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
-                    No assignments match these filters.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((r) => {
-                  const overdue =
-                    r.status !== "complete" &&
-                    r.due_date &&
-                    new Date(r.due_date).getTime() < Date.now();
-                  return (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-4 py-2 text-foreground">{r.employee_name}</td>
-                      <td className="px-4 py-2 text-foreground/80">{r.course_title}</td>
-                      <td className="px-4 py-2">
-                        <StatusBadge status={r.status} />
-                      </td>
-                      <td
-                        className={`px-4 py-2 ${overdue ? "font-medium text-destructive" : "text-foreground/80"}`}
-                      >
-                        {r.due_date ? new Date(r.due_date).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <button
-                          onClick={async () => {
-                            if (!confirm("Are you sure you want to remove this assignment?")) return;
-                            const prev = rows;
-                            setRows((curr) => curr.filter((x) => x.id !== r.id));
-                            const { error } = await supabase
-                              .from("assignments")
-                              .delete()
-                              .eq("id", r.id);
-                            if (error) {
-                              alert("Failed to remove assignment: " + error.message);
-                              setRows(prev);
-                            }
-                          }}
-                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          Cancel
-                        </button>
+              <table className="w-full font-sans text-sm">
+                <thead className="bg-muted/40 text-left text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Employee</th>
+                    <th className="px-4 py-2 font-medium">Course</th>
+                    <th className="px-4 py-2 font-medium">Status</th>
+                    <th className="px-4 py-2 font-medium">Due date</th>
+                    <th className="px-4 py-2 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-4 text-muted-foreground">
+                        Loading…
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-4 text-muted-foreground">
+                        No assignments match these filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((r) => {
+                      const overdue =
+                        r.status !== "complete" &&
+                        r.due_date &&
+                        new Date(r.due_date).getTime() < Date.now();
+                      return (
+                        <tr key={r.id} className="border-t border-border">
+                          <td className="px-4 py-2 text-foreground">{r.employee_name}</td>
+                          <td className="px-4 py-2 text-foreground/80">{r.course_title}</td>
+                          <td className="px-4 py-2">
+                            <StatusBadge status={r.status} />
+                          </td>
+                          <td
+                            className={`px-4 py-2 ${overdue ? "font-medium text-destructive" : "text-foreground/80"}`}
+                          >
+                            {r.due_date ? new Date(r.due_date).toLocaleDateString() : "—"}
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Are you sure you want to remove this assignment?")) return;
+                                const prev = rows;
+                                setRows((curr) => curr.filter((x) => x.id !== r.id));
+                                const { error } = await supabase
+                                  .from("assignments")
+                                  .delete()
+                                  .eq("id", r.id);
+                                if (error) {
+                                  alert("Failed to remove assignment: " + error.message);
+                                  setRows(prev);
+                                }
+                              }}
+                              className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              Cancel
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </AdminShell>
+  );
+}
+
+function OnboardingView() {
+  const cardBorder = "#8A8578";
+
+  return (
+    <div className="py-10">
+      <div className="mb-10 text-center">
+        <h1
+          className="mb-3 font-serif text-4xl font-semibold"
+          style={{ color: "#1B2430" }}
+        >
+          Welcome to SkillForge
+        </h1>
+        <p className="text-base" style={{ color: "#8A8578" }}>
+          Let's get your team learning. Here's how to get started.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <OnboardingCard
+          title="Create your first course"
+          description="Build a course with content and a short quiz to start training your team."
+          to="/admin/courses"
+          buttonText="Create course"
+          borderColor={cardBorder}
+        />
+        <OnboardingCard
+          title="Add employees"
+          description="Invite your team members so they can see and complete assignments."
+          to="/admin/employees"
+          buttonText="Add employees"
+          borderColor={cardBorder}
+        />
+        <OnboardingCard
+          title="Create a team"
+          description="Organize employees into teams for easier course assignments."
+          to="/admin/employees"
+          buttonText="Create team"
+          borderColor={cardBorder}
+        />
+      </div>
+    </div>
+  );
+}
+
+function OnboardingCard({
+  title,
+  description,
+  to,
+  buttonText,
+  borderColor,
+}: {
+  title: string;
+  description: string;
+  to: string;
+  buttonText: string;
+  borderColor: string;
+}) {
+  return (
+    <div
+      className="flex flex-col rounded-md bg-background p-6"
+      style={{ border: `1px solid ${borderColor}` }}
+    >
+      <h2
+        className="mb-2 font-serif text-xl font-semibold"
+        style={{ color: "#1B2430" }}
+      >
+        {title}
+      </h2>
+      <p className="mb-6 flex-1 text-sm" style={{ color: "#8A8578" }}>
+        {description}
+      </p>
+      <Link
+        to={to}
+        className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        {buttonText}
+      </Link>
+    </div>
   );
 }
 
@@ -281,4 +379,3 @@ function StatusBadge({ status }: { status: Status }) {
     </span>
   );
 }
-

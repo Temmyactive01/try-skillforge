@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s.next === "string" ? s.next : "",
+  validateSearch: (s: Record<string, unknown>): { next?: string } => ({
+    next: typeof s.next === "string" ? s.next : undefined,
   }),
   head: () => ({
     meta: [
@@ -15,8 +15,8 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-function safeNext(next: string): string | null {
-  if (!next.startsWith("/") || next.startsWith("//")) return null;
+function safeNext(next: string | undefined | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
   return next;
 }
 

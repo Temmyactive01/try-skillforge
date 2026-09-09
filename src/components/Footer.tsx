@@ -13,6 +13,12 @@ export function Footer() {
         >
           Privacy Policy
         </Link>
+        <Link
+          to="/terms"
+          className="font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
+        >
+          Terms of Service
+        </Link>
       </div>
     </footer>
   );

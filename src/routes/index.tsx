@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { BarChart3, BookOpen, CheckCircle2, ClipboardList, GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { Footer } from "@/components/Footer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -126,12 +127,7 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-border bg-background px-4 py-6">
-        <div className="mx-auto max-w-6xl text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} SkillForge. All rights reserved.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

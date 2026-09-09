@@ -105,15 +105,20 @@ function AboutPage() {
       {/* Team */}
       <section className="mx-auto max-w-6xl px-4 py-16">
         <h2 className="text-center font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Meet the team
+          Meet the founder
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-base text-muted-foreground">
-          We're a small group of builders, educators, and operators obsessed with making workplace learning actually work.
+          SkillForge is built by a solo founder focused on making workplace learning actually work.
         </p>
-        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <TeamMember name="Alex Morgan" role="Founder & CEO" bio="Former L&D lead who saw firsthand how the wrong tools kill engagement." />
-          <TeamMember name="Jordan Lee" role="Head of Product" bio="Designs flows that keep admins and employees out of each other's way." />
-          <TeamMember name="Sam Patel" role="Lead Engineer" bio="Builds the secure, scalable systems that keep SkillForge running smoothly." />
+        <div className="mt-10 flex justify-center">
+          <div className="max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-2xl font-semibold text-foreground">
+              IT
+            </div>
+            <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">Ilesanmi-Ojo Temitope</h3>
+            <p className="text-sm font-medium" style={{ color: "#E8634A" }}>Founder</p>
+            <p className="mt-2 text-sm leading-relaxed" style={{ color: "#8A8578" }}>Building SkillForge to make workplace training something teams actually finish.</p>
+          </div>
         </div>
       </section>
 

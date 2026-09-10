@@ -1,6 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { signupCompanyAdmin } from "@/lib/signup.functions";
 
@@ -91,8 +92,8 @@ function SignupPage() {
           <Field id="name" label="Full name" value={name} onChange={setName} autoComplete="name" />
           <Field id="company" label="Company name" value={companyName} onChange={setCompanyName} autoComplete="organization" />
           <Field id="email" label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
-          <Field id="password" label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" />
-          <Field id="confirm" label="Confirm password" type="password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+          <PasswordField id="password" label="Password" value={password} onChange={setPassword} autoComplete="new-password" />
+          <PasswordField id="confirm" label="Confirm password" value={confirm} onChange={setConfirm} autoComplete="new-password" />
 
           {error && (
             <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">

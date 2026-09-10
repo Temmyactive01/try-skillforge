@@ -29,6 +29,9 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const { next } = Route.useSearch();
 
@@ -56,6 +59,30 @@ function LoginPage() {
       return;
     }
     navigate({ to: profile.role === "admin" ? "/admin/dashboard" : "/employee/home" });
+  }
+
+  async function handleForgotPassword() {
+    setResetError(null);
+    setResetMessage(null);
+
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setResetError("Please enter your email address first.");
+      return;
+    }
+
+    setResetting(true);
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    setResetting(false);
+
+    if (resetErr) {
+      setResetError("Unable to send reset email. Please try again.");
+      return;
+    }
+
+    setResetMessage("If an account exists for this email, a password reset link has been sent.");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -118,7 +145,29 @@ function LoginPage() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            <div className="mt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={resetting}
+                className="text-sm font-normal text-muted-foreground hover:text-foreground focus:outline-none disabled:opacity-60"
+              >
+                {resetting ? "Sending…" : "Forgot password?"}
+              </button>
+            </div>
           </div>
+
+          {resetMessage && (
+            <div role="status" className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
+              {resetMessage}
+            </div>
+          )}
+
+          {resetError && (
+            <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {resetError}
+            </div>
+          )}
 
           {error && (
             <div

@@ -45,6 +45,15 @@ function AdminEmployeesPage() {
     const teamList = t ?? [];
     const teamMap = new Map(teamList.map((x: Team) => [x.id, x.name]));
     setTeams(teamList);
+
+    let pending = new Set<string>();
+    try {
+      const res = await listPendingEmployeeIds({ data: undefined });
+      pending = new Set(res.pendingIds);
+    } catch {
+      // status unavailable — fall back to showing everyone as active
+    }
+
     setEmployees(
       (p ?? []).map((e: any) => ({
         id: e.id,
@@ -52,6 +61,7 @@ function AdminEmployeesPage() {
         email: e.email,
         team_id: e.team_id,
         team_name: e.team_id ? (teamMap.get(e.team_id) ?? null) : null,
+        pending: pending.has(e.id),
       })),
     );
     setLoading(false);

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
-import { createEmployee } from "@/lib/employees.functions";
+import { createEmployee, listPendingEmployeeIds } from "@/lib/employees.functions";
 
 export const Route = createFileRoute("/admin/employees")({
   head: () => ({ meta: [{ title: "Employees — SkillForge" }] }),
@@ -17,6 +17,7 @@ type Employee = {
   email: string;
   team_id: string | null;
   team_name: string | null;
+  pending: boolean;
 };
 
 const inputCls =
@@ -44,6 +45,15 @@ function AdminEmployeesPage() {
     const teamList = t ?? [];
     const teamMap = new Map(teamList.map((x: Team) => [x.id, x.name]));
     setTeams(teamList);
+
+    let pending = new Set<string>();
+    try {
+      const res = await listPendingEmployeeIds({ data: undefined });
+      pending = new Set(res.pendingIds);
+    } catch {
+      // status unavailable — fall back to showing everyone as active
+    }
+
     setEmployees(
       (p ?? []).map((e: any) => ({
         id: e.id,
@@ -51,6 +61,7 @@ function AdminEmployeesPage() {
         email: e.email,
         team_id: e.team_id,
         team_name: e.team_id ? (teamMap.get(e.team_id) ?? null) : null,
+        pending: pending.has(e.id),
       })),
     );
     setLoading(false);
@@ -147,18 +158,19 @@ function AdminEmployeesPage() {
                   <th className="px-4 py-2 font-medium">Name</th>
                   <th className="px-4 py-2 font-medium">Email</th>
                   <th className="px-4 py-2 font-medium">Team</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                       Loading…
                     </td>
                   </tr>
                 ) : employees.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                       No employees yet.
                     </td>
                   </tr>
@@ -168,6 +180,17 @@ function AdminEmployeesPage() {
                       <td className="px-4 py-2 text-foreground">{e.name}</td>
                       <td className="px-4 py-2 text-foreground/80">{e.email}</td>
                       <td className="px-4 py-2 text-foreground/80">{e.team_name ?? "—"}</td>
+                      <td className="px-4 py-2">
+                        {e.pending ? (
+                          <span className="inline-flex items-center rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                            Active
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

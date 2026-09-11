@@ -1,7 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { signupCompanyAdmin } from "@/lib/signup.functions";
 
@@ -85,7 +85,10 @@ function SignupPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-semibold text-foreground">SkillForge</h1>
+        <Link to="/" className="mb-1 inline-flex items-center gap-2">
+          <GraduationCap className="h-6 w-6 text-primary" />
+          <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
+        </Link>
         <p className="mb-6 text-sm text-muted-foreground">Create your company account</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

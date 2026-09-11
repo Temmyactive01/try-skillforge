@@ -158,18 +158,19 @@ function AdminEmployeesPage() {
                   <th className="px-4 py-2 font-medium">Name</th>
                   <th className="px-4 py-2 font-medium">Email</th>
                   <th className="px-4 py-2 font-medium">Team</th>
+                  <th className="px-4 py-2 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                       Loading…
                     </td>
                   </tr>
                 ) : employees.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-4 py-4 text-muted-foreground">
+                    <td colSpan={4} className="px-4 py-4 text-muted-foreground">
                       No employees yet.
                     </td>
                   </tr>
@@ -179,6 +180,17 @@ function AdminEmployeesPage() {
                       <td className="px-4 py-2 text-foreground">{e.name}</td>
                       <td className="px-4 py-2 text-foreground/80">{e.email}</td>
                       <td className="px-4 py-2 text-foreground/80">{e.team_name ?? "—"}</td>
+                      <td className="px-4 py-2">
+                        {e.pending ? (
+                          <span className="inline-flex items-center rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                            Active
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

@@ -19,6 +19,12 @@ export function Footer() {
         >
           Terms of Service
         </Link>
+        <Link
+          to="/security"
+          className="font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
+        >
+          Security
+        </Link>
       </div>
     </footer>
   );

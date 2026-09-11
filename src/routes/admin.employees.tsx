@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
-import { createEmployee } from "@/lib/employees.functions";
+import { createEmployee, listPendingEmployeeIds } from "@/lib/employees.functions";
 
 export const Route = createFileRoute("/admin/employees")({
   head: () => ({ meta: [{ title: "Employees — SkillForge" }] }),
@@ -17,6 +17,7 @@ type Employee = {
   email: string;
   team_id: string | null;
   team_name: string | null;
+  pending: boolean;
 };
 
 const inputCls =

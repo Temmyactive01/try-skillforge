@@ -59,10 +59,10 @@ function AboutPage() {
       <section className="bg-card">
         <div className="mx-auto max-w-6xl px-4 py-20 text-center">
           <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Training your team will actually finish
+            About SkillForge
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            SkillForge was built on a simple belief: learning tools should help people succeed, not become another tab they ignore.
+            We're building the learning platform we wish existed — one that companies actually use and employees actually finish.
           </p>
         </div>
       </section>

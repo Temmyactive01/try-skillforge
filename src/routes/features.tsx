@@ -127,7 +127,7 @@ function FeatureCard({ title, description }: { title: string; description: strin
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-center gap-3">
-        <StampCheck className="bg-primary text-primary-foreground" />
+        <StampCheck variant="primary" />
         <h3 className="font-serif text-lg font-semibold text-foreground">{title}</h3>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>

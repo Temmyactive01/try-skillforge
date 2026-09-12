@@ -1,8 +1,19 @@
-export function StampCheck({ className = "" }: { className?: string }) {
+export function StampCheck({
+  className = "",
+  variant = "success",
+}: {
+  className?: string;
+  variant?: "success" | "primary";
+}) {
+  const variantClasses =
+    variant === "primary"
+      ? "bg-primary text-primary-foreground"
+      : "bg-success text-success-foreground";
+
   return (
     <span
       aria-hidden
-      className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm ${className}`}
+      className={`inline-flex h-5 w-5 items-center justify-center rounded-full shadow-sm ${variantClasses} ${className}`}
       style={{ transform: "rotate(-8deg)" }}
     >
       <svg

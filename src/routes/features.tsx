@@ -70,27 +70,31 @@ function FeaturesPage() {
 
       {/* Feature sections */}
       <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <FeatureCard
-            title="Course Creation"
-            description="Build rich courses with text lessons, embedded video, and downloadable PDFs. Organize content into a clear flow so employees know exactly what to do next."
-          />
-          <FeatureCard
-            title="Quiz & Grading"
-            description="Add multiple-choice quizzes to any course and let SkillForge grade them automatically. Correct answers stay protected so employees can't game the system."
-          />
-          <FeatureCard
-            title="Assignment & Tracking"
-            description="Assign training to individuals or whole teams, set due dates, and watch completion roll in. Employees get reminders before deadlines so nothing slips through."
-          />
-          <FeatureCard
-            title="Admin Dashboard"
-            description="Get real-time visibility into team progress, overdue assignments, and quiz scores — no spreadsheets, no manual follow-up, no guesswork."
-          />
-          <FeatureCard
-            title="Security"
-            description="Role-based access keeps admin tools separate from the employee experience. Quiz answers and sensitive data are locked down by default."
-          />
+        <div className="flex flex-col gap-4 lg:gap-6">
+          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
+            <FeatureCard
+              title="Course Creation"
+              description="Build rich courses with text lessons, embedded video, and downloadable PDFs. Organize content into a clear flow so employees know exactly what to do next."
+            />
+            <FeatureCard
+              title="Quiz & Grading"
+              description="Add multiple-choice quizzes to any course and let SkillForge grade them automatically. Correct answers stay protected so employees can't game the system."
+            />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
+            <FeatureCard
+              title="Assignment & Tracking"
+              description="Assign training to individuals or whole teams, set due dates, and watch completion roll in. Employees get reminders before deadlines so nothing slips through."
+            />
+            <FeatureCard
+              title="Admin Dashboard"
+              description="Get real-time visibility into team progress, overdue assignments, and quiz scores — no spreadsheets, no manual follow-up, no guesswork."
+            />
+            <FeatureCard
+              title="Security"
+              description="Role-based access keeps admin tools separate from the employee experience. Quiz answers and sensitive data are locked down by default."
+            />
+          </div>
         </div>
       </section>
 
@@ -123,7 +127,7 @@ function FeatureCard({ title, description }: { title: string; description: strin
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-center gap-3">
-        <StampCheck />
+        <StampCheck className="bg-primary text-primary-foreground" />
         <h3 className="font-serif text-lg font-semibold text-foreground">{title}</h3>
       </div>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>

@@ -72,5 +72,5 @@ export const submitQuiz = createServerFn({ method: "POST" })
       .eq("id", assignment.id);
     if (uErr) throw new Error(uErr.message);
 
-    return { score, passed };
+    return { score, passed, review };
   });

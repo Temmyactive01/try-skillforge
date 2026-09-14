@@ -180,6 +180,48 @@ function CoursePage() {
               ? " — nice work!"
               : " — a passing score of 70% is required. You can retake the quiz."}
           </p>
+          {result.review.length > 0 && (
+            <div className="mb-4 space-y-3">
+              <h3 className="font-serif text-base font-semibold text-foreground">
+                Your answers
+              </h3>
+              {result.review.map((r, idx) => (
+                <div
+                  key={r.id}
+                  className="rounded-lg border border-border bg-background p-3"
+                >
+                  <div className="mb-2 flex items-start gap-2">
+                    <span
+                      className={`mt-0.5 text-sm font-semibold ${
+                        r.is_correct ? "text-success" : "text-primary"
+                      }`}
+                      aria-hidden
+                    >
+                      {r.is_correct ? "✓" : "✕"}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {idx + 1}. {r.question_text}
+                    </span>
+                  </div>
+                  {r.is_correct ? (
+                    <p className="pl-6 text-sm text-success">
+                      Correct — {r.your_answer}
+                    </p>
+                  ) : (
+                    <div className="space-y-1 pl-6 text-sm">
+                      <p className="text-muted-foreground">
+                        Your answer: {r.your_answer ?? "No answer"}
+                      </p>
+                      <p className="text-success">
+                        Correct answer: {r.correct_answer}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2">
             {!result.passed && (
               <button

@@ -26,6 +26,14 @@ type Question = {
 };
 
 
+type ReviewItem = {
+  id: string;
+  question_text: string;
+  your_answer: string | null;
+  correct_answer: string;
+  is_correct: boolean;
+};
+
 type Assignment = {
   id: string;
   status: "not_started" | "in_progress" | "complete";

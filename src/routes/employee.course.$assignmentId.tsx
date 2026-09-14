@@ -110,7 +110,11 @@ function CoursePage() {
       const res = await submitQuizFn({
         data: { assignment_id: assignment.id, answers },
       });
-      setResult({ score: res.score, passed: res.passed });
+      setResult({
+        score: res.score,
+        passed: res.passed,
+        review: (res as any).review ?? [],
+      });
     } catch (err) {
       console.error("Quiz submission failed", err);
     } finally {

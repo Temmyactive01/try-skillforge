@@ -66,7 +66,7 @@ function CoursePage() {
         if (a.status === "complete") setViewed(true);
         if (a.course) {
           const { data: qs } = await supabase
-            .from("quiz_questions")
+            .from("quiz_questions_public")
             .select("id, question_text, options")
             .eq("course_id", a.course.id);
           setQuestions(

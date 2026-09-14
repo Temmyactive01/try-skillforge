@@ -33,27 +33,40 @@ export const signupCompanyAdmin = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Could not create company. Please try again." };
     }
 
-    // 2) Create auth user with metadata -> trigger creates the profile (role: admin)
-    const { error: uErr } = await supabaseAdmin.auth.admin.createUser({
+    // 2) Create auth user (metadata is never trusted for privileges)
+    const { data: createdUser, error: uErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
       user_metadata: {
-        company_id: company.id,
         name: data.name,
-        role: "admin",
       },
     });
 
-    if (uErr) {
+    if (uErr || !createdUser?.user) {
       // Rollback the company we just made
       await supabaseAdmin.from("companies").delete().eq("id", company.id);
-      const msg = uErr.message?.toLowerCase() ?? "";
+      const msg = uErr?.message?.toLowerCase() ?? "";
       if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
         return { ok: false as const, error: "An account with this email already exists." };
       }
       return { ok: false as const, error: "Could not create account. Please try again." };
     }
+
+    // 3) Create the admin profile server-side (trusted path)
+    const { error: profErr } = await supabaseAdmin.from("profiles").insert({
+      id: createdUser.user.id,
+      company_id: company.id,
+      name: data.name,
+      email: data.email,
+      role: "admin",
+    });
+    if (profErr) {
+      await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
+      await supabaseAdmin.from("companies").delete().eq("id", company.id);
+      return { ok: false as const, error: "Could not create account. Please try again." };
+    }
+
 
     return { ok: true as const };
   });

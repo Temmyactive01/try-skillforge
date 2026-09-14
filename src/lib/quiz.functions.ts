@@ -27,7 +27,7 @@ export const submitQuiz = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: questions, error: qErr } = await supabaseAdmin
       .from("quiz_questions")
-      .select("id, correct_answer")
+      .select("id, question_text, correct_answer")
       .eq("course_id", assignment.course_id);
 
     if (qErr) throw new Error(qErr.message);
@@ -36,8 +36,24 @@ export const submitQuiz = createServerFn({ method: "POST" })
     }
 
     let correct = 0;
+    const review: {
+      id: string;
+      question_text: string;
+      your_answer: string | null;
+      correct_answer: string;
+      is_correct: boolean;
+    }[] = [];
     for (const q of questions) {
-      if (data.answers[q.id] === q.correct_answer) correct++;
+      const given = data.answers[q.id] ?? null;
+      const isCorrect = given === q.correct_answer;
+      if (isCorrect) correct++;
+      review.push({
+        id: q.id,
+        question_text: q.question_text,
+        your_answer: given,
+        correct_answer: q.correct_answer,
+        is_correct: isCorrect,
+      });
     }
     const score = Math.round((correct / questions.length) * 100);
     const passed = score >= 70;
@@ -56,5 +72,5 @@ export const submitQuiz = createServerFn({ method: "POST" })
       .eq("id", assignment.id);
     if (uErr) throw new Error(uErr.message);
 
-    return { score, passed };
+    return { score, passed, review };
   });

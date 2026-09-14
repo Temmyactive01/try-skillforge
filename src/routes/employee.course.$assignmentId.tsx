@@ -45,9 +45,11 @@ function CoursePage() {
   const [viewed, setViewed] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; passed: boolean } | null>(
-    null,
-  );
+  const [result, setResult] = useState<{
+    score: number;
+    passed: boolean;
+    review: ReviewItem[];
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {

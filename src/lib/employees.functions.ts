@@ -35,8 +35,6 @@ export const createEmployee = createServerFn({ method: "POST" })
         redirectTo: `${data.redirect_origin}/accept-invite`,
         data: {
           name: data.name,
-          role: "employee",
-          company_id: companyId,
         },
       },
     );
@@ -44,14 +42,17 @@ export const createEmployee = createServerFn({ method: "POST" })
       throw new Error(cErr?.message ?? "Failed to invite employee.");
     }
 
-    // Trigger creates the profile; set team_id if provided.
-    if (data.team_id) {
-      const { error: uErr } = await supabaseAdmin
-        .from("profiles")
-        .update({ team_id: data.team_id })
-        .eq("id", created.user.id);
-      if (uErr) throw new Error(uErr.message);
-    }
+    // Create the profile server-side (trusted path; metadata is never trusted).
+    const { error: profErr } = await supabaseAdmin.from("profiles").insert({
+      id: created.user.id,
+      company_id: companyId,
+      name: data.name,
+      email: data.email,
+      role: "employee",
+      team_id: data.team_id ?? null,
+    });
+    if (profErr) throw new Error(profErr.message);
+
 
     return { id: created.user.id };
   });

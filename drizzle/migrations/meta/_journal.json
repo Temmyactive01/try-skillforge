@@ -15,6 +15,13 @@
       "when": 1789421016284,
       "tag": "0001_quiz_questions_public_view",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789421569168,
+      "tag": "0002_harden_handle_new_user",
+      "breakpoints": true
     }
   ]
 }

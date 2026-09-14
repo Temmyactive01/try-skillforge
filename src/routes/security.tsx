@@ -42,6 +42,12 @@ function SecurityPage() {
               Features
             </Link>
             <Link
+              to="/pricing"
+              className="text-sm font-medium text-foreground hover:text-muted-foreground"
+            >
+              Pricing
+            </Link>
+            <Link
               to="/about"
               className="text-sm font-medium text-foreground hover:text-muted-foreground"
             >

@@ -24,6 +24,7 @@ type Row = {
 
 type Team = { id: string; name: string };
 type Course = { id: string; title: string };
+type Employee = { id: string; name: string; team_id: string | null };
 
 const STATUSES: Status[] = ["not_started", "in_progress", "complete"];
 
@@ -36,6 +37,8 @@ function AdminAssignments() {
   const [rows, setRows] = useState<Row[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [editing, setEditing] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [teamFilter, setTeamFilter] = useState("");
@@ -53,12 +56,17 @@ function AdminAssignments() {
           .order("due_date", { ascending: true, nullsFirst: false }),
         supabase.from("teams").select("id, name").order("name"),
         supabase.from("courses").select("id, title").order("title"),
-        supabase.from("profiles").select("id, name, team_id"),
+        supabase.from("profiles").select("id, name, team_id, role"),
       ]);
       const profMap = new Map<string, { name: string; team_id: string | null }>();
       (p ?? []).forEach((row: any) => profMap.set(row.id, { name: row.name, team_id: row.team_id }));
       setTeams(t ?? []);
       setCourses(c ?? []);
+      setEmployees(
+        (p ?? [])
+          .filter((row: any) => row.role === "employee")
+          .map((row: any) => ({ id: row.id, name: row.name, team_id: row.team_id })),
+      );
       setRows(
         (a ?? []).map((r: any) => {
           const prof = profMap.get(r.user_id);
@@ -195,6 +203,12 @@ function AdminAssignments() {
                       </td>
                       <td className="px-4 py-2 text-right">
                         <button
+                          onClick={() => setEditing(r)}
+                          className="mr-2 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                        >
+                          Edit
+                        </button>
+                        <button
                           onClick={async () => {
                             if (!confirm("Are you sure you want to remove this assignment?")) return;
                             const prev = rows;
@@ -221,7 +235,177 @@ function AdminAssignments() {
           </table>
         </div>
       </div>
+
+      {editing && (
+        <EditAssignmentModal
+          row={editing}
+          teams={teams}
+          employees={employees}
+          onClose={() => setEditing(null)}
+          onSaved={(updated) => {
+            setRows((curr) =>
+              curr.map((x) =>
+                x.id === updated.id
+                  ? {
+                      ...x,
+                      due_date: updated.due_date,
+                      user_id: updated.user_id,
+                      employee_name:
+                        employees.find((e) => e.id === updated.user_id)?.name ?? x.employee_name,
+                      team_id:
+                        employees.find((e) => e.id === updated.user_id)?.team_id ?? x.team_id,
+                    }
+                  : x,
+              ),
+            );
+            setEditing(null);
+          }}
+        />
+      )}
     </AdminShell>
+  );
+}
+
+function EditAssignmentModal({
+  row,
+  teams,
+  employees,
+  onClose,
+  onSaved,
+}: {
+  row: Row;
+  teams: Team[];
+  employees: Employee[];
+  onClose: () => void;
+  onSaved: (u: { id: string; due_date: string | null; user_id: string }) => void;
+}) {
+  const current = employees.find((e) => e.id === row.user_id);
+  const [teamId, setTeamId] = useState<string>(current?.team_id ?? "");
+  const [userId, setUserId] = useState<string>(row.user_id);
+  const [dueDate, setDueDate] = useState<string>(
+    row.due_date ? new Date(row.due_date).toISOString().slice(0, 10) : "",
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const visible = teamId ? employees.filter((e) => e.team_id === teamId) : employees;
+
+  const fieldCls =
+    "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-sans";
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!userId) {
+      setError("Select an employee.");
+      return;
+    }
+    setSaving(true);
+    const { error: upErr } = await supabase
+      .from("assignments")
+      .update({
+        user_id: userId,
+        due_date: dueDate ? new Date(dueDate).toISOString() : null,
+      })
+      .eq("id", row.id);
+    setSaving(false);
+    if (upErr) {
+      setError(upErr.message);
+      return;
+    }
+    onSaved({ id: row.id, due_date: dueDate ? new Date(dueDate).toISOString() : null, user_id: userId });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-md border border-border bg-card p-5 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4">
+          <h2 className="font-serif text-xl font-semibold text-foreground">Edit assignment</h2>
+          <p className="text-sm text-muted-foreground">{row.course_title}</p>
+        </div>
+
+        <form onSubmit={save} className="space-y-4 font-sans">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">Team</label>
+            <select
+              value={teamId}
+              onChange={(e) => {
+                const t = e.target.value;
+                setTeamId(t);
+                const list = t ? employees.filter((emp) => emp.team_id === t) : employees;
+                if (!list.some((emp) => emp.id === userId)) setUserId(list[0]?.id ?? "");
+              }}
+              className={fieldCls}
+            >
+              <option value="">All teams</option>
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">Employee</label>
+            <select
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className={fieldCls}
+            >
+              <option value="">Select an employee…</option>
+              {visible.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-foreground">Due date</label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className={fieldCls}
+            />
+          </div>
+
+          {error && (
+            <div
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-md border border-border px-4 py-2 text-sm text-foreground/80 hover:bg-muted"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

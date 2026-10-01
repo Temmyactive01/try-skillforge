@@ -203,6 +203,12 @@ function AdminAssignments() {
                       </td>
                       <td className="px-4 py-2 text-right">
                         <button
+                          onClick={() => setEditing(r)}
+                          className="mr-2 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                        >
+                          Edit
+                        </button>
+                        <button
                           onClick={async () => {
                             if (!confirm("Are you sure you want to remove this assignment?")) return;
                             const prev = rows;

@@ -24,6 +24,7 @@ type Row = {
 
 type Team = { id: string; name: string };
 type Course = { id: string; title: string };
+type Employee = { id: string; name: string; team_id: string | null };
 
 const STATUSES: Status[] = ["not_started", "in_progress", "complete"];
 

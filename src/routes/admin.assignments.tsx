@@ -37,6 +37,8 @@ function AdminAssignments() {
   const [rows, setRows] = useState<Row[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [editing, setEditing] = useState<Row | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [teamFilter, setTeamFilter] = useState("");

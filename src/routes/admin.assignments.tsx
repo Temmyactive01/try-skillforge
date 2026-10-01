@@ -56,12 +56,17 @@ function AdminAssignments() {
           .order("due_date", { ascending: true, nullsFirst: false }),
         supabase.from("teams").select("id, name").order("name"),
         supabase.from("courses").select("id, title").order("title"),
-        supabase.from("profiles").select("id, name, team_id"),
+        supabase.from("profiles").select("id, name, team_id, role"),
       ]);
       const profMap = new Map<string, { name: string; team_id: string | null }>();
       (p ?? []).forEach((row: any) => profMap.set(row.id, { name: row.name, team_id: row.team_id }));
       setTeams(t ?? []);
       setCourses(c ?? []);
+      setEmployees(
+        (p ?? [])
+          .filter((row: any) => row.role === "employee")
+          .map((row: any) => ({ id: row.id, name: row.name, team_id: row.team_id })),
+      );
       setRows(
         (a ?? []).map((r: any) => {
           const prof = profMap.get(r.user_id);

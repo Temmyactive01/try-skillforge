@@ -29,6 +29,13 @@
       "when": 1789432116774,
       "tag": "0003_restrict_correct_answer_column",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790941621459,
+      "tag": "0004_add_cancelled_status",
+      "breakpoints": true
     }
   ]
 }

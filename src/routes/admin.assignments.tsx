@@ -26,10 +26,16 @@ type Team = { id: string; name: string };
 type Course = { id: string; title: string };
 type Employee = { id: string; name: string; team_id: string | null };
 
-const STATUSES: Status[] = ["not_started", "in_progress", "complete"];
+const STATUSES: Status[] = ["not_started", "in_progress", "complete", "cancelled"];
 
 function statusLabel(s: Status) {
-  return s === "not_started" ? "Not started" : s === "in_progress" ? "In progress" : "Complete";
+  return s === "not_started"
+    ? "Not started"
+    : s === "in_progress"
+      ? "In progress"
+      : s === "cancelled"
+        ? "Cancelled"
+        : "Complete";
 }
 
 function AdminAssignments() {
@@ -187,6 +193,7 @@ function AdminAssignments() {
                 filtered.map((r) => {
                   const overdue =
                     r.status !== "complete" &&
+                    r.status !== "cancelled" &&
                     r.due_date &&
                     new Date(r.due_date).getTime() < Date.now();
                   return (
@@ -202,6 +209,29 @@ function AdminAssignments() {
                         {r.due_date ? new Date(r.due_date).toLocaleDateString() : "—"}
                       </td>
                       <td className="px-4 py-2 text-right">
+                        {r.status === "cancelled" && (
+                          <button
+                            onClick={async () => {
+                              const prev = rows;
+                              setRows((curr) =>
+                                curr.map((x) =>
+                                  x.id === r.id ? { ...x, status: "not_started" as Status } : x,
+                                ),
+                              );
+                              const { error } = await supabase
+                                .from("assignments")
+                                .update({ status: "not_started" })
+                                .eq("id", r.id);
+                              if (error) {
+                                alert("Failed to restore assignment: " + error.message);
+                                setRows(prev);
+                              }
+                            }}
+                            className="mr-2 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                          >
+                            Undo
+                          </button>
+                        )}
                         <button
                           onClick={() => setEditing(r)}
                           className="mr-2 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground/80 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
@@ -210,15 +240,19 @@ function AdminAssignments() {
                         </button>
                         <button
                           onClick={async () => {
-                            if (!confirm("Are you sure you want to remove this assignment?")) return;
+                            if (!confirm("Are you sure you want to cancel this assignment?")) return;
                             const prev = rows;
-                            setRows((curr) => curr.filter((x) => x.id !== r.id));
+                            setRows((curr) =>
+                              curr.map((x) =>
+                                x.id === r.id ? { ...x, status: "cancelled" as Status } : x,
+                              ),
+                            );
                             const { error } = await supabase
                               .from("assignments")
-                              .delete()
+                              .update({ status: "cancelled" })
                               .eq("id", r.id);
                             if (error) {
-                              alert("Failed to remove assignment: " + error.message);
+                              alert("Failed to cancel assignment: " + error.message);
                               setRows(prev);
                             }
                           }}

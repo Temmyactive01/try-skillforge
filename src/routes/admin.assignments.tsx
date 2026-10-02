@@ -9,7 +9,7 @@ export const Route = createFileRoute("/admin/assignments")({
   component: AdminAssignments,
 });
 
-type Status = "not_started" | "in_progress" | "complete";
+type Status = "not_started" | "in_progress" | "complete" | "cancelled";
 
 type Row = {
   id: string;

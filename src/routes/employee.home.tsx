@@ -63,7 +63,7 @@ function EmployeeHome() {
           score: latest?.score ?? null,
         };
       });
-      setRows(mapped);
+      setRows(mapped.filter((r) => r.status !== "cancelled"));
     })();
   }, [checking]);
 

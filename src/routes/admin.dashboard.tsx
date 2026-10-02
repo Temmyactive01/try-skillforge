@@ -9,7 +9,7 @@ export const Route = createFileRoute("/admin/dashboard")({
   component: AdminDashboard,
 });
 
-type Status = "not_started" | "in_progress" | "complete";
+type Status = "not_started" | "in_progress" | "complete" | "cancelled";
 
 type Row = {
   id: string;
@@ -62,12 +62,13 @@ function AdminDashboard() {
   const showOnboarding = !loading && courses.length === 0 && employeeCount === 0;
 
   const stats = useMemo(() => {
-    const total = rows.length;
-    const complete = rows.filter((r) => r.status === "complete").length;
+    const active = rows.filter((r) => r.status !== "cancelled");
+    const total = active.length;
+    const complete = active.filter((r) => r.status === "complete").length;
     const completionPct = total === 0 ? 0 : Math.round((complete / total) * 100);
-    const activeCourses = new Set(rows.map((r) => r.course_id)).size;
+    const activeCourses = new Set(active.map((r) => r.course_id)).size;
     const now = Date.now();
-    const overdue = rows.filter(
+    const overdue = active.filter(
       (r) => r.status !== "complete" && r.due_date && new Date(r.due_date).getTime() < now,
     ).length;
     return { completionPct, activeCourses, overdue };

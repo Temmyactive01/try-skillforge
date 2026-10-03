@@ -25,7 +25,7 @@ There is no test suite.
 
 ## Stack
 
-- **TanStack Start** (React 19, SSR) with file-based routing via TanStack Router, built with Vite. `vite.config.ts` uses `@lovable.dev/vite-tanstack-config`, which already wires in TanStack Start, React, Tailwind, tsconfig paths, nitro, etc. — do not add those plugins again.
+- **TanStack Start** (React 19, SSR) with file-based routing via TanStack Router, built with Vite 8. `vite.config.ts` is a plain Vite config: Tailwind, TanStack Start (server entry `src/server.ts`; import protection fails the build if client code imports `**/server/**` or `server-only`), nitro for builds (defaults to Cloudflare Workers; output in `.output/`), and React. Dev server runs on port 8080.
 - **Tailwind CSS v4**; design tokens live in `src/styles.css` (navy ink `#1B2430`, off-white background, terracotta primary, green used only for success/"Complete", Fraunces serif headings + Inter body). shadcn/ui components exist in `src/components/ui/` but the app pages currently don't use them — pages are hand-written Tailwind.
 - **Supabase** (Lovable Cloud) for Postgres, Auth, and Row-Level Security. Project id is in `supabase/config.toml`; URL and publishable key come from `.env` (`VITE_SUPABASE_*` for the browser, `SUPABASE_*` for the server). The service-role key (`SUPABASE_SERVICE_ROLE_KEY`) is only present in the hosted server environment.
 

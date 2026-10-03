@@ -20,7 +20,6 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminAssignmentsRouteImport } from './routes/admin.assignments'
 import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
@@ -28,7 +27,6 @@ import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as EmployeeHomeRouteImport } from './routes/employee.home'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as EmployeeCourseAssignmentIdRouteImport } from './routes/employee.course.$assignmentId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -86,12 +84,6 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -128,12 +120,6 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const EmployeeCourseAssignmentIdRoute =
   EmployeeCourseAssignmentIdRouteImport.update({
     id: '/employee/course/$assignmentId',
@@ -153,7 +139,6 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -161,7 +146,6 @@ export interface FileRoutesByFullPath {
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesByTo {
@@ -176,7 +160,6 @@ export interface FileRoutesByTo {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -184,7 +167,6 @@ export interface FileRoutesByTo {
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesById {
@@ -200,7 +182,6 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
-  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -208,7 +189,6 @@ export interface FileRoutesById {
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRouteTypes {
@@ -225,7 +205,6 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -233,7 +212,6 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/employee/home'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/employee/course/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -248,7 +226,6 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -256,7 +233,6 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/employee/home'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/employee/course/$assignmentId'
   id:
     | '__root__'
@@ -271,7 +247,6 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
-    | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -279,7 +254,6 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/employee/home'
     | '/.lovable/oauth/consent'
-    | '/.mcp/invoke-tool/$tool'
     | '/employee/course/$assignmentId'
   fileRoutesById: FileRoutesById
 }
@@ -295,7 +269,6 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
-  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminAssignmentsRoute: typeof AdminAssignmentsRoute
   AdminCoursesRoute: typeof AdminCoursesRoute
@@ -303,7 +276,6 @@ export interface RootRouteChildren {
   AdminEmployeesRoute: typeof AdminEmployeesRoute
   EmployeeHomeRoute: typeof EmployeeHomeRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
-  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   EmployeeCourseAssignmentIdRoute: typeof EmployeeCourseAssignmentIdRoute
 }
 
@@ -386,13 +358,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -442,13 +407,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/employee/course/$assignmentId': {
       id: '/employee/course/$assignmentId'
       path: '/employee/course/$assignmentId'
@@ -471,7 +429,6 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminAssignmentsRoute: AdminAssignmentsRoute,
@@ -480,7 +437,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminEmployeesRoute: AdminEmployeesRoute,
   EmployeeHomeRoute: EmployeeHomeRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
-  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   EmployeeCourseAssignmentIdRoute: EmployeeCourseAssignmentIdRoute,
 }
 export const routeTree = rootRouteImport

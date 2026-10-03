@@ -13,7 +13,7 @@ The project was generated with **Lovable** but is no longer connected to it: thi
 ## Commands
 
 ```sh
-npm i              # or `bun install` (bun.lock is committed)
+npm ci             # npm only; package-lock.json is the lockfile
 npm run dev        # vite dev server
 npm run build      # production build (nitro, Cloudflare target)
 npm run lint       # eslint

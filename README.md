@@ -36,11 +36,15 @@ Continue developing this project in the [Lovable editor](https://lovable.dev/pro
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+You need [Node.js](https://nodejs.org/) 22 or newer, which includes npm. This project uses **npm** only; `package-lock.json` is the lockfile.
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+npm ci        # install the exact versions in package-lock.json
+npm run dev   # start the app at http://localhost:8080
 ```
+
+Other scripts: `npm run build` (production build), `npm run lint`, `npx tsc --noEmit` (type-check).
+
+To add or upgrade a package, use `npm install <package>` and commit the updated `package-lock.json`. `.npmrc` installs only from the public npm registry and, on npm 11 or newer, skips versions published less than a day ago.

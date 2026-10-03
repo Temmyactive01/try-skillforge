@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SkillForge is a multi-tenant B2B learning & development app: a company admin creates courses (text / video link / PDF link + multiple-choice quiz), invites employees, groups them into teams, and assigns courses with due dates; employees view content, take the quiz (pass mark 70%), and see their progress. Each company's data must stay fully isolated from every other company's.
 
-The project is built and synced with **Lovable** (live: https://try-skillforge.lovable.app). Commits pushed to `main` sync back into the Lovable editor — keep `main` working and **never rewrite pushed history** (no force-push, amend, rebase, or squash of pushed commits).
+The project was generated with **Lovable** but is no longer connected to it: this GitHub repo is the only home for SkillForge, and Lovable-specific code is being removed. Keep `main` working and don't rewrite pushed history. `AGENTS.md` still describes the old Lovable sync and is out of date.
+
+`DESIGN.md` is the new official design system for an upcoming redesign. It has **not** been applied yet; the current UI still uses the older tokens described under Stack. Don't restyle pages to `DESIGN.md` unless asked.
 
 ## Commands
 

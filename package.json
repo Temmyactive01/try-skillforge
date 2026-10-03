@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "check:env": "node scripts/check-env.mjs",
-    "verify:security": "node scripts/verify-security.mjs"
+    "verify:security": "node scripts/verify-security.mjs",
+    "seed": "node scripts/seed.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

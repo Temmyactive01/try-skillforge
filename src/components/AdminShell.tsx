@@ -39,7 +39,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </nav>
         <button
           onClick={async () => {
-            await supabase.auth.signOut();
+            await supabase.auth.signOut({ scope: "local" });
             navigate({ to: "/login" });
           }}
           className="mt-4 rounded-md border border-background/25 px-3 py-1.5 text-sm text-background/85 hover:bg-background/10 hover:text-background"

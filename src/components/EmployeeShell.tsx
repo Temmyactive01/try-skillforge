@@ -21,7 +21,7 @@ export function EmployeeShell({
             {name && <span className="text-sm text-muted-foreground">{name}</span>}
             <button
               onClick={async () => {
-                await supabase.auth.signOut();
+                await supabase.auth.signOut({ scope: "local" });
                 navigate({ to: "/login" });
               }}
               className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground hover:bg-muted"

@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "check:env": "node scripts/check-env.mjs",
     "verify:security": "node scripts/verify-security.mjs",
-    "seed": "node scripts/seed.mjs"
+    "seed": "node scripts/seed.mjs",
+    "test:mcp": "node scripts/mcp-smoke.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

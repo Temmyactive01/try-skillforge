@@ -1,0 +1,4 @@
+# Store and check out text files with LF on every OS. Generated files
+# (src/routeTree.gen.ts, Supabase types) are written with LF, and Prettier
+# enforces LF, so CRLF checkouts on Windows made them show as modified.
+* text=auto eol=lf

@@ -79,4 +79,4 @@ To add a tool: create `src/lib/mcp/tools/<name>.ts` exporting a `register…(ser
 
 ## Error handling plumbing
 
-`src/server.ts` wraps the SSR entry to turn swallowed h3 500s into a branded error page; `src/start.ts` adds request-level error middleware; the root `ErrorComponent` reports to Lovable. Leave these in place.
+`src/server.ts` wraps the SSR entry to turn swallowed h3 500s into a branded error page; `src/start.ts` adds request-level error middleware; the root `ErrorComponent` logs to the console. Leave these in place. There is no external error reporting yet.

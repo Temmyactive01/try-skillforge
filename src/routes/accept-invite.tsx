@@ -6,7 +6,7 @@ export const Route = createFileRoute("/accept-invite")({
   head: () => ({
     meta: [
       { title: "Set your password — SkillForge" },
-      { name: "description", content: "Complete your SkillForge account setup." },
+      { name: "description", content: "Set a password for your SkillForge account." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -78,7 +78,7 @@ function AcceptInvitePage() {
     const { data, error: uErr } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (uErr || !data.user) {
-      setError(uErr?.message ?? "Could not set your password. The invite may have expired.");
+      setError(uErr?.message ?? "Could not set your password. The link may have expired.");
       return;
     }
     await routeByRole(data.user.id);
@@ -89,17 +89,18 @@ function AcceptInvitePage() {
       <div className="w-full max-w-sm">
         <h1 className="mb-1 font-serif text-2xl font-semibold text-foreground">SkillForge</h1>
         <p className="mb-6 text-sm text-muted-foreground">
-          Set a password to finish activating your account.
+          Choose a password for your SkillForge account.
         </p>
 
         {checking ? (
-          <p className="text-sm text-muted-foreground">Verifying your invite…</p>
+          <p className="text-sm text-muted-foreground">Verifying your link…</p>
         ) : !hasSession ? (
           <div
             role="alert"
             className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
           >
-            This invite link is invalid or has expired. Ask your administrator to send a new invite.
+            This link is invalid or has expired. Ask your administrator for a new invite, or request
+            a new reset link from the sign-in page.
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">

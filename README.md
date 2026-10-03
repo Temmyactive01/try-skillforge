@@ -34,6 +34,28 @@ In production, set the server variables as secrets in your hosting provider.
 
 Run `npm run check:env` to test every value against Supabase. It never prints secret values.
 
+## Supabase setup (dashboard settings)
+
+These live in the Supabase dashboard, not in code. Set them once per project.
+
+**Authentication → URL Configuration**
+
+- **Site URL:** `http://localhost:8080` for local work; change it to the production URL when you deploy.
+- **Redirect URLs:** `http://localhost:8080/**`, plus `https://YOUR-SITE.netlify.app/**` once deployed. Invite and password-reset emails link to `/accept-invite`, which must be allowed here.
+
+**Authentication → Sign In / Providers**
+
+- **Email** provider: enabled. **Confirm email** can stay on; company signup and invites create users through the admin API.
+- **Allow new users to sign up:** off. Accounts are only created by the app's server functions (company signup, employee invite), which still work with this off.
+
+**Authentication → OAuth Server** (lets AI assistants sign in to the `/mcp` endpoint)
+
+- Enable the OAuth server, set the authorization path to `/oauth/consent`, and allow dynamic client registration.
+
+**Email delivery**
+
+Supabase's built-in email service only delivers to members of your Supabase organisation and only a few emails per hour. Before inviting real employees, set up custom SMTP (for example Resend) under **Authentication → Emails → SMTP Settings**.
+
 ## Database changes
 
 The database structure and Row-Level Security rules live in `supabase/migrations/` and are applied in filename (timestamp) order with the Supabase CLI, which is installed as a dev dependency:

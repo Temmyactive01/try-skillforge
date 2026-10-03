@@ -72,8 +72,9 @@ function LoginPage() {
     }
 
     setResetting(true);
+    // The emailed link signs the user in on /accept-invite, which asks for a new password.
     const { error: resetErr } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/accept-invite`,
     });
     setResetting(false);
 

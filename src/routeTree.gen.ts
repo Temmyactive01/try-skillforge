@@ -26,7 +26,7 @@ import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as EmployeeHomeRouteImport } from './routes/employee.home'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as EmployeeCourseAssignmentIdRouteImport } from './routes/employee.course.$assignmentId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -115,9 +115,9 @@ const EmployeeHomeRoute = EmployeeHomeRouteImport.update({
   path: '/employee/home',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmployeeCourseAssignmentIdRoute =
@@ -145,7 +145,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesByTo {
@@ -166,7 +166,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRoutesById {
@@ -188,7 +188,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/employee/home': typeof EmployeeHomeRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/employee/course/$assignmentId': typeof EmployeeCourseAssignmentIdRoute
 }
 export interface FileRouteTypes {
@@ -211,7 +211,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/employees'
     | '/employee/home'
-    | '/.lovable/oauth/consent'
+    | '/oauth/consent'
     | '/employee/course/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -232,7 +232,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/employees'
     | '/employee/home'
-    | '/.lovable/oauth/consent'
+    | '/oauth/consent'
     | '/employee/course/$assignmentId'
   id:
     | '__root__'
@@ -253,7 +253,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/employees'
     | '/employee/home'
-    | '/.lovable/oauth/consent'
+    | '/oauth/consent'
     | '/employee/course/$assignmentId'
   fileRoutesById: FileRoutesById
 }
@@ -275,7 +275,7 @@ export interface RootRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
   EmployeeHomeRoute: typeof EmployeeHomeRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  OauthConsentRoute: typeof OauthConsentRoute
   EmployeeCourseAssignmentIdRoute: typeof EmployeeCourseAssignmentIdRoute
 }
 
@@ -400,11 +400,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeeHomeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/employee/course/$assignmentId': {
@@ -436,7 +436,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
   EmployeeHomeRoute: EmployeeHomeRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  OauthConsentRoute: OauthConsentRoute,
   EmployeeCourseAssignmentIdRoute: EmployeeCourseAssignmentIdRoute,
 }
 export const routeTree = rootRouteImport

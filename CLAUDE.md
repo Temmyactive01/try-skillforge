@@ -37,7 +37,7 @@ Routes are files in `src/routes/` (see `src/routes/README.md` for conventions: `
 - Auth: `/login` (email+password, forgot-password, role-based redirect, safe `?next=`), `/signup` (creates a new company + its admin), `/accept-invite` (invited employee sets password).
 - Admin (wrapped in `AdminShell`): `/admin/dashboard`, `/admin/courses`, `/admin/assignments`, `/admin/employees`.
 - Employee (wrapped in `EmployeeShell`): `/employee/home`, `/employee/course/$assignmentId`.
-- Machine endpoints: `/mcp`, `/.well-known/oauth-protected-resource`, `/.lovable/oauth/consent` (see MCP below).
+- Machine endpoints: `/mcp`, `/.well-known/oauth-protected-resource`, `/oauth/consent` (see MCP below).
 
 Page guarding is client-side via `useRequireRole("admin" | "employee")` in `src/lib/use-require-role.ts`, which redirects to `/login` or to the other role's home. This is UX only — **the real security boundary is RLS in the database**.
 
@@ -73,7 +73,7 @@ Migrations live in **two** places, applied in order: `supabase/migrations/` (ear
 
 `src/lib/mcp/` is a read-only MCP server built on the official `@modelcontextprotocol/sdk`, exposing `get_my_profile`, `list_my_assignments`, `list_company_courses`. `/mcp` (`src/routes/mcp.ts`) is stateless Streamable HTTP: each request gets a fresh `McpServer` bound to the verified caller (`handleMcpRequest` in `src/lib/mcp/index.ts`).
 
-Auth (`src/lib/mcp/auth.ts`): Supabase Auth is the OAuth authorization server and the app is only the protected resource. A request needs a signed-in user's Supabase access token as `Authorization: Bearer`; otherwise it gets a 401 whose `WWW-Authenticate` points to `/.well-known/oauth-protected-resource`, which names `${SUPABASE_URL}/auth/v1` as the issuer. Browser requests from a foreign `Origin` get 403. Tools query through `supabaseForUser` with the caller's token, so RLS still applies — never use `supabaseAdmin` in a tool. The Supabase OAuth consent screen is `/.lovable/oauth/consent`; its URL must match the Supabase project's OAuth server settings.
+Auth (`src/lib/mcp/auth.ts`): Supabase Auth is the OAuth authorization server and the app is only the protected resource. A request needs a signed-in user's Supabase access token as `Authorization: Bearer`; otherwise it gets a 401 whose `WWW-Authenticate` points to `/.well-known/oauth-protected-resource`, which names `${SUPABASE_URL}/auth/v1` as the issuer. Browser requests from a foreign `Origin` get 403. Tools query through `supabaseForUser` with the caller's token, so RLS still applies — never use `supabaseAdmin` in a tool. The Supabase OAuth consent screen is `/oauth/consent`; its URL must match the Supabase project's OAuth server settings.
 
 To add a tool: create `src/lib/mcp/tools/<name>.ts` exporting a `register…(server, user)` function that calls `server.registerTool`, and call it from `createMcpServer` in `src/lib/mcp/index.ts`.
 

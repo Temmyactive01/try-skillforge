@@ -1,10 +1,5 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# AGENTS.md
+
+Project guidance for coding agents lives in [CLAUDE.md](CLAUDE.md): commands, architecture, the Supabase security model and the MCP server. Read it before making changes. The design system for the upcoming redesign is in [DESIGN.md](DESIGN.md); don't apply it unless asked.
+
+Keep `main` working and don't rewrite pushed history (no force-push, amend, rebase or squash of pushed commits).

@@ -28,6 +28,23 @@ The app reads Supabase settings from `.env` (committed) and `.env.local` (git-ig
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | Browser | Public values |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID` | Server | Same values as the `VITE_` ones |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server (signup, invites, quiz grading) | **Secret.** Put it in `.env.local`, never in `.env` |
-| `DATABASE_URL` | `drizzle-kit` migrations only | Postgres connection string. Keep it in `.env.local` |
+| `DATABASE_URL` | Scripts (`check:env`, security checks, seed) | Session pooler connection string with your database password. Keep it in `.env.local` |
 
 In production, set the server variables as secrets in your hosting provider.
+
+Run `npm run check:env` to test every value against Supabase. It never prints secret values.
+
+## Database changes
+
+The database structure and Row-Level Security rules live in `supabase/migrations/` and are applied in filename (timestamp) order with the Supabase CLI, which is installed as a dev dependency:
+
+```sh
+npx supabase login                               # once per computer
+npx supabase link --project-ref <project-id>     # once per clone; asks for the database password
+npx supabase migration new <short_name>          # creates an empty, timestamped SQL file to fill in
+npx supabase db push --dry-run                   # lists what would be applied
+npx supabase db push                             # applies new migrations
+npx supabase gen types typescript --project-id <project-id> > src/integrations/supabase/types.ts
+```
+
+Never edit a migration that has already been applied; add a new one instead.

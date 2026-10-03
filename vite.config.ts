@@ -40,7 +40,7 @@ export default defineConfig(({ command, mode }) => {
           environments: {
             client: { define: { "process.env.NODE_ENV": JSON.stringify("development") } },
           },
-          esbuild: { keepNames: true },
+          build: { rolldownOptions: { output: { keepNames: true } } },
         }
       : {}),
     css: { transformer: "lightningcss" },

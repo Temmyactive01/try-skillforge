@@ -67,7 +67,7 @@ Key invariants enforced in SQL — keep them when changing things:
 - A trigger (`private.restrict_assignment_user_update`) lets non-admin employees change only `status` on their own assignments.
 - Cancelling an assignment sets `status = 'cancelled'` (kept on record, admin can "Undo" back to `not_started`); cancelled rows are excluded from dashboard stats and the employee's list. Some older code (e.g. the MCP `list_my_assignments` status filter, the course page's `Assignment` type) doesn't know about `cancelled`.
 
-Migrations live in **two** places, applied in order: `supabase/migrations/` (earlier) and then `drizzle/migrations/` (newer, via `drizzle.config.ts` using `DATABASE_URL` from `.env.local`). New schema changes go in as new SQL migrations; `drizzle/schema.ts` is intentionally blank and auto-generated.
+All migrations live in `supabase/migrations/` (timestamp-ordered) and are applied with the Supabase CLI (`npx supabase db push`, see README "Database changes"). Add schema changes as new migrations via `npx supabase migration new`; never edit applied ones. After a schema change, regenerate `src/integrations/supabase/types.ts`.
 
 ## MCP server
 

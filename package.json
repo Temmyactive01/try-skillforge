@@ -13,7 +13,9 @@
     "check:env": "node scripts/check-env.mjs",
     "verify:security": "node scripts/verify-security.mjs",
     "seed": "node scripts/seed.mjs",
-    "test:mcp": "node scripts/mcp-smoke.mjs"
+    "test:mcp": "node scripts/mcp-smoke.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -72,6 +74,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "1.63.0",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

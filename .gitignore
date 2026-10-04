@@ -37,3 +37,7 @@ dist-ssr
 
 # Supabase CLI link state
 supabase/.temp/
+
+# Playwright end-to-end test output
+test-results/
+playwright-report/

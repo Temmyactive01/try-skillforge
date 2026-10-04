@@ -29,15 +29,22 @@ export const createEmployee = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Send an invite email — user sets their own password via the secure link.
-    const { data: created, error: cErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
-      data.email,
-      {
-        redirectTo: `${data.redirect_origin}/accept-invite?type=invite`,
-        data: {
-          name: data.name,
-        },
+    const inviteOptions = {
+      redirectTo: `${data.redirect_origin}/accept-invite?type=invite`,
+      data: {
+        name: data.name,
       },
-    );
+    };
+    // The end-to-end tests' dev server sets E2E_SKIP_INVITE_EMAIL so no real email is sent:
+    // generateLink creates the same invited user without emailing it. Never honoured in builds.
+    const skipEmail = import.meta.env.DEV && process.env.E2E_SKIP_INVITE_EMAIL === "1";
+    const { data: created, error: cErr } = skipEmail
+      ? await supabaseAdmin.auth.admin.generateLink({
+          type: "invite",
+          email: data.email,
+          options: inviteOptions,
+        })
+      : await supabaseAdmin.auth.admin.inviteUserByEmail(data.email, inviteOptions);
     if (cErr || !created.user) {
       throw new Error(cErr?.message ?? "Failed to invite employee.");
     }

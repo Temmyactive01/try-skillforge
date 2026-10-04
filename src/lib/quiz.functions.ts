@@ -22,6 +22,9 @@ export const submitQuiz = createServerFn({ method: "POST" })
     if (!assignment || assignment.user_id !== context.userId) {
       throw new Response("Forbidden", { status: 403 });
     }
+    if (assignment.status === "cancelled") {
+      throw new Response("This assignment was cancelled", { status: 400 });
+    }
 
     // The course must be one the caller can see (their own company's), so the answers
     // read below with the admin client can never come from another company.
@@ -68,15 +71,16 @@ export const submitQuiz = createServerFn({ method: "POST" })
     const score = Math.round((correct / questions.length) * 100);
     const passed = score >= 70;
 
-    // Write result + update status using the user-scoped client so RLS applies
-    const { error: rErr } = await context.supabase.from("quiz_results").insert({
+    // Only this grader may record results and set "complete": the database refuses both
+    // from employees, so write with the admin client now that ownership is verified above.
+    const { error: rErr } = await supabaseAdmin.from("quiz_results").insert({
       assignment_id: assignment.id,
       score,
       passed,
     });
     if (rErr) throw new Error(rErr.message);
 
-    const { error: uErr } = await context.supabase
+    const { error: uErr } = await supabaseAdmin
       .from("assignments")
       .update({ status: passed ? "complete" : "in_progress" })
       .eq("id", assignment.id);

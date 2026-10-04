@@ -128,6 +128,38 @@ test.describe("an employee can't use admin features", () => {
     expect(after.data?.role, "employee promotes themselves to admin").toBe("employee");
   });
 
+  test("only passing the quiz can complete a course", async () => {
+    const courseId = await createCourse(a.id, `Completion Course ${Date.now()}`);
+    const assignmentId = await assign(courseId, a.employee.id);
+    const asEmployee = await signedInClient(a.employee.email);
+    const statusNow = async () =>
+      (await adminClient().from("assignments").select("status").eq("id", assignmentId).single())
+        .data?.status;
+    const setStatus = (status: "not_started" | "in_progress" | "complete" | "cancelled") =>
+      asEmployee.from("assignments").update({ status }).eq("id", assignmentId);
+
+    // Starting a course is allowed.
+    expect((await setStatus("in_progress")).error).toBeNull();
+    expect(await statusNow()).toBe("in_progress");
+
+    // Completing it directly is not, and neither is any other status change.
+    expect((await setStatus("complete")).error, "employee sets Complete").not.toBeNull();
+    expect((await setStatus("cancelled")).error, "employee cancels").not.toBeNull();
+    expect((await setStatus("not_started")).error, "employee resets").not.toBeNull();
+    expect(await statusNow()).toBe("in_progress");
+
+    // Nor can they record a passing result for themselves.
+    const fake = await asEmployee
+      .from("quiz_results")
+      .insert({ assignment_id: assignmentId, score: 100, passed: true });
+    expect(fake.error, "employee records their own quiz result").not.toBeNull();
+    const results = await adminClient()
+      .from("quiz_results")
+      .select("id")
+      .eq("assignment_id", assignmentId);
+    expect(results.data).toEqual([]);
+  });
+
   test("quiz answers can't be read", async () => {
     const asEmployee = await signedInClient(a.employee.email);
     const allowed = await asEmployee

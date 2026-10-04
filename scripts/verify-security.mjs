@@ -185,6 +185,46 @@ if (signInError) {
       .eq("id", mine.id);
     check(Boolean(error), "cannot change their own due date");
   }
+  {
+    // Only the server-side quiz grader may complete an assignment or record a result.
+    const { data: open } = await browser
+      .from("assignments")
+      .select("id, status")
+      .neq("status", "complete")
+      .neq("status", "cancelled")
+      .limit(1)
+      .single();
+    const { error } = await browser
+      .from("assignments")
+      .update({ status: "complete" })
+      .eq("id", open.id);
+    const { data: after } = await admin
+      .from("assignments")
+      .select("status")
+      .eq("id", open.id)
+      .single();
+    if (after.status !== open.status) {
+      await admin.from("assignments").update({ status: open.status }).eq("id", open.id);
+    }
+    check(
+      Boolean(error) && after.status === open.status,
+      "cannot mark their own assignment Complete",
+    );
+
+    const { data: fake, error: insertError } = await browser
+      .from("quiz_results")
+      .insert({ assignment_id: open.id, score: 100, passed: true })
+      .select("id");
+    if (fake?.length)
+      await admin
+        .from("quiz_results")
+        .delete()
+        .in(
+          "id",
+          fake.map((r) => r.id),
+        );
+    check(Boolean(insertError), "cannot record their own quiz result");
+  }
 
   // Another company's data must be invisible. Create one temporarily.
   const { data: other } = await admin

@@ -10,6 +10,10 @@ This GitHub repo is the only home for SkillForge. Keep `main` working and don't 
 
 `DESIGN.md` is the new official design system for an upcoming redesign. It has **not** been applied yet; the current UI still uses the older tokens described under Stack. Don't restyle pages to `DESIGN.md` unless asked.
 
+## Progress log
+
+`docs/progress.md` records what has been done, key decisions and why, bugs fixed, known issues, the "Before launch" checklist and what's next. Read it at the start of a session. **At the end of every working session, update it before the final commit:** refresh "Where things stand", add a new dated session section at the top (newest first) with what was done, decisions, bugs and fixes (with commit hashes), tick or add "Before launch" items, and update "Known issues" and "What's next".
+
 ## Commands
 
 ```sh

@@ -2,20 +2,59 @@
 
 What has been done, why, what broke and what's next. Newest session first. Update this file at the end of every working session.
 
-## Where things stand (2026-10-04, end of session 2)
+## Where things stand (2026-10-05, end of session 3)
 
 - The app runs locally against your own Supabase project (`obfxcakfqjqxrxjphidy`). Nothing depends on Lovable any more.
-- The GitHub repo is the only home for the code. Session 2's commits are local only and **not pushed yet**.
-- The database has all 13 migrations applied. Every table is protected by Row-Level Security, and `npm run verify:security` proves it.
-- **19 automated browser tests** (`npm run test:e2e`) cover:
+- The GitHub repo is the only home for the code. Everything is pushed to `main`.
+- The database has all 14 migrations applied. Every table is protected by Row-Level Security, and `npm run verify:security` proves it.
+- **Only passing the quiz completes a course.** Employees can start a course, but only the server-side grader can mark it Complete or record a score.
+- **20 automated browser tests** (`npm run test:e2e`) cover:
   - signup, invites, courses and quizzes;
   - password reset;
-  - company isolation and role rules.
+  - company isolation and role rules;
+  - who can complete a course.
 
   They pass, send no email and clean up after themselves.
 - Demo data (Northwind Logistics) is loaded with `npm run seed`. Your own test company from manual testing is also in the database.
 - Not deployed yet. Netlify is the planned host.
 - The new design system (`DESIGN.md`) is written but not applied. The tests are there to catch anything the redesign breaks.
+
+## Session 3: 2026-10-05 (only the quiz completes a course)
+
+### What we did
+
+1. **Closed the "employees can complete their own course" gap.**
+   - A new migration means a signed-in employee can only move their own assignment from Not started to In progress. Setting Complete, Cancelled or back to Not started is refused.
+   - Employees can no longer insert quiz results at all.
+   - The quiz grader (`submitQuiz`) records the result and sets Complete or In progress itself, using the service role, after checking:
+     - the assignment is the employee's;
+     - it isn't cancelled;
+     - its course belongs to their company.
+2. **Added proof.**
+   - A new test, "only passing the quiz can complete a course", has an employee:
+     - start a course (allowed);
+     - try to set Complete, Cancelled and Not started (all refused);
+     - try to record a 100% result (refused).
+   - `npm run verify:security` gained the same two checks.
+   - The test was run **before** the fix and failed, which showed the gap was real. It passes after.
+3. Re-ran everything: 20/20 browser tests, `verify:security`, `test:mcp`, the type-check and the build all pass. Northwind and your test company are unchanged.
+4. Pushed sessions 2 and 3 to GitHub.
+
+### Key decisions and why
+
+| Decision | Why |
+|---|---|
+| **Enforced in the database, not just the app** | The browser can talk to the database directly, so a rule only in the page could be bypassed. The database now refuses the change whoever sends it. |
+| **The grader writes with the service role** | Once employees can't set Complete, the grader can't do it "as the employee" either. It checks ownership first, then writes with the trusted key. |
+| **Employees may only go Not started → In progress** | That's the one change the app makes for them ("I've reviewed the content"). Every other status change belongs to the grader or an admin. |
+| **Cancelled assignments can't be graded** | Otherwise taking the quiz from an old link would revive a cancelled assignment as Complete. |
+| **Existing behaviour kept: failing a retake after passing sets In progress** | This is unchanged from before. Worth deciding later whether a pass should stick. |
+
+### Bugs found and fixed
+
+| Bug | Cause | Fix |
+|---|---|---|
+| Employees could mark a course Complete (or record any score) without taking the quiz | The assignment trigger allowed any status change, and a rule let employees insert their own quiz results. | New migration, plus the grader writing with the service role (`f192771`). |
 
 ## Session 2: 2026-10-04 (automated tests)
 
@@ -118,10 +157,7 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 
 ### Known issues (not fixed yet)
 
-- **Employees can mark their own course complete without the quiz.** Noticed in session 2 while reviewing the security rules.
-  - The database lets an employee set their own assignment's status to `complete`, and insert their own quiz result with any score.
-  - This only affects their own progress, never another company's data.
-  - Fix later: let only the server-side grader write results and completion.
+- ~~**Employees can mark their own course complete without the quiz.**~~ Fixed in session 3 (`f192771`).
 - **Cancelled assignments aren't handled everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type don't know about the `cancelled` status.
 - **npm reports security advisories** in some dependencies. `npm audit fix` wasn't run, because it changes versions.
 - **About 290 old lint problems** remain, mostly formatting in the Supabase helper files and the generated `types.ts`.
@@ -144,12 +180,11 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 
 ## What's next
 
-1. Push session 2's commits once you've reviewed them.
-2. Apply the design system in `DESIGN.md` (the redesign). Run `npm run test:e2e` after each page. If a test breaks only because a label or button text changed on purpose, update the test to match.
-3. Deploy to Netlify and confirm the build works there, then work through "Before launch".
-4. Fix the known issues above, starting with `cancelled` assignments.
-5. Try connecting a real AI assistant through `/oauth/consent`.
-6. Optionally, run the tests automatically on GitHub for every push (GitHub Actions). That needs the Supabase secret stored as a GitHub secret, and ideally a separate test Supabase project.
+1. Apply the design system in `DESIGN.md` (the redesign). Run `npm run test:e2e` after each page. If a test breaks only because a label or button text changed on purpose, update the test to match.
+2. Deploy to Netlify and confirm the build works there, then work through "Before launch".
+3. Fix the known issues above, starting with `cancelled` assignments.
+4. Try connecting a real AI assistant through `/oauth/consent`.
+5. Optionally, run the tests automatically on GitHub for every push (GitHub Actions). That needs the Supabase secret stored as a GitHub secret, and ideally a separate test Supabase project.
 
 ## Useful commands
 

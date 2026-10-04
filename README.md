@@ -82,7 +82,7 @@ Automated browser tests (Playwright) check the main flows end to end, so a chang
   - signing out in another tab while the reset form is open;
   - an already-used link;
   - reloading the reset page.
-- **Access rules:** one company can't see or change another company's data, in the pages or by querying the database directly. An employee can't open admin pages or make admin-only changes.
+- **Access rules:** one company can't see or change another company's data, in the pages or by querying the database directly. An employee can't open admin pages or make admin-only changes, and can't mark a course Complete themselves: only passing the quiz does that.
 
 ### Before the first run
 
@@ -105,7 +105,7 @@ To run a single file, name it: `npm run test:e2e -- e2e/password-reset.spec.ts`.
 ### Reading the results
 
 - Each test prints one line: a ✓ when it passed, a ✘ when it failed.
-- The last lines give the totals, for example `19 passed (3.2m)`, and confirm the clean-up (`Cleaned up test data: 4 companies, 12 users.`).
+- The last lines give the totals, for example `20 passed (3.7m)`, and confirm the clean-up (`Cleaned up test data: 4 companies, 12 users.`).
 - When a test fails, it is listed with the step that went wrong (for example the button or text it couldn't find).
 - `npm run test:e2e:report` shows each failure with:
   - a screenshot;

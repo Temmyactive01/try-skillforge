@@ -23,6 +23,16 @@ export const submitQuiz = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
+    // The course must be one the caller can see (their own company's), so the answers
+    // read below with the admin client can never come from another company.
+    const { data: course, error: cErr } = await context.supabase
+      .from("courses")
+      .select("id")
+      .eq("id", assignment.course_id)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (!course) throw new Response("Forbidden", { status: 403 });
+
     // Load correct answers using the admin client (bypasses column-level grants)
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: questions, error: qErr } = await supabaseAdmin

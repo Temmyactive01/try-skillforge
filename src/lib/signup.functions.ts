@@ -9,7 +9,7 @@ const signupSchema = z.object({
 });
 
 export const signupCompanyAdmin = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => signupSchema.parse(data))
+  .validator((data: unknown) => signupSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

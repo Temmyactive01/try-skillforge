@@ -9,7 +9,7 @@ const submitSchema = z.object({
 
 export const submitQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => submitSchema.parse(data))
+  .validator((data) => submitSchema.parse(data))
   .handler(async ({ data, context }) => {
     // Verify the assignment belongs to the calling user (RLS-scoped read)
     const { data: assignment, error: aErr } = await context.supabase

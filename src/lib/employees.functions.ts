@@ -12,7 +12,7 @@ const CreateEmployeeSchema = z.object({
 
 export const createEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => CreateEmployeeSchema.parse(data))
+  .validator((data: unknown) => CreateEmployeeSchema.parse(data))
   .handler(async ({ data, context }) => {
     // Verify caller is admin and get their company_id
     const { data: adminProfile, error: pErr } = await context.supabase

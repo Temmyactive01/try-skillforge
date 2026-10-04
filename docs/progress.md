@@ -2,15 +2,68 @@
 
 What has been done, why, what broke and what's next. Newest session first. Update this file at the end of every working session.
 
-## Where things stand (2026-10-04)
+## Where things stand (2026-10-04, end of session 2)
 
 - The app runs locally against your own Supabase project (`obfxcakfqjqxrxjphidy`). Nothing depends on Lovable any more.
-- The GitHub repo is the only home for the code. `main` is pushed and up to date.
-- The database has all 12 migrations applied. Every table is protected by Row-Level Security, and `npm run verify:security` proves it.
+- The GitHub repo is the only home for the code. Session 2's commits are local only and **not pushed yet**.
+- The database has all 13 migrations applied. Every table is protected by Row-Level Security, and `npm run verify:security` proves it.
+- **19 automated browser tests** (`npm run test:e2e`) cover:
+  - signup, invites, courses and quizzes;
+  - password reset;
+  - company isolation and role rules.
+
+  They pass, send no email and clean up after themselves.
 - Demo data (Northwind Logistics) is loaded with `npm run seed`. Your own test company from manual testing is also in the database.
-- Signup, employee invites, course assignment, quizzes, password reset and the AI-assistant (`/mcp`) endpoint have all been tested and work.
 - Not deployed yet. Netlify is the planned host.
-- The new design system (`DESIGN.md`) is written but not applied.
+- The new design system (`DESIGN.md`) is written but not applied. The tests are there to catch anything the redesign breaks.
+
+## Session 2: 2026-10-04 (automated tests)
+
+### What we did
+
+1. **Added Playwright end-to-end tests** (`e2e/`, run with `npm run test:e2e`): 19 tests in three files.
+   - `journey.spec.ts` repeats manual tests 1–4:
+     - company signup;
+     - team and employee invite;
+     - accepting the invite;
+     - creating and assigning a course;
+     - failing, retaking and passing the quiz;
+     - the admin seeing Complete.
+   - `password-reset.spec.ts` repeats test 5:
+     - the Forgot password request;
+     - a fresh link;
+     - signing out in another tab;
+     - an already-used link;
+     - reloading the page.
+   - `access.spec.ts` checks:
+     - company isolation, in the pages and by direct database queries;
+     - employees blocked from admin pages and admin-only changes;
+     - quiz answers staying hidden.
+2. **Found and fixed a security hole** with the new isolation test (see bugs).
+3. **Replaced the deprecated `inputValidator()`** with `validator()` in all three server functions.
+4. Documented the tests in the README ("Tests") and in `CLAUDE.md`.
+
+### Key decisions and why
+
+| Decision | Why |
+|---|---|
+| **Playwright with the installed Edge** | Playwright is the standard tool for browser tests. Using the Edge that ships with Windows avoids a large browser download. |
+| **Tests run their own app server on port 8090** | It can't accidentally reuse your normal 8080 server, which sends real invite emails, and you can keep `npm run dev` open while tests run. It needed one Supabase setting: `http://localhost:8090/**` in Redirect URLs. |
+| **Test-only switch `E2E_SKIP_INVITE_EMAIL`** | "Add Employee" sends its email from the server, where a test can't intercept it. With the switch on, the app creates the same invited user via `generateLink` without emailing. It only works in the dev server, never in a production build. |
+| **Links from the admin API; the Forgot password request answered by the test** | No real email and no use of Supabase's email limit. |
+| **Strict test-data naming plus a guarded clean-up** | Test users are `…@e2e.example.com` and test companies are `E2E Test …`. Clean-up refuses to delete anything else, so Northwind and your company are safe. It also runs before each run, to clear leftovers from a crashed run. |
+| **One test at a time** | Keeps well under Supabase's sign-in rate limits. A full run takes about 3–4 minutes. |
+| **Security fix applied straight away** (your choice) | The hole broke company isolation, the app's core promise. |
+
+### Bugs found and fixed
+
+| Bug | Cause | Fix |
+|---|---|---|
+| **An admin could read another company's quiz answers** | The rule for creating assignments checked that the *employee* was in the admin's company, but not the *course*. An admin who knew another company's course ID could assign it to their own employee. Submitting that quiz then returned the other company's questions and correct answers. | A new migration requires the course to be in the admin's company too, and the quiz grader refuses courses the user can't see (`638d638`). No existing data was affected (0 such assignments). |
+| Early test clicks did nothing | The tests clicked before React had finished loading the page (slow on a cold dev server), so forms submitted as plain HTML. | Tests open pages with `open()`, which waits until the page is idle. Test-only; no app change. |
+| `inputValidator()` deprecation warning | TanStack Start renamed the method. | Switched to `validator()` (`77062fd`). The warning is gone, and all tests pass before and after. |
+
+Commits: `638d638` (security fix), `ac29ac3` (tests), `77062fd` (validator), plus the docs commit that adds this section.
 
 ## Session 1: 2026-10-03 to 2026-10-04
 
@@ -65,6 +118,10 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 
 ### Known issues (not fixed yet)
 
+- **Employees can mark their own course complete without the quiz.** Noticed in session 2 while reviewing the security rules.
+  - The database lets an employee set their own assignment's status to `complete`, and insert their own quiz result with any score.
+  - This only affects their own progress, never another company's data.
+  - Fix later: let only the server-side grader write results and completion.
 - **Cancelled assignments aren't handled everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type don't know about the `cancelled` status.
 - **npm reports security advisories** in some dependencies. `npm audit fix` wasn't run, because it changes versions.
 - **About 290 old lint problems** remain, mostly formatting in the Supabase helper files and the generated `types.ts`.
@@ -73,7 +130,8 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 - **The old Lovable site** (try-skillforge.lovable.app) and its Supabase project still exist, frozen at the old version.
 - **Harmless dev-log noise:**
   - a hydration warning caused by a page-ruler browser extension;
-  - a 404 for the missing `favicon.ico`.
+  - a 404 for the missing `favicon.ico`;
+  - `TypeError: Failed to fetch` lines during test runs, from requests cut off when a test moves to the next page.
 
 ## Before launch
 
@@ -81,14 +139,17 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 - [ ] **Update Supabase Site URL and Redirect URLs for Netlify** (Authentication → URL Configuration). Set Site URL to the Netlify address and add `https://YOUR-SITE.netlify.app/**` to Redirect URLs. Keep `http://localhost:8080/**` for local work.
 - [ ] **Remove the Northwind demo data and your test company** from the production database. The demo accounts share a public password.
 - [ ] **Add a favicon** (the browser-tab icon). Do it with the redesign so it matches `DESIGN.md`.
-- [ ] **Update the deprecated `inputValidator()` code** in the server functions (`src/lib/*.functions.ts`), as TanStack Start's warning suggests.
+- [x] **Update the deprecated `inputValidator()` code** in the server functions (done in session 2, `77062fd`).
+- [ ] **Run `npm run test:e2e` before every deploy.**
 
 ## What's next
 
-1. Deploy to Netlify and confirm the build works there, then work through "Before launch".
-2. Apply the design system in `DESIGN.md` (the redesign).
-3. Fix the known issues above, starting with `cancelled` assignments.
-4. Try connecting a real AI assistant through `/oauth/consent`.
+1. Push session 2's commits once you've reviewed them.
+2. Apply the design system in `DESIGN.md` (the redesign). Run `npm run test:e2e` after each page. If a test breaks only because a label or button text changed on purpose, update the test to match.
+3. Deploy to Netlify and confirm the build works there, then work through "Before launch".
+4. Fix the known issues above, starting with `cancelled` assignments.
+5. Try connecting a real AI assistant through `/oauth/consent`.
+6. Optionally, run the tests automatically on GitHub for every push (GitHub Actions). That needs the Supabase secret stored as a GitHub secret, and ideally a separate test Supabase project.
 
 ## Useful commands
 
@@ -98,5 +159,7 @@ npm run check:env         # check .env / .env.local against Supabase (never prin
 npm run verify:security   # prove RLS and quiz-answer protection
 npm run seed              # (re)load Northwind demo data
 npm run test:mcp          # test the AI-assistant endpoint (needs npm run dev)
+npm run test:e2e          # all browser tests (~3–4 min, no email, cleans up)
+npm run test:e2e:report   # open the last test report
 npx supabase db push      # apply new migrations (see README "Database changes")
 ```

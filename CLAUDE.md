@@ -22,10 +22,15 @@ npm run dev        # vite dev server
 npm run build      # production build (nitro, Cloudflare target)
 npm run lint       # eslint
 npm run format     # prettier --write
-npx tsc --noEmit   # type-check (no script for it)
+npx tsc --noEmit   # type-check (no script for it); e2e: npx tsc --noEmit -p e2e/tsconfig.json
+npm run test:e2e   # Playwright end-to-end tests (add `-- e2e/<file>.spec.ts` for one file)
 ```
 
-There is no test suite.
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090. That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+- **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
+- **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.
+- **Navigate with `open(page, url)`** (it waits for `networkidle`). Interacting before hydration makes forms submit natively, and the URL gains a `?`.
+- `npm run verify:security` and `npm run test:mcp` are separate script checks (see the README).
 
 ## Stack
 
@@ -65,7 +70,7 @@ Files under `src/integrations/supabase/` (clients, auth middleware/attacher) are
 Tables (all `public`, RLS enabled): `companies`, `teams`, `profiles` (1:1 with `auth.users`; holds `company_id`, `team_id`, `role` = `admin|employee` — there is no separate `users` table and no password column), `courses`, `quiz_questions` (`options` is a JSONB array, `correct_answer` is the option text), `assignments` (`status` enum: `not_started | in_progress | complete | cancelled`), `quiz_results`.
 
 Key invariants enforced in SQL — keep them when changing things:
-- RLS policies scope every table to `private.get_user_company_id(auth.uid())`; admin writes also require `private.is_admin(auth.uid())`. These helpers live in the `private` schema (SECURITY DEFINER, not exposed via the API) to avoid RLS recursion.
+- RLS policies scope every table to `private.get_user_company_id(auth.uid())`; admin writes also require `private.is_admin(auth.uid())`. Assignments link a user and a course, and admin writes require **both** to be in the admin's company. Any new cross-table reference needs the same both-sides check, and `submitQuiz` refuses courses the caller can't see. These helpers live in the `private` schema (SECURITY DEFINER, not exposed via the API) to avoid RLS recursion.
 - **Profiles are never created from client-supplied metadata.** The old `on_auth_user_created` trigger was removed; only server functions using the service role insert profiles. Users can update their own profile but cannot change `role` or `company_id`.
 - `quiz_questions.correct_answer` is not selectable by `authenticated` (column-level grants), so clients must select explicit columns (`id, question_text, options`) — `select("*")` will fail. Grading must happen server-side.
 - A trigger (`private.restrict_assignment_user_update`) lets non-admin employees change only `status` on their own assignments.

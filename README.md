@@ -41,7 +41,7 @@ These live in the Supabase dashboard, not in code. Set them once per project.
 **Authentication → URL Configuration**
 
 - **Site URL:** `http://localhost:8080` for local work; change it to the production URL when you deploy.
-- **Redirect URLs:** `http://localhost:8080/**`, plus `https://YOUR-SITE.netlify.app/**` once deployed. Invite and password-reset emails link to `/accept-invite`, which must be allowed here.
+- **Redirect URLs:** `http://localhost:8080/**`, `http://localhost:8090/**` (the end-to-end test server, see [Tests](#tests)), plus `https://YOUR-SITE.netlify.app/**` once deployed. Invite and password-reset emails link to `/accept-invite`, which must be allowed here.
 
 **Authentication → Sign In / Providers**
 
@@ -70,3 +70,51 @@ npx supabase gen types typescript --project-id <project-id> > src/integrations/s
 ```
 
 Never edit a migration that has already been applied; add a new one instead.
+
+## Tests
+
+Automated browser tests (Playwright) check the main flows end to end, so a change that breaks them is caught before it ships:
+
+- **Journey:** a company signs up, creates a team, invites an employee, and the employee accepts the invite. The admin creates and assigns a course. The employee fails the quiz, retakes it and passes, and the admin then sees the assignment as Complete.
+- **Password reset:**
+  - the Forgot password request;
+  - a fresh reset link;
+  - signing out in another tab while the reset form is open;
+  - an already-used link;
+  - reloading the reset page.
+- **Access rules:** one company can't see or change another company's data, in the pages or by querying the database directly. An employee can't open admin pages or make admin-only changes.
+
+### Before the first run
+
+1. Install the dependencies with `npm ci`.
+2. `.env.local` must hold the secret key (check with `npm run check:env`).
+3. In Supabase, add `http://localhost:8090/**` to **Authentication → URL Configuration → Redirect URLs**. If it's missing, the tests stop straight away and tell you so.
+4. The tests use Microsoft Edge, which comes with Windows. On another computer, run `npx playwright install chromium` and remove `channel: "msedge"` from `playwright.config.ts`.
+
+### Running them
+
+```sh
+npm run test:e2e          # run every test (about 3–4 minutes)
+npm run test:e2e:report   # open the detailed report of the last run in your browser
+```
+
+The tests start their own copy of the app on port 8090, so you can leave `npm run dev` running.
+
+To run a single file, name it: `npm run test:e2e -- e2e/password-reset.spec.ts`. To watch the browser while it works, add `--headed`.
+
+### Reading the results
+
+- Each test prints one line: a ✓ when it passed, a ✘ when it failed.
+- The last lines give the totals, for example `19 passed (3.2m)`, and confirm the clean-up (`Cleaned up test data: 4 companies, 12 users.`).
+- When a test fails, it is listed with the step that went wrong (for example the button or text it couldn't find).
+- `npm run test:e2e:report` shows each failure with:
+  - a screenshot;
+  - a "trace" you can step through action by action.
+
+  The raw files are in `test-results/`. Both folders are git-ignored.
+- Lines like `[WebServer] … TypeError: Failed to fetch` are harmless. They come from requests a page still had in flight when a test moved on.
+
+### What the tests will never do
+
+- **Send email.** Invite and reset links are made with Supabase's admin API, and the Forgot password request is answered by the test itself. The test server sets `E2E_SKIP_INVITE_EMAIL=1`, so **Add Employee** creates the invited user without emailing them. This switch only works in the dev server, never in a production build.
+- **Touch real data.** Every test account uses an `@e2e.example.com` address and every test company is named `E2E Test …`. Clean-up deletes only those, before and after each run, even when tests fail.

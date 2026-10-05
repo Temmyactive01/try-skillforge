@@ -80,11 +80,15 @@ export const submitQuiz = createServerFn({ method: "POST" })
     });
     if (rErr) throw new Error(rErr.message);
 
-    const { error: uErr } = await supabaseAdmin
-      .from("assignments")
-      .update({ status: passed ? "complete" : "in_progress" })
-      .eq("id", assignment.id);
-    if (uErr) throw new Error(uErr.message);
+    // Once passed, an assignment stays complete: later attempts are practice only.
+    const status = passed || assignment.status === "complete" ? "complete" : "in_progress";
+    if (status !== assignment.status) {
+      const { error: uErr } = await supabaseAdmin
+        .from("assignments")
+        .update({ status })
+        .eq("id", assignment.id);
+      if (uErr) throw new Error(uErr.message);
+    }
 
-    return { score, passed, review };
+    return { score, passed, review, status };
   });

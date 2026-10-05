@@ -57,6 +57,7 @@ function CoursePage() {
     score: number;
     passed: boolean;
     review: ReviewItem[];
+    complete: boolean;
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -114,6 +115,7 @@ function CoursePage() {
         score: res.score,
         passed: res.passed,
         review: (res as any).review ?? [],
+        complete: res.status === "complete",
       });
     } catch (err) {
       console.error("Quiz submission failed", err);
@@ -178,7 +180,9 @@ function CoursePage() {
             You scored <span className="font-medium">{result.score}%</span>
             {result.passed
               ? " — nice work!"
-              : " — a passing score of 70% is required. You can retake the quiz."}
+              : result.complete
+                ? " — this was a practice attempt. You already passed, so the course stays complete."
+                : " — a passing score of 70% is required. You can retake the quiz."}
           </p>
           {result.review.length > 0 && (
             <div className="mb-4 space-y-3">

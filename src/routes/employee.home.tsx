@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
+import { bestScore } from "@/lib/scores";
 
 export const Route = createFileRoute("/employee/home")({
   head: () => ({ meta: [{ title: "Home — SkillForge" }] }),
@@ -45,22 +46,18 @@ function EmployeeHome() {
       const { data } = await supabase
         .from("assignments")
         .select(
-          "id, due_date, status, course:courses(id, title, category), quiz_results(score, completed_at)",
+          "id, due_date, status, course:courses(id, title, category), quiz_results(score)",
         )
         .eq("user_id", userData.user.id)
         .order("created_at", { ascending: false });
       const mapped: Row[] = (data ?? []).map((a: any) => {
-        const latest = (a.quiz_results ?? [])
-          .slice()
-          .sort((x: any, y: any) =>
-            (y.completed_at ?? "").localeCompare(x.completed_at ?? ""),
-          )[0];
         return {
           id: a.id,
           due_date: a.due_date,
           status: a.status,
           course: a.course,
-          score: latest?.score ?? null,
+          // Practice retakes after passing don't lower the score shown.
+          score: bestScore(a.quiz_results),
         };
       });
       setRows(mapped.filter((r) => r.status !== "cancelled"));

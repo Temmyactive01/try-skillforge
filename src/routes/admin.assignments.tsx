@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
+import { bestScore } from "@/lib/scores";
 
 export const Route = createFileRoute("/admin/assignments")({
   head: () => ({ meta: [{ title: "Assignments — SkillForge" }] }),
@@ -20,6 +21,7 @@ type Row = {
   team_id: string | null;
   course_id: string;
   course_title: string;
+  best_score: number | null;
 };
 
 type Team = { id: string; name: string };
@@ -58,7 +60,7 @@ function AdminAssignments() {
       const [{ data: a }, { data: t }, { data: c }, { data: p }] = await Promise.all([
         supabase
           .from("assignments")
-          .select("id, status, due_date, user_id, course_id, courses(title)")
+          .select("id, status, due_date, user_id, course_id, courses(title), quiz_results(score)")
           .order("due_date", { ascending: true, nullsFirst: false }),
         supabase.from("teams").select("id, name").order("name"),
         supabase.from("courses").select("id, title").order("title"),
@@ -85,6 +87,8 @@ function AdminAssignments() {
             team_id: prof?.team_id ?? null,
             course_id: r.course_id,
             course_title: r.courses?.title ?? "—",
+            // Retakes are allowed after passing, so show the best attempt, not the latest.
+            best_score: bestScore(r.quiz_results),
           };
         }),
       );
@@ -172,6 +176,7 @@ function AdminAssignments() {
                 <th className="px-4 py-2 font-medium">Employee</th>
                 <th className="px-4 py-2 font-medium">Course</th>
                 <th className="px-4 py-2 font-medium">Status</th>
+                <th className="px-4 py-2 font-medium">Best score</th>
                 <th className="px-4 py-2 font-medium">Due date</th>
                 <th className="px-4 py-2 text-right font-medium">Actions</th>
               </tr>
@@ -179,13 +184,13 @@ function AdminAssignments() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-4 text-muted-foreground">
                     Loading…
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-4 text-muted-foreground">
+                  <td colSpan={6} className="px-4 py-4 text-muted-foreground">
                     No assignments match these filters.
                   </td>
                 </tr>
@@ -202,6 +207,9 @@ function AdminAssignments() {
                       <td className="px-4 py-2 text-foreground/80">{r.course_title}</td>
                       <td className="px-4 py-2">
                         <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-4 py-2 text-foreground/80">
+                        {r.best_score != null ? `${r.best_score}%` : "—"}
                       </td>
                       <td
                         className={`px-4 py-2 ${overdue ? "font-medium text-destructive" : "text-foreground/80"}`}

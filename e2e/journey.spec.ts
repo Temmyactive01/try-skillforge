@@ -154,9 +154,28 @@ test("the employee fails the quiz, then retakes it and passes", async () => {
   );
 });
 
-test("the admin sees the assignment as Complete", async () => {
+test("a practice retake after passing keeps the course Complete and the best score", async () => {
+  await employee.getByRole("link").filter({ hasText: courseTitle }).click();
+  await employee.getByRole("button", { name: "Take Quiz" }).click();
+
+  // A worse attempt (every answer wrong) is only practice.
+  await answerQuiz(employee, (q) => q.options.find((o) => o !== q.correct)!);
+  await expect(employee.getByRole("heading", { name: "Quiz Not Passed" })).toBeVisible();
+  await expect(
+    employee.getByText(/You already passed, so the course stays complete\./),
+  ).toBeVisible();
+
+  await open(employee, "/employee/home");
+  await expect(employee.getByRole("link").filter({ hasText: courseTitle })).toContainText(
+    /Completed\s*·\s*100%/,
+  );
+});
+
+test("the admin sees the assignment as Complete with the best score", async () => {
   await open(admin, "/admin/assignments");
   await expect(assignmentRow(admin)).toContainText("Complete");
+  // Attempts were 0%, 100% and 0%: the best one is shown, not the latest.
+  await expect(assignmentRow(admin).getByRole("cell").nth(3)).toHaveText("100%");
   await open(admin, "/admin/dashboard");
   await expect(admin.getByRole("link").filter({ hasText: "Overall completion" })).toContainText(
     "100%",

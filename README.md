@@ -75,7 +75,7 @@ Never edit a migration that has already been applied; add a new one instead.
 
 Automated browser tests (Playwright) check the main flows end to end, so a change that breaks them is caught before it ships:
 
-- **Journey:** a company signs up, creates a team, invites an employee, and the employee accepts the invite. The admin creates and assigns a course. The employee fails the quiz, retakes it and passes, and the admin then sees the assignment as Complete.
+- **Journey:** a company signs up, creates a team, invites an employee, and the employee accepts the invite. The admin creates and assigns a course. The employee fails the quiz, retakes it and passes, then does a practice retake. The course stays Complete, and the admin sees the best score.
 - **Password reset:**
   - the Forgot password request;
   - a fresh reset link;
@@ -105,7 +105,7 @@ To run a single file, name it: `npm run test:e2e -- e2e/password-reset.spec.ts`.
 ### Reading the results
 
 - Each test prints one line: a ✓ when it passed, a ✘ when it failed.
-- The last lines give the totals, for example `20 passed (3.7m)`, and confirm the clean-up (`Cleaned up test data: 4 companies, 12 users.`).
+- The last lines give the totals, for example `21 passed (2.5m)`, and confirm the clean-up (`Cleaned up test data: 4 companies, 12 users.`).
 - When a test fails, it is listed with the step that went wrong (for example the button or text it couldn't find).
 - `npm run test:e2e:report` shows each failure with:
   - a screenshot;

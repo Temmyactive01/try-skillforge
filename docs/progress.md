@@ -8,18 +8,20 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 - The GitHub repo is the only home for the code. Everything is pushed to `main`.
 - The database has all 14 migrations applied. Every table is protected by Row-Level Security, and `npm run verify:security` proves it.
 - **Only passing the quiz completes a course.** Employees can start a course, but only the server-side grader can mark it Complete or record a score.
-- **20 automated browser tests** (`npm run test:e2e`) cover:
+- **Once passed, a course stays Complete.** Employees can retake the quiz for practice, and admins see each assignment's best score on the Assignments page.
+- **21 automated browser tests** (`npm run test:e2e`) cover:
   - signup, invites, courses and quizzes;
   - password reset;
   - company isolation and role rules;
-  - who can complete a course.
+  - who can complete a course;
+  - practice retakes after passing.
 
   They pass, send no email and clean up after themselves.
 - Demo data (Northwind Logistics) is loaded with `npm run seed`. Your own test company from manual testing is also in the database.
 - Not deployed yet. Netlify is the planned host.
 - The new design system (`DESIGN.md`) is written but not applied. The tests are there to catch anything the redesign breaks.
 
-## Session 3: 2026-10-05 (only the quiz completes a course)
+## Session 3: 2026-10-05 (only the quiz completes a course; retakes)
 
 ### What we did
 
@@ -39,6 +41,13 @@ What has been done, why, what broke and what's next. Newest session first. Updat
    - The test was run **before** the fix and failed, which showed the gap was real. It passes after.
 3. Re-ran everything: 20/20 browser tests, `verify:security`, `test:mcp`, the type-check and the build all pass. Northwind and your test company are unchanged.
 4. Pushed sessions 2 and 3 to GitHub.
+5. **Retakes (your decision): once passed, an assignment stays Complete** (`e92b5ab`).
+   - Later attempts are practice. They're still recorded, but they never move the course back to In progress.
+   - The admin's Assignments page has a new **Best score** column.
+   - The employee's My Learning page also shows the best score; before, it showed the latest.
+   - A failed practice attempt now says "You already passed, so the course stays complete." It no longer asks for a retake.
+   - The journey test now does a 0% practice retake after passing, and checks that the course stays Complete, My Learning still shows 100% and the admin sees Best score 100%.
+   - All 21 tests, `verify:security`, `test:mcp`, the type-check and the build pass. Pushed.
 
 ### Key decisions and why
 
@@ -48,7 +57,8 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 | **The grader writes with the service role** | Once employees can't set Complete, the grader can't do it "as the employee" either. It checks ownership first, then writes with the trusted key. |
 | **Employees may only go Not started → In progress** | That's the one change the app makes for them ("I've reviewed the content"). Every other status change belongs to the grader or an admin. |
 | **Cancelled assignments can't be graded** | Otherwise taking the quiz from an old link would revive a cancelled assignment as Complete. |
-| **Existing behaviour kept: failing a retake after passing sets In progress** | This is unchanged from before. Worth deciding later whether a pass should stick. |
+| **A pass sticks; retakes are practice** (your decision, replacing the old behaviour where a failed retake set In progress) | Completion records that the employee has shown they know the material. Practising afterwards shouldn't undo that. |
+| **Show the best score, not the latest** | It matches "a pass sticks". A lower practice score shouldn't make a completed course look worse to the admin or the employee. |
 
 ### Bugs found and fixed
 

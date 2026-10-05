@@ -61,7 +61,7 @@ There are three ways code talks to Supabase; pick the right one:
 Existing server functions:
 - `signupCompanyAdmin` (`signup.functions.ts`) — creates company → auth user → admin profile with the service role, rolling back on failure.
 - `createEmployee` / `listPendingEmployeeIds` (`employees.functions.ts`) — admin-only: sends a Supabase invite email (redirect to `/accept-invite`) and inserts the employee profile; "pending" = auth user that has never signed in.
-- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review.
+- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest.
 
 Files under `src/integrations/supabase/` (clients, auth middleware/attacher) are ordinary project code. `types.ts` mirrors the DB schema; regenerate it with `npx supabase gen types typescript --project-id <id> > src/integrations/supabase/types.ts` after schema changes rather than editing it by hand.
 

@@ -30,7 +30,7 @@ function emptyQuestion(): QuestionDraft {
 }
 
 function AdminCoursesPage() {
-  const { checking } = useRequireRole("admin");
+  const { checking, name } = useRequireRole("admin");
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -62,7 +62,7 @@ function AdminCoursesPage() {
   if (checking) return null;
 
   return (
-    <AdminShell>
+    <AdminShell name={name}>
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-foreground">Courses</h1>

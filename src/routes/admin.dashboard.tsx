@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
+import { Button } from "@/components/ui/button";
+import { TemperProgress } from "@/components/ui/temper-progress";
 
 export const Route = createFileRoute("/admin/dashboard")({
   head: () => ({ meta: [{ title: "Admin Dashboard — SkillForge" }] }),
@@ -22,7 +24,7 @@ type Row = {
 type Profile = { id: string; name: string; team_id: string | null; role: string };
 
 function AdminDashboard() {
-  const { checking } = useRequireRole("admin");
+  const { checking, name } = useRequireRole("admin");
   const [rows, setRows] = useState<Row[]>([]);
   const [courses, setCourses] = useState<{ id: string }[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -77,27 +79,59 @@ function AdminDashboard() {
   if (checking) return null;
 
   return (
-    <AdminShell>
+    <AdminShell name={name}>
       <div className="mx-auto max-w-6xl">
         {loading ? (
-          <div className="py-12 text-center text-muted-foreground">Loading…</div>
+          <p className="py-12 text-ink-muted">Loading…</p>
         ) : showOnboarding ? (
           <OnboardingView />
         ) : (
           <>
-            <h1 className="mb-6 font-serif text-3xl font-semibold text-foreground">Dashboard</h1>
+            <h1 className="mb-8 text-heading-1 font-expanded text-ink">Dashboard</h1>
 
-            <div className="mb-2 grid gap-4 sm:grid-cols-3">
-              <StatCard label="Overall completion" value={`${stats.completionPct}%`} />
-              <StatCard label="Active courses" value={stats.activeCourses} />
-              <StatCard label="Overdue assignments" value={stats.overdue} />
+            <div className="mb-6 grid gap-6 sm:grid-cols-3">
+              <StatPanel label="Overall completion">
+                <Figure value={`${stats.completionPct}%`} />
+                {/* The one place the whole company's progress is a single number. */}
+                <TemperProgress
+                  value={stats.completionPct}
+                  label="Overall completion"
+                  showValue={false}
+                  className="mt-3"
+                />
+              </StatPanel>
+
+              <StatPanel label="Active courses">
+                <Figure value={stats.activeCourses} />
+                <p className="mt-3 text-small text-ink-muted">
+                  {stats.activeCourses === 1 ? "course assigned" : "courses assigned"}
+                </p>
+              </StatPanel>
+
+              <StatPanel label="Overdue assignments">
+                <Figure value={stats.overdue} tone={stats.overdue > 0 ? "oxide" : "ink"} />
+                {/* Overdue is never colour alone: the words say it too. */}
+                <p
+                  className={`mt-3 text-small ${stats.overdue > 0 ? "text-oxide" : "text-ink-muted"}`}
+                >
+                  {stats.overdue === 0
+                    ? "Nothing overdue"
+                    : stats.overdue === 1
+                      ? "1 assignment past its due date"
+                      : `${stats.overdue} assignments past their due date`}
+                </p>
+              </StatPanel>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Click a stat or visit{" "}
-              <Link to="/admin/assignments" className="font-medium text-primary hover:underline">
+
+            <p className="text-small text-ink-muted">
+              Open{" "}
+              <Link
+                to="/admin/assignments"
+                className="font-medium text-temper-blue hover:underline"
+              >
                 Assignments
               </Link>{" "}
-              to see the full assignment detail.
+              to see every row, or choose a panel above.
             </p>
           </>
         )}
@@ -106,44 +140,51 @@ function AdminDashboard() {
   );
 }
 
-function OnboardingView() {
-  const cardBorder = "#8A8578";
-
+function Figure({ value, tone = "ink" }: { value: string | number; tone?: "ink" | "oxide" }) {
   return (
-    <div className="py-10">
-      <div className="mb-10 text-center">
-        <h1
-          className="mb-3 font-serif text-4xl font-semibold"
-          style={{ color: "#1B2430" }}
-        >
-          Welcome to SkillForge
-        </h1>
-        <p className="text-base" style={{ color: "#8A8578" }}>
-          Let's get your team learning. Here's how to get started.
-        </p>
-      </div>
+    <p className={`text-figure tabular-nums ${tone === "oxide" ? "text-oxide" : "text-ink"}`}>
+      {value}
+    </p>
+  );
+}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+function StatPanel({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Link
+      to="/admin/assignments"
+      className="block rounded-md border border-steel bg-surface p-6 transition-colors hover:border-steel-strong"
+    >
+      <p className="text-small text-ink-muted">{label}</p>
+      {children}
+    </Link>
+  );
+}
+
+function OnboardingView() {
+  return (
+    <div className="max-w-4xl">
+      <h1 className="mb-3 text-heading-1 font-expanded text-ink">Welcome to SkillForge</h1>
+      <p className="mb-8 text-body text-ink-muted">Three steps to get your team learning.</p>
+
+      <div className="grid gap-6 md:grid-cols-3">
         <OnboardingCard
           title="Create your first course"
           description="Build a course with content and a short quiz to start training your team."
           to="/admin/courses"
-          buttonText="Create course"
-          borderColor={cardBorder}
+          action="Create course"
+          primary
         />
         <OnboardingCard
           title="Add employees"
           description="Invite your team members so they can see and complete assignments."
           to="/admin/employees"
-          buttonText="Add employees"
-          borderColor={cardBorder}
+          action="Add employees"
         />
         <OnboardingCard
           title="Create a team"
-          description="Organize employees into teams for easier course assignments."
+          description="Organise employees into teams to assign courses to everyone at once."
           to="/admin/employees"
-          buttonText="Create team"
-          borderColor={cardBorder}
+          action="Create team"
         />
       </div>
     </div>
@@ -154,49 +195,23 @@ function OnboardingCard({
   title,
   description,
   to,
-  buttonText,
-  borderColor,
+  action,
+  // DESIGN.md: one primary button per screen. The first step is the one to take.
+  primary = false,
 }: {
   title: string;
   description: string;
   to: string;
-  buttonText: string;
-  borderColor: string;
+  action: string;
+  primary?: boolean;
 }) {
   return (
-    <div
-      className="flex flex-col rounded-md bg-background p-6"
-      style={{ border: `1px solid ${borderColor}` }}
-    >
-      <h2
-        className="mb-2 font-serif text-xl font-semibold"
-        style={{ color: "#1B2430" }}
-      >
-        {title}
-      </h2>
-      <p className="mb-6 flex-1 text-sm" style={{ color: "#8A8578" }}>
-        {description}
-      </p>
-      <Link
-        to={to}
-        className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-      >
-        {buttonText}
-      </Link>
+    <div className="flex flex-col rounded-md border border-steel bg-surface p-6">
+      <h2 className="mb-2 text-heading-3 text-ink">{title}</h2>
+      <p className="mb-6 flex-1 text-small text-ink-muted">{description}</p>
+      <Button asChild variant={primary ? "default" : "outline"} className="w-full">
+        <Link to={to}>{action}</Link>
+      </Button>
     </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string | number }) {
-  return (
-    <Link
-      to="/admin/assignments"
-      className="block rounded-md border border-border bg-card p-5 shadow-sm transition-colors hover:border-primary/50"
-    >
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 font-serif text-4xl font-semibold text-foreground tracking-tight">
-        {value}
-      </p>
-    </Link>
   );
 }

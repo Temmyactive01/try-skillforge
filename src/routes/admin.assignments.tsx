@@ -292,7 +292,7 @@ function AdminAssignments() {
           ) : (
             <>
               {/* Six columns can't be read on a phone, so each row becomes a card. */}
-              <ul className="divide-y divide-steel md:hidden">
+              <ul aria-label="Assignments" className="divide-y divide-steel md:hidden">
                 {sorted.map((r) => (
                   <AssignmentCard
                     key={r.id}
@@ -510,14 +510,12 @@ function RowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            className="text-oxide"
-            onSelect={(e) => {
-              // Let the menu close before the dialog takes focus.
-              e.preventDefault();
-              setConfirming(true);
-            }}
-          >
+          {/*
+           * The menu must be allowed to close: while it is open it takes the rest
+           * of the page out of the accessibility tree, and holding it open behind
+           * the dialog would leave the table unreachable afterwards.
+           */}
+          <DropdownMenuItem className="text-oxide" onSelect={() => setConfirming(true)}>
             Cancel assignment
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -156,17 +156,43 @@ export async function createCourse(
   return course.id;
 }
 
-export async function assign(courseId: string, userId: string) {
+export type AssignmentStatus = "not_started" | "in_progress" | "complete" | "cancelled";
+
+/** A date `days` from now as YYYY-MM-DD. Negative is in the past, so overdue. */
+export const dayFromNow = (days: number) =>
+  new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+
+export async function assign(
+  courseId: string,
+  userId: string,
+  options: { status?: AssignmentStatus; dueInDays?: number } = {},
+) {
   const admin = adminClient();
   const row = must(
     await admin
       .from("assignments")
-      .insert({ course_id: courseId, user_id: userId, status: "not_started" })
+      .insert({
+        course_id: courseId,
+        user_id: userId,
+        status: options.status ?? "not_started",
+        due_date: options.dueInDays === undefined ? null : dayFromNow(options.dueInDays),
+      })
       .select("id")
       .single(),
     "create assignment",
   );
   return row.id;
+}
+
+/** The stored status, for checking that what the page shows matches the database. */
+export async function assignmentStatus(id: string) {
+  const { data, error } = await adminClient()
+    .from("assignments")
+    .select("status")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(`read assignment ${id}: ${error.message}`);
+  return data.status;
 }
 
 async function generateLink(type: "recovery" | "invite", email: string, baseURL: string) {

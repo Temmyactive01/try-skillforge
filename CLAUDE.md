@@ -30,7 +30,7 @@ npm run screenshots      # design screenshots → docs/screenshots/phase-1
 
 **After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
 
-**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090. That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (26 tests, about 6 minutes). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
 
 - **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
 - **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.

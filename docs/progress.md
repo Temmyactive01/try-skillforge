@@ -7,8 +7,8 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 - **The redesign has started.** `DESIGN.md` is now live: cool steel colours, Archivo, and the temper scale for progress. The cream/terracotta/Fraunces look is gone.
 - Phase 1 covered the foundations and three screens: the admin shell, the admin dashboard and the Assignments table. Everything else inherits the new colours and typeface but keeps its old layout until its phase.
 - Dark mode works, with a toggle in the admin top bar.
-- Work is on the **`redesign` branch**, 5 commits, **not merged and not pushed** — waiting on your review of the screenshots.
-- All 21 tests still pass, unchanged.
+- Work is on the **`redesign` branch**, 7 commits, **not merged and not pushed** — ready for you to merge when you're happy.
+- **26 tests pass**: the 21 from before, plus 5 new ones protecting the redesigned Assignments behaviour.
 
 ## Session 4: 2026-10-08 (redesign, phase 1)
 
@@ -46,11 +46,43 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 | Mobile table columns were cramped and the pinned column had no edge | The table's minimum width was too narrow, and the frozen first column had no border.                            | Wider minimum, and a hairline on the pinned column so it reads as pinned when scrolled. |
 | The last of the old terracotta                                      | Two hardcoded colours were still inline on the About page.                                                      | Replaced with tokens. No old palette values remain anywhere in `src/`.                  |
 
+### Your review, and what changed because of it
+
+You reviewed the screenshots and asked for six changes. All are in:
+
+1. **Cancelling an assignment is no longer one click.** Edit stays on the row; cancelling moved into a "⋯" menu and asks for confirmation first. A cancelled row offers only **Restore** (renamed from Undo).
+2. **Status tags** got a soft tint and lost their outline, so they can't be mistaken for buttons.
+3. **Dates read "2 Oct 2026" everywhere**, fixed to British format rather than the reader's own, so a due date can't mean 10 February to one person and 2 October to another.
+4. **On a phone, assignments are cards**, not a table scrolled sideways. The table returns on wider screens.
+5. **Dashboard panels earn their space:** the subtext now adds something the number doesn't ("The oldest is 6 days late"), and each panel is a visible link that opens Assignments already filtered.
+6. **The getting-started steps are numbered** 1, 2, 3.
+
+Plus British spelling throughout.
+
+### Then we protected it with tests
+
+Five new tests in `e2e/assignments.spec.ts`, because all of that behaviour was new and nothing was guarding it:
+
+- cancelling through the menu and the confirmation, then restoring, checked in the page **and** in the database;
+- choosing "Keep assignment" changes nothing;
+- the dashboard's overdue panel opens Assignments filtered to overdue, and the number of rows matches the number on the panel;
+- at phone width the assignments are cards, with nothing scrolling sideways;
+- on a wider screen the table comes back.
+
+### Bugs the review and the tests found
+
+| Bug                                                                 | Cause                                                                                                                                                                                                   | Fix                                                                                                                      |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **The page became unreachable for screen readers after cancelling** | The "⋯" menu was being held open behind the confirmation dialog. While a menu is open it hides the rest of the page from assistive technology, so the table stayed hidden even after the dialog closed. | The menu now closes properly. Found only because the new test could not find the table rows afterwards.                  |
+| React warned about a mismatch on every page load                    | The theme is chosen in the browser, so the server's HTML can't contain it.                                                                                                                              | The page now declares that difference as deliberate. The claim in the last session that there was no mismatch was wrong. |
+| The screenshot run hung twice                                       | It waited for a table row, which no longer exists at phone width; then for a hidden one, because the cards come first in the page.                                                                      | It now waits for whichever layout is actually on show.                                                                   |
+
 ### What phase 1 did not cover
 
 - The employee screens, the marketing pages, Courses and Employees. They use the new colours and typeface, but their layout is unchanged.
 - The marketing home page still has the centred hero and three feature cards that `DESIGN.md` says to avoid.
 - `AssignCourseModal` is still on a raw grey/green/red palette rather than the tokens.
+- Row actions still report failures with a browser `alert()`. Everything else now uses the design system's dialogs.
 
 ## Where things stood (2026-10-05, end of session 3)
 
@@ -241,7 +273,7 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 
 ## What's next
 
-1. Review the phase-1 screenshots, then merge the `redesign` branch and push.
+1. Merge the `redesign` branch and push it.
 2. Continue the redesign: the employee screens, Courses and Employees, then the marketing pages. Run `npm run test:e2e` and `npm run check:contrast` after each.
 3. Deploy to Netlify and confirm the build works there, then work through "Before launch".
 4. Fix the known issues above, starting with `cancelled` assignments.
@@ -258,7 +290,7 @@ npm run seed              # (re)load Northwind demo data
 npm run test:mcp          # test the AI-assistant endpoint (needs npm run dev)
 npm run check:contrast    # check the design colours meet WCAG AA, both themes
 npm run screenshots       # capture the admin screens for review
-npm run test:e2e          # all browser tests (~3–4 min, no email, cleans up)
+npm run test:e2e          # all browser tests (~6 min, no email, cleans up)
 npm run test:e2e:report   # open the last test report
 npx supabase db push      # apply new migrations (see README "Database changes")
 ```

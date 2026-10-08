@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:e2e:report": "playwright show-report",
     "screenshots": "playwright test -c playwright.screenshots.config.ts --project=phase-1",
-    "screenshots:before": "playwright test -c playwright.screenshots.config.ts --project=before"
+    "screenshots:before": "playwright test -c playwright.screenshots.config.ts --project=before",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

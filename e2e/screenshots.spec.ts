@@ -66,16 +66,16 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
 
         if (!shell) return;
         // The shell's other states: collapsed rail on desktop, open drawer on mobile.
-        if (vp.label === "desktop") {
-          await page.getByRole("button", { name: "Toggle sidebar" }).click();
-          await page.waitForTimeout(400);
-          await shoot(page, `admin-shell-collapsed-${suffix}`);
-        } else {
-          await page.getByRole("button", { name: "Toggle sidebar" }).click();
-          await page.getByRole("navigation").waitFor();
-          await page.waitForTimeout(400);
-          await shoot(page, `admin-shell-drawer-${suffix}`);
-        }
+        // The rail carries the same label, so take the trigger in the header.
+        const trigger = page.locator("header").getByRole("button", { name: /toggle sidebar/i });
+        await trigger.click();
+        await page.waitForTimeout(500);
+        await shoot(
+          page,
+          vp.label === "desktop"
+            ? `admin-shell-collapsed-${suffix}`
+            : `admin-shell-drawer-${suffix}`,
+        );
       });
 
       // The brand-new company: the getting-started state.

@@ -14,6 +14,8 @@ const baseURL = `http://localhost:${E2E_PORT}`;
 
 export default defineConfig({
   testDir: "e2e",
+  // The screenshot spec has its own config (playwright.screenshots.config.ts).
+  testIgnore: /screenshots\.spec\.ts/,
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
   // One test at a time keeps us well under Supabase's auth rate limits.

@@ -263,10 +263,28 @@ export async function open(page: Page, url: string) {
 
 export async function signInUI(page: Page, email: string, password = PASSWORD) {
   await open(page, "/login");
-  await page.locator("#email").fill(email);
-  await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL(/\/(admin|employee)\//);
+  const submit = async () => {
+    await page.locator("#email").fill(email);
+    await page.locator("#password").fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  };
+
+  await submit();
+  try {
+    await page.waitForURL(/\/(admin|employee)\//, { timeout: 20_000 });
+  } catch {
+    /*
+     * A click that lands before React has attached submits the form the
+     * old-fashioned way: the page reloads onto /login? with empty fields and
+     * nothing happens. Waiting for networkidle usually prevents it, but on a
+     * slow run it still slips through, so fill the form again and retry once.
+     * A genuinely bad password still fails here, just a few seconds later.
+     */
+    if (!/\/(admin|employee)\//.test(page.url())) {
+      await submit();
+      await page.waitForURL(/\/(admin|employee)\//);
+    }
+  }
 }
 
 /** The input, textarea or select that follows a visible label (forms without htmlFor). */

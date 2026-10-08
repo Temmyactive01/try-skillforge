@@ -25,7 +25,7 @@ const inputCls =
 const labelCls = "mb-1 block text-sm font-medium text-foreground/80";
 
 function AdminEmployeesPage() {
-  const { checking } = useRequireRole("admin");
+  const { checking, name } = useRequireRole("admin");
   const [teams, setTeams] = useState<Team[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ function AdminEmployeesPage() {
   if (checking) return null;
 
   return (
-    <AdminShell>
+    <AdminShell name={name}>
       <div className="mx-auto max-w-4xl space-y-10">
         <section>
           <div className="mb-4 flex items-center justify-between">

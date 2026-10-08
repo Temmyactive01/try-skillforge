@@ -23,12 +23,12 @@ To add or upgrade a package, use `npm install <package>` and commit the updated 
 
 The app reads Supabase settings from `.env` (committed) and `.env.local` (git-ignored, overrides `.env`):
 
-| Variable | Used by | Notes |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | Browser | Public values |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID` | Server | Same values as the `VITE_` ones |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server (signup, invites, quiz grading) | **Secret.** Put it in `.env.local`, never in `.env` |
-| `DATABASE_URL` | Scripts (`check:env`, security checks, seed) | Session pooler connection string with your database password. Keep it in `.env.local` |
+| Variable                                                                         | Used by                                      | Notes                                                                                 |
+| -------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` | Browser                                      | Public values                                                                         |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`                | Server                                       | Same values as the `VITE_` ones                                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`                                                      | Server (signup, invites, quiz grading)       | **Secret.** Put it in `.env.local`, never in `.env`                                   |
+| `DATABASE_URL`                                                                   | Scripts (`check:env`, security checks, seed) | Session pooler connection string with your database password. Keep it in `.env.local` |
 
 In production, set the server variables as secrets in your hosting provider.
 
@@ -112,9 +112,24 @@ To run a single file, name it: `npm run test:e2e -- e2e/password-reset.spec.ts`.
   - a "trace" you can step through action by action.
 
   The raw files are in `test-results/`. Both folders are git-ignored.
+
 - Lines like `[WebServer] … TypeError: Failed to fetch` are harmless. They come from requests a page still had in flight when a test moved on.
 
 ### What the tests will never do
 
 - **Send email.** Invite and reset links are made with Supabase's admin API, and the Forgot password request is answered by the test itself. The test server sets `E2E_SKIP_INVITE_EMAIL=1`, so **Add Employee** creates the invited user without emailing them. This switch only works in the dev server, never in a production build.
 - **Touch real data.** Every test account uses an `@e2e.example.com` address and every test company is named `E2E Test …`. Clean-up deletes only those, before and after each run, even when tests fail.
+
+## Design
+
+[DESIGN.md](DESIGN.md) is the design system and the source of truth for every visual decision. Its tokens live in `src/styles.css`, in a light and a dark theme.
+
+The redesign is happening in phases. Phase 1 covered the foundations (colour, type, spacing, radius, dark mode) and three screens: the admin shell, the admin dashboard and the Assignments table. Other screens already use the new colours and typeface, but keep their old layout until their phase.
+
+```sh
+npm run check:contrast   # check every colour pair against WCAG AA, in both themes
+npm run screenshots      # capture the admin screens → docs/screenshots/phase-1
+```
+
+- **Dark mode** follows your computer's setting until you use the toggle in the top bar, which then remembers your choice.
+- **Screenshots** are in [docs/screenshots](docs/screenshots): `before/` is the old design, `phase-1/` the new one. Each screen is captured on a desktop and a phone, in both themes. The run seeds its own demo data on its own port and deletes it afterwards, so it never touches real data.

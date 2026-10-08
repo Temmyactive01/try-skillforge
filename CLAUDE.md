@@ -8,7 +8,7 @@ SkillForge is a multi-tenant B2B learning & development app: a company admin cre
 
 This GitHub repo is the only home for SkillForge. Keep `main` working and don't rewrite pushed history. `AGENTS.md` only points other coding agents here, so keep guidance in this file.
 
-`DESIGN.md` is the new official design system for an upcoming redesign. It has **not** been applied yet; the current UI still uses the older tokens described under Stack. Don't restyle pages to `DESIGN.md` unless asked.
+`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table. Other screens inherit the new tokens but keep their old hand-built layout until their phase.
 
 ## Progress log
 
@@ -24,9 +24,14 @@ npm run lint       # eslint
 npm run format     # prettier --write
 npx tsc --noEmit   # type-check (no script for it); e2e: npx tsc --noEmit -p e2e/tsconfig.json
 npm run test:e2e   # Playwright end-to-end tests (add `-- e2e/<file>.spec.ts` for one file)
+npm run check:contrast   # WCAG AA check on the design tokens, both themes
+npm run screenshots      # design screenshots → docs/screenshots/phase-1
 ```
 
-**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090. That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+**After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
+
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (26 tests, about 6 minutes). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+
 - **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
 - **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.
 - **Navigate with `open(page, url)`** (it waits for `networkidle`). Interacting before hydration makes forms submit natively, and the URL gains a `?`.
@@ -35,7 +40,14 @@ npm run test:e2e   # Playwright end-to-end tests (add `-- e2e/<file>.spec.ts` fo
 ## Stack
 
 - **TanStack Start** (React 19, SSR) with file-based routing via TanStack Router, built with Vite 8. `vite.config.ts` is a plain Vite config: Tailwind, TanStack Start (server entry `src/server.ts`; import protection fails the build if client code imports `**/server/**` or `server-only`), nitro for builds (defaults to Cloudflare Workers; output in `.output/`), and React. Dev server runs on port 8080.
-- **Tailwind CSS v4**; design tokens live in `src/styles.css` (navy ink `#1B2430`, off-white background, terracotta primary, green used only for success/"Complete", Fraunces serif headings + Inter body). shadcn/ui components exist in `src/components/ui/` but the app pages currently don't use them — pages are hand-written Tailwind.
+- **Tailwind CSS v4**; tokens live in `src/styles.css` and follow `DESIGN.md`. Read that file before any visual work. In short:
+  - Colours are declared per theme under `:root` and `[data-theme="dark"]`, then exposed via `@theme inline`. Use the design names (`bg-surface`, `text-ink`, `text-ink-muted`, `border-steel`, `bg-temper-blue`, `text-oxide`) in new code. The shadcn names (`bg-primary`, `bg-card`, `text-muted-foreground`, …) are **aliases of the same tokens**, kept so unredesigned screens stay coherent — don't add new code that uses them.
+  - The **temper scale** (straw → bronze → violet → blue) means progress and nothing else. Never use it decoratively. `temper-straw` is a fill, not a text colour, in the light theme.
+  - Type: one family (Archivo). Use the named sizes `text-display`, `text-heading-1`, `text-figure`, `text-heading-2`, `text-heading-3`, `text-body`, `text-small` — line height and weight travel with the size. Add `font-expanded` to `display` and `heading-1` only. Never below 14px. Sentence case.
+  - Spacing uses the 4px steps 1, 2, 3, 4, 6, 8, 12, 16. Radius: `sm` controls, `md` buttons and panels, `lg` dialogs only.
+  - Separate panels with a `steel` hairline, not a shadow. One primary button per screen.
+- **Theme:** `data-theme` on `<html>`, set by an inline script in `__root.tsx` before first paint (stored choice, else the system setting). `ThemeToggle` switches it. Don't move that script or add a theme provider — the current setup is what keeps dark mode from flashing.
+- **Build screens from the kit in `src/components/ui/`** (restyled to the tokens), not hand-written markup — `DESIGN.md` asks for this, and the admin shell, dashboard and Assignments table now follow it. `TemperProgress` is the custom component for any completion figure. The admin shell is built on the kit's `sidebar.tsx` primitive.
 - **Supabase** for Postgres, Auth, and Row-Level Security. Project id is in `supabase/config.toml`; URL and publishable key come from `.env` (`VITE_SUPABASE_*` for the browser, `SUPABASE_*` for the server). Secrets (`SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`) go in git-ignored `.env.local`, which overrides `.env`; `.env` is committed. See the README's environment table.
 
 ## Routing
@@ -59,6 +71,7 @@ There are three ways code talks to Supabase; pick the right one:
 3. **Service-role admin client** — `supabaseAdmin` from `@/integrations/supabase/client.server`, which bypasses RLS. Only use inside server-function handlers, and load it with a dynamic `await import(...)` there: `*.functions.ts` and route files are also bundled for the client, so a top-level import would leak it.
 
 Existing server functions:
+
 - `signupCompanyAdmin` (`signup.functions.ts`) — creates company → auth user → admin profile with the service role, rolling back on failure.
 - `createEmployee` / `listPendingEmployeeIds` (`employees.functions.ts`) — admin-only: sends a Supabase invite email (redirect to `/accept-invite`) and inserts the employee profile; "pending" = auth user that has never signed in.
 - `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest.
@@ -70,6 +83,7 @@ Files under `src/integrations/supabase/` (clients, auth middleware/attacher) are
 Tables (all `public`, RLS enabled): `companies`, `teams`, `profiles` (1:1 with `auth.users`; holds `company_id`, `team_id`, `role` = `admin|employee` — there is no separate `users` table and no password column), `courses`, `quiz_questions` (`options` is a JSONB array, `correct_answer` is the option text), `assignments` (`status` enum: `not_started | in_progress | complete | cancelled`), `quiz_results`.
 
 Key invariants enforced in SQL — keep them when changing things:
+
 - RLS policies scope every table to `private.get_user_company_id(auth.uid())`; admin writes also require `private.is_admin(auth.uid())`. Assignments link a user and a course, and admin writes require **both** to be in the admin's company. Any new cross-table reference needs the same both-sides check, and `submitQuiz` refuses courses the caller can't see. These helpers live in the `private` schema (SECURITY DEFINER, not exposed via the API) to avoid RLS recursion.
 - **Profiles are never created from client-supplied metadata.** The old `on_auth_user_created` trigger was removed; only server functions using the service role insert profiles. Users can update their own profile but cannot change `role` or `company_id`.
 - `quiz_questions.correct_answer` is not selectable by `authenticated` (column-level grants), so clients must select explicit columns (`id, question_text, options`) — `select("*")` will fail. Grading must happen server-side.

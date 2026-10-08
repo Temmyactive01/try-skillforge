@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronsUpDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronsUpDown, ChevronUp, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
 import { bestScore } from "@/lib/scores";
+import { daysLate, formatDate, overdueLabel } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { TemperProgress } from "@/components/ui/temper-progress";
@@ -16,9 +17,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+/** The dashboard panels link here with a filter already applied. */
+export type StatusFilter = Status | "overdue";
 
 export const Route = createFileRoute("/admin/assignments")({
   head: () => ({ meta: [{ title: "Assignments — SkillForge" }] }),
+  validateSearch: (search: Record<string, unknown>): { status?: StatusFilter } => {
+    const status = search.status;
+    return typeof status === "string" && FILTERABLE.includes(status as StatusFilter)
+      ? { status: status as StatusFilter }
+      : {};
+  },
   component: AdminAssignments,
 });
 
@@ -45,6 +71,22 @@ type Sort = { column: SortColumn; direction: "asc" | "desc" };
 
 const STATUSES: Status[] = ["not_started", "in_progress", "complete", "cancelled"];
 
+/*
+ * "Overdue" isn't a stored status — it cuts across the others — but it is what
+ * an admin actually looks for, so the Status filter offers it alongside them.
+ */
+const FILTERABLE: StatusFilter[] = [...STATUSES, "overdue"];
+
+/** Past its due date and not finished. The dashboard counts it the same way. */
+function isOverdue(row: { status: Status; due_date: string | null }) {
+  return (
+    row.status !== "complete" &&
+    row.status !== "cancelled" &&
+    row.due_date !== null &&
+    new Date(row.due_date).getTime() < Date.now()
+  );
+}
+
 // Status sorts by how far along the work is, not alphabetically.
 const STATUS_ORDER: Record<Status, number> = {
   not_started: 0,
@@ -63,6 +105,8 @@ function statusLabel(s: Status) {
         : "Complete";
 }
 
+const filterLabel = (f: StatusFilter) => (f === "overdue" ? "Overdue" : statusLabel(f));
+
 function AdminAssignments() {
   const { checking, name } = useRequireRole("admin");
   const [rows, setRows] = useState<Row[]>([]);
@@ -74,7 +118,12 @@ function AdminAssignments() {
 
   const [teamFilter, setTeamFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  // Arriving from a dashboard panel means arriving with its filter already set.
+  const { status: statusFromUrl } = Route.useSearch();
+  const [statusFilter, setStatusFilter] = useState<string>(statusFromUrl ?? "");
+  useEffect(() => {
+    setStatusFilter(statusFromUrl ?? "");
+  }, [statusFromUrl]);
   // The soonest deadline first, matching the order the rows arrive in.
   const [sort, setSort] = useState<Sort>({ column: "due_date", direction: "asc" });
 
@@ -129,7 +178,8 @@ function AdminAssignments() {
         (r) =>
           (!teamFilter || r.team_id === teamFilter) &&
           (!courseFilter || r.course_id === courseFilter) &&
-          (!statusFilter || r.status === statusFilter),
+          (!statusFilter ||
+            (statusFilter === "overdue" ? isOverdue(r) : r.status === statusFilter)),
       ),
     [rows, teamFilter, courseFilter, statusFilter],
   );
@@ -211,9 +261,9 @@ function AdminAssignments() {
               onChange={setStatusFilter}
               allLabel="All statuses"
             >
-              {STATUSES.map((s) => (
+              {FILTERABLE.map((s) => (
                 <option key={s} value={s}>
-                  {statusLabel(s)}
+                  {filterLabel(s)}
                 </option>
               ))}
             </Filter>
@@ -233,65 +283,64 @@ function AdminAssignments() {
             )}
           </div>
 
-          {/*
-           * On a phone the table scrolls sideways inside this panel, with the
-           * employee column pinned so you always know whose row you are reading.
-           */}
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-4xl text-small">
-              <thead>
-                <tr className="border-b border-steel">
-                  <SortableHeader
-                    column="employee_name"
-                    sort={sort}
-                    onSort={setSort}
-                    className="sticky left-0 border-r border-steel bg-surface"
-                  >
-                    Employee
-                  </SortableHeader>
-                  <SortableHeader column="course_title" sort={sort} onSort={setSort}>
-                    Course
-                  </SortableHeader>
-                  <SortableHeader column="status" sort={sort} onSort={setSort}>
-                    Status
-                  </SortableHeader>
-                  <SortableHeader column="best_score" sort={sort} onSort={setSort}>
-                    Best score
-                  </SortableHeader>
-                  <SortableHeader column="due_date" sort={sort} onSort={setSort}>
-                    Due date
-                  </SortableHeader>
-                  <th scope="col" className="px-3 py-3 text-right font-medium text-ink-muted">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-6 text-ink-muted">
-                      Loading…
-                    </td>
-                  </tr>
-                ) : sorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-3 py-6 text-ink-muted">
-                      No assignments match these filters.
-                    </td>
-                  </tr>
-                ) : (
-                  sorted.map((r) => (
-                    <AssignmentRow
-                      key={r.id}
-                      row={r}
-                      onEdit={() => setEditing(r)}
-                      onStatusChange={(status) => patchStatus(r.id, status)}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <p className="px-4 py-6 text-small text-ink-muted">Loading…</p>
+          ) : sorted.length === 0 ? (
+            <p className="px-4 py-6 text-small text-ink-muted">
+              No assignments match these filters.
+            </p>
+          ) : (
+            <>
+              {/* Six columns can't be read on a phone, so each row becomes a card. */}
+              <ul className="divide-y divide-steel md:hidden">
+                {sorted.map((r) => (
+                  <AssignmentCard
+                    key={r.id}
+                    row={r}
+                    onEdit={() => setEditing(r)}
+                    onStatusChange={(status) => patchStatus(r.id, status)}
+                  />
+                ))}
+              </ul>
+
+              <div className="hidden w-full overflow-x-auto md:block">
+                <table className="w-full text-small">
+                  <thead>
+                    <tr className="border-b border-steel">
+                      <SortableHeader column="employee_name" sort={sort} onSort={setSort}>
+                        Employee
+                      </SortableHeader>
+                      <SortableHeader column="course_title" sort={sort} onSort={setSort}>
+                        Course
+                      </SortableHeader>
+                      <SortableHeader column="status" sort={sort} onSort={setSort}>
+                        Status
+                      </SortableHeader>
+                      <SortableHeader column="best_score" sort={sort} onSort={setSort}>
+                        Best score
+                      </SortableHeader>
+                      <SortableHeader column="due_date" sort={sort} onSort={setSort}>
+                        Due date
+                      </SortableHeader>
+                      <th scope="col" className="px-3 py-3 text-right font-medium text-ink-muted">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map((r) => (
+                      <AssignmentRow
+                        key={r.id}
+                        row={r}
+                        onEdit={() => setEditing(r)}
+                        onStatusChange={(status) => patchStatus(r.id, status)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -398,13 +447,100 @@ function SortableHeader({
   );
 }
 
-/** How late something is, in whole days. Overdue is never colour alone. */
-function overdueDays(dueDate: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(dueDate);
-  due.setHours(0, 0, 0, 0);
-  return Math.round((today.getTime() - due.getTime()) / 86_400_000);
+/** The due date, with how late it is underneath when it has passed. */
+function DueDate({ row }: { row: Row }) {
+  if (!row.due_date) return <span className="text-ink-muted">—</span>;
+  const late = isOverdue(row) ? daysLate(row.due_date) : null;
+  return (
+    <>
+      <span className={late !== null ? "font-medium text-oxide" : "text-ink"}>
+        {formatDate(row.due_date)}
+      </span>
+      {late !== null && <span className="block text-small text-oxide">{overdueLabel(late)}</span>}
+    </>
+  );
+}
+
+function Score({ row }: { row: Row }) {
+  if (row.best_score == null) return <span className="text-ink-muted">—</span>;
+  return (
+    <TemperProgress
+      value={row.best_score}
+      label={`Best score, ${row.course_title}`}
+      className="min-w-28"
+    />
+  );
+}
+
+/*
+ * Edit stays in reach; cancelling is tucked behind the menu and asks first,
+ * because it changes what an employee sees. A cancelled assignment offers only
+ * Restore — there is nothing left to cancel.
+ */
+function RowActions({
+  row,
+  onEdit,
+  onStatusChange,
+}: {
+  row: Row;
+  onEdit: () => void;
+  onStatusChange: (status: Status) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const what = `${row.course_title} for ${row.employee_name}`;
+
+  if (row.status === "cancelled") {
+    return (
+      <Button variant="outline" size="sm" onClick={() => onStatusChange("not_started")}>
+        Restore
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <Button variant="outline" size="sm" onClick={onEdit}>
+        Edit
+      </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={`More actions for ${what}`}>
+            <MoreHorizontal aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            className="text-oxide"
+            onSelect={(e) => {
+              // Let the menu close before the dialog takes focus.
+              e.preventDefault();
+              setConfirming(true);
+            }}
+          >
+            Cancel assignment
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {what} will disappear from their learning list. You can restore it later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep assignment</AlertDialogCancel>
+            <AlertDialogAction onClick={() => onStatusChange("cancelled")}>
+              Cancel assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
 }
 
 function AssignmentRow({
@@ -416,100 +552,75 @@ function AssignmentRow({
   onEdit: () => void;
   onStatusChange: (status: Status) => void;
 }) {
-  const late =
-    row.status !== "complete" &&
-    row.status !== "cancelled" &&
-    row.due_date &&
-    new Date(row.due_date).getTime() < Date.now()
-      ? overdueDays(row.due_date)
-      : null;
-
   return (
     <tr className="border-b border-steel last:border-b-0">
-      <td className="sticky left-0 border-r border-steel bg-surface px-3 py-3 text-ink">
-        {row.employee_name}
-      </td>
+      <td className="px-3 py-3 text-ink">{row.employee_name}</td>
       <td className="px-3 py-3 text-ink">{row.course_title}</td>
       <td className="px-3 py-3">
         <StatusTag status={row.status} />
       </td>
       <td className="px-3 py-3">
-        {row.best_score != null ? (
-          <TemperProgress
-            value={row.best_score}
-            label={`Best score, ${row.course_title}`}
-            className="min-w-28"
-          />
-        ) : (
-          <span className="text-ink-muted">—</span>
-        )}
+        <Score row={row} />
       </td>
       <td className="px-3 py-3">
-        {row.due_date ? (
-          <>
-            <span className={late !== null ? "font-medium text-oxide" : "text-ink"}>
-              {new Date(row.due_date).toLocaleDateString()}
-            </span>
-            {late !== null && (
-              <span className="block text-small text-oxide">
-                {late === 0
-                  ? "Due today"
-                  : late === 1
-                    ? "Overdue by 1 day"
-                    : `Overdue by ${late} days`}
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="text-ink-muted">—</span>
-        )}
+        <DueDate row={row} />
       </td>
       <td className="px-3 py-3 text-right whitespace-nowrap">
-        {row.status === "cancelled" && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mr-2"
-            onClick={() => onStatusChange("not_started")}
-          >
-            Undo
-          </Button>
-        )}
-        <Button variant="outline" size="sm" className="mr-2" onClick={onEdit}>
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="hover:border-oxide hover:text-oxide"
-          onClick={() => {
-            if (!confirm("Are you sure you want to cancel this assignment?")) return;
-            onStatusChange("cancelled");
-          }}
-        >
-          Cancel
-        </Button>
+        <RowActions row={row} onEdit={onEdit} onStatusChange={onStatusChange} />
       </td>
     </tr>
+  );
+}
+
+/** The same assignment as a card, for widths where six columns don't fit. */
+function AssignmentCard({
+  row,
+  onEdit,
+  onStatusChange,
+}: {
+  row: Row;
+  onEdit: () => void;
+  onStatusChange: (status: Status) => void;
+}) {
+  return (
+    <li className="space-y-3 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-body font-medium text-ink">{row.employee_name}</p>
+          <p className="text-small text-ink-muted">{row.course_title}</p>
+        </div>
+        <StatusTag status={row.status} />
+      </div>
+
+      {row.best_score != null && <Score row={row} />}
+
+      <div className="flex items-end justify-between gap-3">
+        <p className="text-small">
+          <DueDate row={row} />
+        </p>
+        <RowActions row={row} onEdit={onEdit} onStatusChange={onStatusChange} />
+      </div>
+    </li>
   );
 }
 
 /*
  * Status on the temper scale: cold steel before anything starts, bronze once the
  * work is under way, blue when it is done. Cancelled stays flat — it is not a
- * stage of progress, so it gets no temper colour.
+ * stage of progress, so it gets no temper colour. A soft fill and no outline, so
+ * a tag is never mistaken for a button.
  */
 function StatusTag({ status }: { status: Status }) {
   const tone: Record<Status, string> = {
-    not_started: "border-steel-strong text-ink-muted",
-    in_progress: "border-temper-bronze bg-temper-bronze/10 text-temper-bronze",
-    complete: "border-temper-blue bg-temper-blue/10 text-temper-blue",
-    cancelled: "border-steel text-ink-muted line-through",
+    not_started: "bg-steel/40 text-ink-muted",
+    in_progress: "bg-temper-bronze/15 text-temper-bronze",
+    complete: "bg-temper-blue/15 text-temper-blue",
+    cancelled: "bg-steel/40 text-ink-muted line-through",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-sm border px-2 py-0.5 text-small font-medium whitespace-nowrap",
+        "inline-flex shrink-0 items-center rounded-sm px-2 py-0.5 text-small font-medium whitespace-nowrap",
         tone[status],
       )}
     >

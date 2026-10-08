@@ -80,7 +80,7 @@ function FeaturesPage() {
           <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
             <FeatureCard
               title="Course Creation"
-              description="Build rich courses with text lessons, embedded video, and downloadable PDFs. Organize content into a clear flow so employees know exactly what to do next."
+              description="Build rich courses with text lessons, embedded video, and downloadable PDFs. Organise content into a clear flow so employees know exactly what to do next."
             />
             <FeatureCard
               title="Quiz & Grading"

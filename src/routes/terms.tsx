@@ -106,7 +106,7 @@ function TermsPage() {
 
             <TermsSection title="Data Ownership">
               <p>
-                You retain ownership of the content you upload to SkillForge. You grant us a limited license to host, display, and process that content solely for the purpose of providing the service. We will not use your company content for any other purpose without your consent.
+                You retain ownership of the content you upload to SkillForge. You grant us a limited licence to host, display, and process that content solely for the purpose of providing the service. We will not use your company content for any other purpose without your consent.
               </p>
             </TermsSection>
 

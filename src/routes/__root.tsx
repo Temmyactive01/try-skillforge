@@ -116,14 +116,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 /*
  * Picks the theme before the first paint, so dark mode never flashes white.
- * React doesn't render this attribute, so there's nothing for it to mismatch
- * on hydration. With no stored choice we follow the operating system.
+ * With no stored choice we follow the operating system.
+ *
+ * The server can't know the answer, so the markup it sends has no data-theme
+ * and this script adds one. That difference is deliberate, and
+ * suppressHydrationWarning below tells React to accept it on <html> rather
+ * than warn on every page load.
  */
 const themeScript = `(function(){try{var t=localStorage.getItem("skillforge-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="light"}})()`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <HeadContent />

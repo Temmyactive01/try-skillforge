@@ -65,10 +65,11 @@ const CHECKS = [
   ["overdue text", "oxide", "surface", 4.5],
   ["overdue text on the page", "oxide", "ground", 4.5],
 
-  // Status tags: temper colour as text on a 10% tint of itself.
-  ["'In progress' tag text", "temper-bronze", "surface", 4.5, ["temper-bronze", 0.1]],
-  ["'Complete' tag text", "temper-blue", "surface", 4.5, ["temper-blue", 0.1]],
-  ["'Not started' tag text", "ink-muted", "surface", 4.5],
+  // Status tags have a soft fill and no outline, so the text must carry them.
+  ["'In progress' tag text", "temper-bronze", "surface", 4.5, ["temper-bronze", 0.15]],
+  ["'Complete' tag text", "temper-blue", "surface", 4.5, ["temper-blue", 0.15]],
+  ["'Not started' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
+  ["'Cancelled' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
 
   // Filled controls.
   ["text on a primary button", "on-temper-blue", "temper-blue", 4.5],

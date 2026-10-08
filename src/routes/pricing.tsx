@@ -47,7 +47,7 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    description: "For larger organizations",
+    description: "For larger organisations",
     price: "Custom",
     cta: "Contact us",
     ctaVariant: "outline" as const,

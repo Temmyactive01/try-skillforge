@@ -61,7 +61,9 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
 
         await open(page, "/admin/assignments");
         await page.getByRole("heading", { name: "Assignments" }).waitFor();
-        await page.getByRole("row").nth(1).waitFor();
+        // Wait on the data itself: this is a table on a desktop and cards on a phone.
+        // Both are in the DOM at every width, so wait for whichever one is on show.
+        await page.getByText("Amara Nwosu").filter({ visible: true }).first().waitFor();
         await shoot(page, `assignments-${suffix}`);
 
         if (!shell) return;

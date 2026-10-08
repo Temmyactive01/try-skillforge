@@ -2,168 +2,181 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 /*
- * SkillForge design system.
- * Palette:
- *   Ink navy   #1B2430  — primary text, headers, navy outline buttons
- *   Off-white  #F5F3EE  — page background
- *   Success    #2F8F6F  — ONLY for "Complete" badges / success
- *   Terracotta #E8634A  — primary CTA accent (use sparingly)
- *   Warm gray  #8A8578  — secondary text, borders
- * Typography:
- *   Headers: Fraunces 600 (serif)
- *   Body/UI: Inter 400/500 (sans)
+ * SkillForge design system — see DESIGN.md, which is the source of truth.
+ *
+ * Cool steel neutrals, one typeface (Archivo), and one bold idea: the temper
+ * scale. A forge tempers steel through straw, bronze, violet and blue, and
+ * progress in SkillForge moves through those same four colours. They appear
+ * wherever completion is shown and nowhere else — never as decoration.
+ *
+ * Tokens are declared as plain variables below (so they can change per theme)
+ * and exposed to Tailwind through `@theme inline`.
  */
 
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Fraunces", ui-serif, Georgia, serif;
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --radius: 0.625rem;
+  color-scheme: light;
 
-  /* Page background — warm off-white #F5F3EE */
-  --background: oklch(0.962 0.008 85);
-  /* Ink navy #1B2430 */
-  --foreground: oklch(0.245 0.022 250);
+  --ground: #f1f2f0;
+  --surface: #ffffff;
+  --ink: #1a1f24;
+  --ink-muted: #59626b;
+  --steel: #c4cacf;
+  --steel-strong: #7a838a;
 
-  --card: oklch(0.985 0.005 85);
-  --card-foreground: oklch(0.245 0.022 250);
-  --popover: oklch(0.985 0.005 85);
-  --popover-foreground: oklch(0.245 0.022 250);
-
-  /* Primary CTA — terracotta #E8634A */
-  --primary: oklch(0.668 0.176 35);
-  --primary-foreground: oklch(0.985 0.005 85);
-
-  --secondary: oklch(0.93 0.008 85);
-  --secondary-foreground: oklch(0.245 0.022 250);
-  --muted: oklch(0.93 0.008 85);
-  /* Warm gray #8A8578 */
-  --muted-foreground: oklch(0.59 0.012 85);
-  --accent: oklch(0.93 0.008 85);
-  --accent-foreground: oklch(0.245 0.022 250);
-
-  /* Overdue / destructive — keep red */
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0.005 85);
-
-  /* Complete / success — confirmed green #2F8F6F */
-  --success: oklch(0.585 0.105 165);
-  --success-foreground: oklch(0.985 0.005 85);
-
-  /* In progress — amber */
-  --warning: oklch(0.78 0.16 75);
-  --warning-foreground: oklch(0.245 0.022 250);
-
-  /* Warm gray border #8A8578 (softened) */
-  --border: oklch(0.59 0.012 85 / 25%);
-  --input: oklch(0.59 0.012 85 / 30%);
-  --ring: oklch(0.668 0.176 35);
-
-  --chart-1: oklch(0.668 0.176 35);
-  --chart-2: oklch(0.585 0.105 165);
-  --chart-3: oklch(0.245 0.022 250);
-  --chart-4: oklch(0.78 0.16 75);
-  --chart-5: oklch(0.59 0.012 85);
-
-  --sidebar: oklch(0.985 0.005 85);
-  --sidebar-foreground: oklch(0.245 0.022 250);
-  --sidebar-primary: oklch(0.245 0.022 250);
-  --sidebar-primary-foreground: oklch(0.985 0.005 85);
-  --sidebar-accent: oklch(0.93 0.008 85);
-  --sidebar-accent-foreground: oklch(0.245 0.022 250);
-  --sidebar-border: oklch(0.59 0.012 85 / 25%);
-  --sidebar-ring: oklch(0.668 0.176 35);
+  --temper-blue: #2c3f9e;
+  --on-temper-blue: #ffffff;
+  --temper-violet: #6b3f8e;
+  --temper-bronze: #94561f;
+  --on-temper-bronze: #ffffff;
+  --temper-straw: #a67c1a;
+  --oxide: #b0362b;
+  --on-oxide: #ffffff;
 }
 
-.dark {
-  --background: oklch(0.245 0.022 250);
-  --foreground: oklch(0.962 0.008 85);
-  --card: oklch(0.29 0.022 250);
-  --card-foreground: oklch(0.962 0.008 85);
-  --popover: oklch(0.29 0.022 250);
-  --popover-foreground: oklch(0.962 0.008 85);
-  --primary: oklch(0.668 0.176 35);
-  --primary-foreground: oklch(0.985 0.005 85);
-  --secondary: oklch(0.32 0.022 250);
-  --secondary-foreground: oklch(0.962 0.008 85);
-  --muted: oklch(0.32 0.022 250);
-  --muted-foreground: oklch(0.72 0.012 85);
-  --accent: oklch(0.32 0.022 250);
-  --accent-foreground: oklch(0.962 0.008 85);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0.005 85);
-  --success: oklch(0.65 0.11 165);
-  --success-foreground: oklch(0.985 0.005 85);
-  --warning: oklch(0.78 0.16 75);
-  --warning-foreground: oklch(0.245 0.022 250);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.668 0.176 35);
-  --chart-1: oklch(0.668 0.176 35);
-  --chart-2: oklch(0.65 0.11 165);
-  --chart-3: oklch(0.78 0.16 75);
-  --chart-4: oklch(0.72 0.012 85);
-  --chart-5: oklch(0.962 0.008 85);
-  --sidebar: oklch(0.29 0.022 250);
-  --sidebar-foreground: oklch(0.962 0.008 85);
-  --sidebar-primary: oklch(0.668 0.176 35);
-  --sidebar-primary-foreground: oklch(0.985 0.005 85);
-  --sidebar-accent: oklch(0.32 0.022 250);
-  --sidebar-accent-foreground: oklch(0.962 0.008 85);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.668 0.176 35);
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ground: #15181b;
+  --surface: #1d2125;
+  --ink: #e8ebed;
+  --ink-muted: #9ba4ac;
+  --steel: #3a4148;
+  --steel-strong: #727b83;
+
+  --temper-blue: #93a3f2;
+  --on-temper-blue: #10152e;
+  --temper-violet: #c3a6e0;
+  --temper-bronze: #dda56b;
+  --on-temper-bronze: #15181b;
+  --temper-straw: #e3c36f;
+  --oxide: #f2907f;
+  --on-oxide: #15181b;
+}
+
+/*
+ * Derived surfaces. DESIGN.md doesn't name a hover or a quiet fill, so both are
+ * mixed from steel and therefore follow whichever theme is active.
+ */
+:root,
+[data-theme="dark"] {
+  --accent: color-mix(in oklab, var(--steel) 40%, transparent);
+  --muted: color-mix(in oklab, var(--steel) 30%, var(--surface));
+  --secondary: color-mix(in oklab, var(--steel) 50%, var(--surface));
+}
+
+@theme inline {
+  /* DESIGN.md tokens */
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-steel: var(--steel);
+  --color-steel-strong: var(--steel-strong);
+  --color-temper-blue: var(--temper-blue);
+  --color-on-temper-blue: var(--on-temper-blue);
+  --color-temper-violet: var(--temper-violet);
+  --color-temper-bronze: var(--temper-bronze);
+  --color-on-temper-bronze: var(--on-temper-bronze);
+  --color-temper-straw: var(--temper-straw);
+  --color-oxide: var(--oxide);
+  --color-on-oxide: var(--on-oxide);
+
+  /*
+   * The shadcn kit's names are aliases of the tokens above, not a second
+   * palette. Renaming them in 44 kit files and 20 routes would be churn for no
+   * gain, and this way every screen picks up the new design at once.
+   */
+  --color-background: var(--ground);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--temper-blue);
+  --color-primary-foreground: var(--on-temper-blue);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--oxide);
+  --color-destructive-foreground: var(--on-oxide);
+  /* "Complete" is the last temper stage, so success is blue here, not green. */
+  --color-success: var(--temper-blue);
+  --color-success-foreground: var(--on-temper-blue);
+  --color-warning: var(--temper-bronze);
+  --color-warning-foreground: var(--on-temper-bronze);
+  --color-border: var(--steel);
+  --color-input: var(--steel-strong);
+  --color-ring: var(--temper-blue);
+  --color-ring-offset-background: var(--ground);
+
+  /* Charts read as progress, so they follow the temper scale. */
+  --color-chart-1: var(--temper-straw);
+  --color-chart-2: var(--temper-bronze);
+  --color-chart-3: var(--temper-violet);
+  --color-chart-4: var(--temper-blue);
+  --color-chart-5: var(--steel-strong);
+
+  /* DESIGN.md: a fixed left sidebar on surface, content on ground. */
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--ink);
+  --color-sidebar-primary: var(--temper-blue);
+  --color-sidebar-primary-foreground: var(--on-temper-blue);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-accent-foreground: var(--ink);
+  --color-sidebar-border: var(--steel);
+  --color-sidebar-ring: var(--temper-blue);
+
+  /* One family, variable width and weight. */
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /*
+   * Screens this phase hasn't redesigned yet still carry `font-serif` and
+   * `font-display` classes from the Fraunces era. Pointing them at Archivo keeps
+   * the promise of one family — without these they would fall back to Georgia.
+   * The classes go as each screen is redesigned.
+   */
+  --font-serif: var(--font-sans);
+  --font-display: var(--font-sans);
+
+  /* The type scale. Line height and weight travel with the size. */
+  --text-display: 56px;
+  --text-display--line-height: 58px;
+  --text-display--font-weight: 700;
+  --text-heading-1: 36px;
+  --text-heading-1--line-height: 42px;
+  --text-heading-1--font-weight: 650;
+  --text-figure: 40px;
+  --text-figure--line-height: 44px;
+  --text-figure--font-weight: 600;
+  --text-heading-2: 24px;
+  --text-heading-2--line-height: 30px;
+  --text-heading-2--font-weight: 600;
+  --text-heading-3: 18px;
+  --text-heading-3--line-height: 24px;
+  --text-heading-3--font-weight: 600;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+  --text-small: 14px;
+  --text-small--line-height: 20px;
+  --text-small--font-weight: 400;
+
+  /* Radius follows hierarchy: small controls, then buttons and panels, then dialogs. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+}
+
+/* Archivo's expanded width is the brand's voice in type: display and heading-1 only. */
+@utility font-expanded {
+  font-stretch: 125%;
 }
 
 @layer base {
@@ -176,15 +189,20 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--color-ground);
+    color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
     font-weight: 400;
   }
 
-  h1, h2 {
-    font-family: var(--font-serif);
-    font-weight: 600;
-    letter-spacing: -0.01em;
+  /*
+   * Keyboard focus is always visible, including on screens this phase hasn't
+   * reached yet. Components that draw their own ring override this.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-temper-blue);
+    outline-offset: 2px;
   }
 }

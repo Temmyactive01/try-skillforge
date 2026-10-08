@@ -6,9 +6,17 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — SkillForge" },
-      { name: "description", content: "Learn why SkillForge was built and the team behind the modern learning and development platform." },
+      {
+        name: "description",
+        content:
+          "Learn why SkillForge was built and the team behind the modern learning and development platform.",
+      },
       { property: "og:title", content: "About — SkillForge" },
-      { property: "og:description", content: "Learn why SkillForge was built and the team behind the modern learning and development platform." },
+      {
+        property: "og:description",
+        content:
+          "Learn why SkillForge was built and the team behind the modern learning and development platform.",
+      },
     ],
   }),
   component: AboutPage,
@@ -68,7 +76,8 @@ function AboutPage() {
             About SkillForge
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            We're building the learning platform we wish existed — one that companies actually use and employees actually finish.
+            We're building the learning platform we wish existed — one that companies actually use
+            and employees actually finish.
           </p>
         </div>
       </section>
@@ -80,7 +89,11 @@ function AboutPage() {
             Our story
           </h2>
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            We started SkillForge after watching too many companies buy powerful L&D software that employees never used. The tools were clunky, progress tracking lived in scattered spreadsheets, and completion rates stayed stubbornly low. We set out to build something different: a platform that makes assigning, completing, and tracking training feel effortless for everyone involved.
+            We started SkillForge after watching too many companies buy powerful L&D software that
+            employees never used. The tools were clunky, progress tracking lived in scattered
+            spreadsheets, and completion rates stayed stubbornly low. We set out to build something
+            different: a platform that makes assigning, completing, and tracking training feel
+            effortless for everyone involved.
           </p>
         </div>
       </section>
@@ -121,9 +134,13 @@ function AboutPage() {
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-2xl font-semibold text-foreground">
               IT
             </div>
-            <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">Ilesanmi-Ojo Temitope</h3>
-            <p className="text-sm font-medium" style={{ color: "#E8634A" }}>Founder</p>
-            <p className="mt-2 text-sm leading-relaxed" style={{ color: "#8A8578" }}>Building SkillForge to make workplace training something teams actually finish.</p>
+            <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">
+              Ilesanmi-Ojo Temitope
+            </h3>
+            <p className="text-sm font-medium text-temper-blue">Founder</p>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+              Building SkillForge to make workplace training something teams actually finish.
+            </p>
           </div>
         </div>
       </section>
@@ -135,7 +152,8 @@ function AboutPage() {
             Want to see what we're building?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Join the teams already using SkillForge to turn training from a chore into a competitive advantage.
+            Join the teams already using SkillForge to turn training from a chore into a competitive
+            advantage.
           </p>
           <div className="mt-8">
             <Link
@@ -157,9 +175,7 @@ function PrincipleCard({ title, description }: { title: string; description: str
   return (
     <div className="flex flex-col items-center text-center">
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
-        <span className="font-serif text-xl font-semibold text-primary">
-          {title.charAt(0)}
-        </span>
+        <span className="font-serif text-xl font-semibold text-primary">{title.charAt(0)}</span>
       </div>
       <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">{title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
@@ -171,7 +187,10 @@ function TeamMember({ name, role, bio }: { name: string; role: string; bio: stri
   return (
     <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-shadow hover:shadow-md">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-2xl font-semibold text-foreground">
-        {name.split(" ").map((n) => n[0]).join("")}
+        {name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")}
       </div>
       <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">{name}</h3>
       <p className="text-sm font-medium text-primary">{role}</p>

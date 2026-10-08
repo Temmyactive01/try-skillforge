@@ -1,57 +1,106 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MoreHorizontal, Plus } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
+import { formatDate } from "@/lib/dates";
+import { sortRows, type Sort } from "@/lib/sorting";
 import { AdminShell } from "@/components/AdminShell";
 import { AssignCourseModal } from "@/components/AssignCourseModal";
+import { CourseEditor } from "@/components/CourseEditor";
+import { Button } from "@/components/ui/button";
+import { TemperProgress } from "@/components/ui/temper-progress";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { toastDone, toastFailed } from "@/components/ui/sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/admin/courses")({
   head: () => ({ meta: [{ title: "Courses — SkillForge" }] }),
   component: AdminCoursesPage,
 });
 
-type ContentType = "text" | "video" | "pdf";
-
 type CourseRow = {
   id: string;
   title: string;
   category: string | null;
+  created_at: string;
+  question_count: number;
+  /** Every assignment row, cancelled ones included: all of them block deletion. */
   assignment_count: number;
+  /** Assignments that still count towards completion. */
+  active_count: number;
+  completed_count: number;
+  /** Percentage complete, or null when the course has never been assigned. */
+  completion: number | null;
 };
 
-type QuestionDraft = {
-  question_text: string;
-  options: string[]; // length 4
-  correct_index: number; // 0..3
-};
+type SortColumn = "title" | "question_count" | "active_count" | "completion" | "created_at";
 
-function emptyQuestion(): QuestionDraft {
-  return { question_text: "", options: ["", "", "", ""], correct_index: 0 };
-}
+/** Which screen the page is showing. The editor replaces the list rather than floating over it. */
+type View = { kind: "list" } | { kind: "create" } | { kind: "edit"; course: CourseRow };
 
 function AdminCoursesPage() {
   const { checking, name } = useRequireRole("admin");
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [assignCourse, setAssignCourse] = useState<{ id: string; title: string } | null>(null);
+  const [view, setView] = useState<View>({ kind: "list" });
+  const [assigning, setAssigning] = useState<CourseRow | null>(null);
+  const [sort, setSort] = useState<Sort<SortColumn>>({ column: "created_at", direction: "desc" });
 
   async function refresh() {
     setLoading(true);
     const { data, error } = await supabase
       .from("courses")
-      .select("id, title, category, assignments(count)")
+      // Only the question id: correct_answer isn't readable in the browser, by design.
+      .select("id, title, category, created_at, quiz_questions(id), assignments(status)")
       .order("created_at", { ascending: false });
-    if (!error && data) {
-      setCourses(
-        data.map((c: any) => ({
+    if (error) {
+      toastFailed("Couldn't load your courses. Check your connection and refresh the page.");
+      setLoading(false);
+      return;
+    }
+    setCourses(
+      (data ?? []).map((c) => {
+        const assignments = c.assignments ?? [];
+        const active = assignments.filter((a) => a.status !== "cancelled");
+        const completed = active.filter((a) => a.status === "complete");
+        return {
           id: c.id,
           title: c.title,
           category: c.category,
-          assignment_count: c.assignments?.[0]?.count ?? 0,
-        })),
-      );
-    }
+          created_at: c.created_at,
+          question_count: (c.quiz_questions ?? []).length,
+          assignment_count: assignments.length,
+          active_count: active.length,
+          completed_count: completed.length,
+          completion: active.length ? Math.round((completed.length / active.length) * 100) : null,
+        };
+      }),
+    );
     setLoading(false);
   }
 
@@ -59,84 +108,160 @@ function AdminCoursesPage() {
     if (!checking) refresh();
   }, [checking]);
 
+  const sorted = useMemo(
+    () =>
+      sortRows(courses, sort, (c, column) => {
+        switch (column) {
+          case "title":
+            return c.title.toLocaleLowerCase();
+          case "question_count":
+            return c.question_count;
+          case "active_count":
+            return c.active_count;
+          case "completion":
+            return c.completion;
+          case "created_at":
+            return new Date(c.created_at).getTime();
+        }
+      }),
+    [courses, sort],
+  );
+
+  async function deleteCourse(course: CourseRow) {
+    const previous = courses;
+    setCourses((curr) => curr.filter((c) => c.id !== course.id));
+    const { error } = await supabase.from("courses").delete().eq("id", course.id);
+    if (error) {
+      setCourses(previous);
+      toastFailed("Couldn't delete the course. Check your connection and try again.");
+      return;
+    }
+    toastDone(`Deleted ${course.title}.`);
+  }
+
   if (checking) return null;
 
-  return (
-    <AdminShell name={name}>
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-foreground">Courses</h1>
-          {!showForm && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              + Create Course
-            </button>
-          )}
-        </div>
-
-        {showForm && (
-          <CreateCourseForm
-            onCancel={() => setShowForm(false)}
-            onCreated={() => {
-              setShowForm(false);
+  if (view.kind !== "list") {
+    return (
+      <AdminShell name={name}>
+        <div className="mx-auto max-w-3xl">
+          <CourseEditor
+            courseId={view.kind === "edit" ? view.course.id : undefined}
+            assignmentCount={view.kind === "edit" ? view.course.active_count : undefined}
+            completedCount={view.kind === "edit" ? view.course.completed_count : undefined}
+            onCancel={() => setView({ kind: "list" })}
+            onSaved={(message) => {
+              setView({ kind: "list" });
+              toastDone(message);
               refresh();
             }}
           />
-        )}
+        </div>
+      </AdminShell>
+    );
+  }
 
-        <div className="mt-2 overflow-hidden rounded-md border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-muted-foreground">
-              <tr>
-                <th className="px-4 py-2 font-medium">Title</th>
-                <th className="px-4 py-2 font-medium">Category</th>
-                <th className="px-4 py-2 font-medium">Assignments</th>
-                <th className="px-4 py-2 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-4 text-muted-foreground">
-                    Loading…
-                  </td>
-                </tr>
-              ) : courses.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-4 text-muted-foreground">
-                    No courses yet.
-                  </td>
-                </tr>
-              ) : (
-                courses.map((c) => (
-                  <tr key={c.id} className="border-t border-border">
-                    <td className="px-4 py-2 text-foreground">{c.title}</td>
-                    <td className="px-4 py-2 text-foreground/80">{c.category ?? "—"}</td>
-                    <td className="px-4 py-2 text-foreground/80">{c.assignment_count}</td>
-                    <td className="px-4 py-2 text-right">
-                      <button
-                        onClick={() => setAssignCourse({ id: c.id, title: c.title })}
-                        className="rounded-md border border-border px-3 py-1 text-sm text-foreground/80 hover:bg-muted/40"
-                      >
-                        Assign
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+  return (
+    <AdminShell name={name}>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-heading-1 font-expanded text-ink">Courses</h1>
+          <Button onClick={() => setView({ kind: "create" })}>
+            <Plus aria-hidden />
+            Create course
+          </Button>
+        </div>
+
+        <div className="rounded-md border border-steel bg-surface">
+          {loading ? (
+            <p className="px-4 py-6 text-small text-ink-muted">Loading…</p>
+          ) : sorted.length === 0 ? (
+            <div className="px-4 py-12 text-center">
+              <p className="text-body text-ink">No courses yet.</p>
+              <p className="mt-1 text-small text-ink-muted">
+                Create your first course to start assigning training.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Six columns can't be read on a phone, so each row becomes a card. */}
+              <ul aria-label="Courses" className="divide-y divide-steel md:hidden">
+                {sorted.map((c) => (
+                  <CourseCard
+                    key={c.id}
+                    course={c}
+                    onAssign={() => setAssigning(c)}
+                    onEdit={() => setView({ kind: "edit", course: c })}
+                    onDelete={() => deleteCourse(c)}
+                  />
+                ))}
+              </ul>
+
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <SortableHeader column="title" sort={sort} onSort={setSort}>
+                        Course
+                      </SortableHeader>
+                      <SortableHeader column="question_count" sort={sort} onSort={setSort}>
+                        Questions
+                      </SortableHeader>
+                      <SortableHeader column="active_count" sort={sort} onSort={setSort}>
+                        Assigned
+                      </SortableHeader>
+                      <SortableHeader column="completion" sort={sort} onSort={setSort}>
+                        Completion
+                      </SortableHeader>
+                      <SortableHeader column="created_at" sort={sort} onSort={setSort}>
+                        Created
+                      </SortableHeader>
+                      <TableHead scope="col" className="text-right">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sorted.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <span className="font-medium">{c.title}</span>
+                          {c.category && (
+                            <span className="block text-small text-ink-muted">{c.category}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="tabular-nums">{c.question_count}</TableCell>
+                        <TableCell className="tabular-nums">{c.active_count}</TableCell>
+                        <TableCell>
+                          <Completion course={c} />
+                        </TableCell>
+                        <TableCell>{formatDate(c.created_at)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <CourseActions
+                            course={c}
+                            onAssign={() => setAssigning(c)}
+                            onEdit={() => setView({ kind: "edit", course: c })}
+                            onDelete={() => deleteCourse(c)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
+          )}
         </div>
       </div>
-      {assignCourse && (
+
+      {assigning && (
         <AssignCourseModal
-          courseId={assignCourse.id}
-          courseTitle={assignCourse.title}
-          onClose={() => setAssignCourse(null)}
-          onAssigned={() => {
-            setAssignCourse(null);
+          courseId={assigning.id}
+          courseTitle={assigning.title}
+          onClose={() => setAssigning(null)}
+          onAssigned={(message) => {
+            setAssigning(null);
+            toastDone(message);
             refresh();
           }}
         />
@@ -145,253 +270,136 @@ function AdminCoursesPage() {
   );
 }
 
-function CreateCourseForm({
-  onCancel,
-  onCreated,
+/** How much of a course is finished. A course nobody has been given isn't 0% — it's unmeasured. */
+function Completion({ course }: { course: CourseRow }) {
+  if (course.completion === null) {
+    return <span className="text-small text-ink-muted">Not assigned yet</span>;
+  }
+  return (
+    <TemperProgress
+      value={course.completion}
+      label={`Completion, ${course.title}`}
+      className="min-w-28"
+    />
+  );
+}
+
+/**
+ * Assigning is what an admin comes here to do, so it stays on the row.
+ * Editing and deleting sit behind the menu, and deleting asks first.
+ */
+function CourseActions({
+  course,
+  onAssign,
+  onEdit,
+  onDelete,
 }: {
-  onCancel: () => void;
-  onCreated: () => void;
+  course: CourseRow;
+  onAssign: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [contentType, setContentType] = useState<ContentType>("text");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
-  const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  function updateQuestion(i: number, patch: Partial<QuestionDraft>) {
-    setQuestions((qs) => qs.map((q, idx) => (idx === i ? { ...q, ...patch } : q)));
-  }
-  function updateOption(qi: number, oi: number, value: string) {
-    setQuestions((qs) =>
-      qs.map((q, idx) =>
-        idx === qi ? { ...q, options: q.options.map((o, j) => (j === oi ? value : o)) } : q,
-      ),
-    );
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSaving(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) throw new Error("Not authenticated.");
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("company_id")
-        .eq("id", userData.user.id)
-        .maybeSingle();
-      if (!profile) throw new Error("Profile not found.");
-
-      const { data: course, error: cErr } = await supabase
-        .from("courses")
-        .insert({
-          company_id: profile.company_id,
-          title: title.trim(),
-          description: description.trim() || null,
-          content_type: contentType,
-          content_url: content.trim() || null,
-          category: category.trim() || null,
-        })
-        .select("id")
-        .single();
-      if (cErr || !course) throw new Error(cErr?.message ?? "Failed to create course.");
-
-      const validQs = questions.filter(
-        (q) => q.question_text.trim() && q.options.some((o) => o.trim()),
-      );
-      if (validQs.length > 0) {
-        const rows = validQs.map((q) => {
-          const cleanOpts = q.options.map((o) => o.trim()).filter(Boolean);
-          const correctIdx = Math.min(q.correct_index, cleanOpts.length - 1);
-          return {
-            course_id: course.id,
-            question_text: q.question_text.trim(),
-            options: cleanOpts,
-            correct_answer: cleanOpts[correctIdx] ?? "",
-          };
-        });
-        const { error: qErr } = await supabase.from("quiz_questions").insert(rows);
-        if (qErr) throw new Error(qErr.message);
-      }
-      onCreated();
-    } catch (err: any) {
-      setError(err.message ?? "Something went wrong.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputCls =
-    "w-full rounded-md border border-border px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20";
-  const labelCls = "mb-1 block text-sm font-medium text-foreground/80";
+  const [confirming, setConfirming] = useState(false);
+  // Deleting a course takes its assignments and their results with it, so a
+  // course that anyone has been given can't be deleted at all.
+  const blocked = course.assignment_count > 0;
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mb-6 space-y-5 rounded-md border border-border bg-card p-5"
-    >
-      <h2 className="text-lg font-semibold text-foreground">New Course</h2>
+    <div className="flex items-center justify-end gap-2">
+      <Button variant="outline" size="sm" onClick={onAssign}>
+        Assign
+      </Button>
 
-      <div>
-        <label className={labelCls}>Title</label>
-        <input
-          required
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={inputCls}
-        />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={`More actions for ${course.title}`}>
+            <MoreHorizontal aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={onEdit}>Edit course</DropdownMenuItem>
+          {/*
+           * The menu must be allowed to close: while it is open it takes the
+           * rest of the page out of the accessibility tree, and holding it open
+           * behind the dialog would leave the table unreachable afterwards.
+           */}
+          <DropdownMenuItem className="text-oxide" onSelect={() => setConfirming(true)}>
+            Delete course
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          {blocked ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Can't delete this course</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {course.active_count > 0
+                    ? `${course.title} is assigned to ${course.active_count} ${course.active_count === 1 ? "person" : "people"}. Cancel those assignments before deleting it.`
+                    : `${course.title} has ${course.assignment_count} cancelled ${course.assignment_count === 1 ? "assignment" : "assignments"} on record. A course can only be deleted while nothing points at it.`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this course?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {course.title} and its {course.question_count}{" "}
+                  {course.question_count === 1 ? "question" : "questions"} will be removed. This
+                  can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep course</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>Delete course</AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+/** The same course as a card, for widths where six columns don't fit. */
+function CourseCard({
+  course,
+  onAssign,
+  onEdit,
+  onDelete,
+}: {
+  course: CourseRow;
+  onAssign: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <li className="space-y-3 p-4">
+      <div className="min-w-0">
+        <p className="text-body font-medium text-ink">{course.title}</p>
+        <p className="text-small text-ink-muted">
+          {[
+            course.category,
+            `${course.question_count} ${course.question_count === 1 ? "question" : "questions"}`,
+            `${course.active_count} assigned`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       </div>
 
-      <div>
-        <label className={labelCls}>Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className={inputCls}
-        />
+      <Completion course={course} />
+
+      <div className="flex items-end justify-between gap-3">
+        <p className="text-small text-ink-muted">Created {formatDate(course.created_at)}</p>
+        <CourseActions course={course} onAssign={onAssign} onEdit={onEdit} onDelete={onDelete} />
       </div>
-
-      <div>
-        <label className={labelCls}>Content Type</label>
-        <div className="flex gap-4 text-sm text-foreground/80">
-          {(["text", "video", "pdf"] as ContentType[]).map((t) => (
-            <label key={t} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="content_type"
-                value={t}
-                checked={contentType === t}
-                onChange={() => setContentType(t)}
-              />
-              {t === "text" ? "Text" : t === "video" ? "Video link" : "PDF"}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelCls}>
-          {contentType === "text" ? "Content" : contentType === "video" ? "Video URL" : "PDF URL"}
-        </label>
-        {contentType === "text" ? (
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={5}
-            className={inputCls}
-          />
-        ) : (
-          <input
-            type="url"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="https://…"
-            className={inputCls}
-          />
-        )}
-      </div>
-
-      <div>
-        <label className={labelCls}>Category</label>
-        <input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className={inputCls}
-        />
-      </div>
-
-      <div className="border-t border-border pt-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-foreground">Quiz Questions</h3>
-          <button
-            type="button"
-            onClick={() => setQuestions((qs) => [...qs, emptyQuestion()])}
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-foreground/80 hover:bg-muted/40"
-          >
-            + Add question
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {questions.map((q, qi) => (
-            <div key={qi} className="rounded-md border border-border p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground/80">Question {qi + 1}</span>
-                {questions.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setQuestions((qs) => qs.filter((_, idx) => idx !== qi))
-                    }
-                    className="text-xs text-muted-foreground hover:text-destructive"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              <input
-                placeholder="Question text"
-                value={q.question_text}
-                onChange={(e) => updateQuestion(qi, { question_text: e.target.value })}
-                className={`${inputCls} mb-3`}
-              />
-              <div className="space-y-2">
-                {q.options.map((opt, oi) => (
-                  <label key={oi} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name={`correct-${qi}`}
-                      checked={q.correct_index === oi}
-                      onChange={() => updateQuestion(qi, { correct_index: oi })}
-                      title="Mark as correct answer"
-                    />
-                    <input
-                      placeholder={`Option ${oi + 1}`}
-                      value={opt}
-                      onChange={(e) => updateOption(qi, oi, e.target.value)}
-                      className={inputCls}
-                    />
-                  </label>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Select the radio next to the correct answer.
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        >
-          {error}
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-        >
-          {saving ? "Saving…" : "Save course"}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-border px-4 py-2 text-sm text-foreground/80 hover:bg-muted/40"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    </li>
   );
 }

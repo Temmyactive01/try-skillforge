@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
 import { submitQuiz } from "@/lib/quiz.functions";
+import { PASS_MARK } from "@/lib/scores";
 
 export const Route = createFileRoute("/employee/course/$assignmentId")({
   head: () => ({ meta: [{ title: "Course — SkillForge" }] }),
@@ -182,7 +183,7 @@ function CoursePage() {
               ? " — nice work!"
               : result.complete
                 ? " — this was a practice attempt. You already passed, so the course stays complete."
-                : " — a passing score of 70% is required. You can retake the quiz."}
+                : ` — a passing score of ${PASS_MARK}% is required. You can retake the quiz.`}
           </p>
           {result.review.length > 0 && (
             <div className="mb-4 space-y-3">

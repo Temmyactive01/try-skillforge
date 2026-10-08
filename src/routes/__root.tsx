@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 
@@ -142,6 +142,20 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  /*
+   * Marks the document once React has attached. Until then the page is just
+   * server-rendered HTML: a click on a form submits it the old-fashioned way,
+   * the URL gains a "?" and nothing happens. The end-to-end tests wait for
+   * this attribute instead of guessing with a timeout or retrying the form.
+   *
+   * An effect runs only after hydration, which is exactly the moment we mean.
+   * The server never sends the attribute, and <html> already carries
+   * suppressHydrationWarning for the theme script, so adding it is free.
+   */
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = "true";
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

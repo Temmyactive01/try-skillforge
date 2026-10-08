@@ -32,6 +32,13 @@ export default tseslint.config(
           ],
         },
       ],
+      /*
+       * Nothing in the app may use a native browser dialog. They ignore the
+       * design system, can't be styled, block the page, and read badly on a
+       * phone. Confirmations use the kit's AlertDialog, messages use the
+       * toast. This catches alert(), confirm() and prompt().
+       */
+      "no-alert": "error",
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },

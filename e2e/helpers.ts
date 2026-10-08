@@ -254,37 +254,30 @@ export async function cleanupE2EData() {
 // --- Browser helpers ---------------------------------------------------------
 
 /**
- * Loads a page and waits until it is idle, so React has hydrated before the test clicks.
- * Clicking earlier submits forms the old-fashioned way (the URL gains a "?") and nothing happens.
+ * Waits until React has attached to the page.
+ *
+ * Before that the page is only server-rendered HTML: a click submits a form
+ * natively, the URL gains a "?" and nothing happens. The app sets
+ * data-hydrated on <html> in an effect, which runs exactly when hydration
+ * finishes — so this waits for the real event rather than for the network to
+ * fall quiet and hopes it was enough.
  */
+export async function waitForHydration(page: Page) {
+  await page.waitForSelector("html[data-hydrated='true']", { state: "attached" });
+}
+
+/** Loads a page and waits until React has hydrated, so a test can interact with it. */
 export async function open(page: Page, url: string) {
   await page.goto(url, { waitUntil: "networkidle" });
+  await waitForHydration(page);
 }
 
 export async function signInUI(page: Page, email: string, password = PASSWORD) {
   await open(page, "/login");
-  const submit = async () => {
-    await page.locator("#email").fill(email);
-    await page.locator("#password").fill(password);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  };
-
-  await submit();
-  try {
-    await page.waitForURL(/\/(admin|employee)\//, { timeout: 20_000 });
-  } catch {
-    /*
-     * A click that lands before React has attached submits the form the
-     * old-fashioned way: the page reloads onto /login? with empty fields and
-     * nothing happens. Waiting for networkidle usually prevents it, but on a
-     * slow run it still slips through, so fill the form again and retry once.
-     * A genuinely bad password still fails here, just a few seconds later.
-     */
-    if (!/\/(admin|employee)\//.test(page.url())) {
-      await submit();
-      await page.waitForURL(/\/(admin|employee)\//);
-    }
-  }
+  await page.locator("#email").fill(email);
+  await page.locator("#password").fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL(/\/(admin|employee)\//);
 }
 
 /** The input, textarea or select that follows a visible label (forms without htmlFor). */

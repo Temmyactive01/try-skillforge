@@ -1,6 +1,6 @@
 // Company isolation and role rules, checked in the browser and with the same
 // access a browser has (publishable key + the user's own login).
-import { test } from "@playwright/test";
+import { test, type Page } from "@playwright/test";
 import {
   adminClient,
   assign,
@@ -171,5 +171,136 @@ test.describe("an employee can't use admin features", () => {
 
     const answers = await asEmployee.from("quiz_questions").select("correct_answer");
     expect(answers.error?.message).toMatch(/permission denied/i);
+  });
+});
+
+/*
+ * getCourseForEdit is the only path that returns quiz_questions.correct_answer,
+ * which is revoked from every signed-in user at the column level. It reads with
+ * the service role, so its two guards — admin only, and the course must come
+ * back from an RLS-scoped read as the caller — are the whole boundary.
+ *
+ * These call it the way the app does: from a signed-in page, so the real auth
+ * middleware attaches the real token.
+ */
+async function callGetCourseForEdit(page: Page, courseId: string) {
+  return page.evaluate(async (id) => {
+    // A variable path keeps TypeScript from trying to resolve a browser URL.
+    const modulePath = "/src/lib/courses.functions.ts";
+    const mod = await import(/* @vite-ignore */ modulePath);
+    try {
+      const result = await mod.getCourseForEdit({ data: { course_id: id } });
+      return { ok: true as const, answers: result.questions.map((q: never) => q) };
+    } catch (error) {
+      return { ok: false as const, message: String(error) };
+    }
+  }, courseId);
+}
+
+test.describe("the quiz answers a course editor needs", () => {
+  test("an admin gets their own company's answers", async ({ page }) => {
+    await signInUI(page, a.admin.email);
+    await open(page, "/admin/courses");
+
+    const result = await callGetCourseForEdit(page, a.courseId);
+    expect(result.ok, "admin reads their own course").toBe(true);
+    // The positive control: without it the refusals below could pass vacuously.
+    expect(result.ok && result.answers.length).toBe(3);
+  });
+
+  test("an admin is refused another company's answers", async ({ page }) => {
+    await signInUI(page, b.admin.email);
+    await open(page, "/admin/courses");
+
+    const result = await callGetCourseForEdit(page, a.courseId);
+    expect(result.ok, "admin reads another company's course").toBe(false);
+  });
+
+  test("an employee is refused, even for their own course", async ({ page }) => {
+    await signInUI(page, a.employee.email);
+    await open(page, "/employee/home");
+
+    const result = await callGetCourseForEdit(page, a.courseId);
+    expect(result.ok, "employee reads the answer sheet").toBe(false);
+  });
+});
+
+/*
+ * An admin may change one column on a colleague's profile: their team. The
+ * policy says who, the restrict_admin_profile_update trigger says which column.
+ */
+test.describe("an admin may only change an employee's team", () => {
+  test("the team moves, and nothing else does", async () => {
+    const asAdmin = await signedInClient(a.admin.email);
+    const { data: team } = await adminClient()
+      .from("teams")
+      .insert({ company_id: a.id, name: `Policy team ${Date.now()}` })
+      .select("id")
+      .single();
+
+    const moved = await asAdmin
+      .from("profiles")
+      .update({ team_id: team!.id })
+      .eq("id", a.employee.id);
+    expect(moved.error, "admin moves their employee to a team").toBeNull();
+
+    const stored = async () =>
+      (
+        await adminClient()
+          .from("profiles")
+          .select("team_id, name, role, company_id")
+          .eq("id", a.employee.id)
+          .single()
+      ).data;
+    expect((await stored())?.team_id).toBe(team!.id);
+
+    for (const [what, patch] of [
+      ["rename them", { name: "Renamed by an admin" }],
+      ["promote them", { role: "admin" as const }],
+      ["move them to another company", { company_id: b.id }],
+    ] as const) {
+      const attempt = await asAdmin.from("profiles").update(patch).eq("id", a.employee.id);
+      expect(attempt.error, `admin tries to ${what}`).not.toBeNull();
+    }
+
+    const after = await stored();
+    expect(after?.name).toBe(a.employee.name);
+    expect(after?.role).toBe("employee");
+    expect(after?.company_id).toBe(a.id);
+  });
+
+  test("another company's employee is out of reach", async () => {
+    const asAdmin = await signedInClient(a.admin.email);
+    const { data: team } = await adminClient()
+      .from("teams")
+      .insert({ company_id: a.id, name: `Reach team ${Date.now()}` })
+      .select("id")
+      .single();
+
+    await asAdmin.from("profiles").update({ team_id: team!.id }).eq("id", b.employee.id);
+    const stored = await adminClient()
+      .from("profiles")
+      .select("team_id")
+      .eq("id", b.employee.id)
+      .single();
+    expect(stored.data?.team_id, "admin moves another company's employee").toBeNull();
+  });
+
+  test("an employee still can't move a colleague", async () => {
+    const asEmployee = await signedInClient(a.employee.email);
+    const { data: team } = await adminClient()
+      .from("teams")
+      .insert({ company_id: a.id, name: `Colleague team ${Date.now()}` })
+      .select("id")
+      .single();
+
+    const other = await createUser(a.id, `Colleague ${Date.now()}`);
+    await asEmployee.from("profiles").update({ team_id: team!.id }).eq("id", other.id);
+    const stored = await adminClient()
+      .from("profiles")
+      .select("team_id")
+      .eq("id", other.id)
+      .single();
+    expect(stored.data?.team_id, "employee moves a colleague").toBeNull();
   });
 });

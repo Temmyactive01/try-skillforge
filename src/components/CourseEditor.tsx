@@ -456,7 +456,7 @@ export function CourseEditor({
                       <div key={oi} className="flex items-center gap-3">
                         <RadioGroupItem
                           value={String(oi)}
-                          aria-label={`Option ${oi + 1} is the correct answer`}
+                          aria-label={`Question ${index + 1}, option ${oi + 1} is the correct answer`}
                         />
                         <Input
                           aria-label={`Question ${index + 1}, option ${oi + 1}`}

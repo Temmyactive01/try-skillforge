@@ -49,11 +49,13 @@ type CourseRow = {
   category: string | null;
   created_at: string;
   question_count: number;
-  /** Every assignment row, cancelled ones included: all of them block deletion. */
+  /** Every assignment row, cancelled ones included. */
   assignment_count: number;
   /** Assignments that still count towards completion. */
   active_count: number;
   completed_count: number;
+  /** Has anyone ever passed this course? A pass is a record worth keeping. */
+  ever_passed: boolean;
   /** Percentage complete, or null when the course has never been assigned. */
   completion: number | null;
 };
@@ -76,7 +78,9 @@ function AdminCoursesPage() {
     const { data, error } = await supabase
       .from("courses")
       // Only the question id: correct_answer isn't readable in the browser, by design.
-      .select("id, title, category, created_at, quiz_questions(id), assignments(status)")
+      .select(
+        "id, title, category, created_at, quiz_questions(id), assignments(status, quiz_results(passed))",
+      )
       .order("created_at", { ascending: false });
     if (error) {
       toastFailed("Couldn't load your courses. Check your connection and refresh the page.");
@@ -98,6 +102,13 @@ function AdminCoursesPage() {
           active_count: active.length,
           completed_count: completed.length,
           completion: active.length ? Math.round((completed.length / active.length) * 100) : null,
+          /*
+           * A cancelled assignment can still hold a pass, so the status alone
+           * isn't enough: look for a passing result anywhere on the course.
+           */
+          ever_passed: assignments.some(
+            (a) => a.status === "complete" || (a.quiz_results ?? []).some((r) => r.passed),
+          ),
         };
       }),
     );
@@ -300,9 +311,19 @@ function CourseActions({
   onDelete: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  // Deleting a course takes its assignments and their results with it, so a
-  // course that anyone has been given can't be deleted at all.
-  const blocked = course.assignment_count > 0;
+
+  /*
+   * Deleting a course takes its assignments and their quiz results with it, so
+   * it is allowed only when there is nothing left to lose: every assignment
+   * cancelled, and nobody ever passed. A completion is a record of what
+   * somebody proved they knew; tidying up the catalogue is not a good enough
+   * reason to destroy it.
+   */
+  const blockedBy = course.ever_passed
+    ? "completions"
+    : course.active_count > 0
+      ? "assignments"
+      : null;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -331,14 +352,14 @@ function CourseActions({
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
-          {blocked ? (
+          {blockedBy ? (
             <>
               <AlertDialogHeader>
                 <AlertDialogTitle>Can't delete this course</AlertDialogTitle>
                 <AlertDialogDescription>
-                  {course.active_count > 0
-                    ? `${course.title} is assigned to ${course.active_count} ${course.active_count === 1 ? "person" : "people"}. Cancel those assignments before deleting it.`
-                    : `${course.title} has ${course.assignment_count} cancelled ${course.assignment_count === 1 ? "assignment" : "assignments"} on record. A course can only be deleted while nothing points at it.`}
+                  {blockedBy === "completions"
+                    ? `${course.title} has completed training records, so it can't be deleted. This keeps your training history intact.`
+                    : `${course.title} is assigned to ${course.active_count} ${course.active_count === 1 ? "person" : "people"}. Cancel those assignments before deleting it.`}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -351,8 +372,10 @@ function CourseActions({
                 <AlertDialogTitle>Delete this course?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {course.title} and its {course.question_count}{" "}
-                  {course.question_count === 1 ? "question" : "questions"} will be removed. This
-                  can't be undone.
+                  {course.question_count === 1 ? "question" : "questions"} will be removed
+                  {course.assignment_count > 0 &&
+                    `, along with ${course.assignment_count} cancelled ${course.assignment_count === 1 ? "assignment" : "assignments"}`}
+                  . Nobody has passed it, so no training record is lost. This can't be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

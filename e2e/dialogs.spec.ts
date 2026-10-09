@@ -153,42 +153,51 @@ const PANELS: { name: string; path: string; openIt: (page: Page) => Promise<Loca
 ];
 
 /*
- * The nine dialogs live on three pages. Walking them in page order and closing
- * each one with Escape turns three dozen page loads into three, which matters:
- * this runs four times over.
+ * Both halves navigate afresh before each dialog. Closing one and opening the
+ * next on the same page is quicker, but Radix locks the page with
+ * pointer-events while a dialog is open and releases it on its own schedule,
+ * so the next click can land on <html> instead of the button. A page load is
+ * the one thing that resets all of it.
  */
-const BY_PAGE = [...PANELS].sort((a, b) => a.path.localeCompare(b.path));
+
+/** A one-off override on a single dialog would only show up by checking them all. */
+test("every dialog sits on an opaque surface", async ({ page }) => {
+  await signInUI(page, adminEmail);
+  for (const panel of PANELS) {
+    await open(page, panel.path);
+    const found = await panel.openIt(page);
+    await expectOpaque(found, panel.name);
+  }
+});
+
+/*
+ * The opacity came from two shared components, so a regression would hit every
+ * dialog at once: one Dialog and one AlertDialog are enough to cover the rest
+ * across the matrix, and checking all nine four times over just costs minutes.
+ */
+const REPRESENTATIVE = PANELS.filter(
+  (panel) => panel.name === "Invite employee" || panel.name === "Delete team confirmation",
+);
 
 for (const width of [375, 1280]) {
   test.describe(`at ${width}px`, () => {
     test.use({ viewport: { width, height: 812 } });
 
     for (const theme of ["light", "dark"] as const) {
-      test(`every dialog sits on an opaque surface in the ${theme} theme`, async ({ page }) => {
+      test(`a dialog and a confirmation stay opaque in the ${theme} theme`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: theme });
         await signInUI(page, adminEmail);
 
-        let currentPath = "";
-        for (const panel of BY_PAGE) {
-          if (panel.path !== currentPath) {
-            await open(page, panel.path);
-            currentPath = panel.path;
-          }
+        for (const panel of REPRESENTATIVE) {
+          await open(page, panel.path);
           const found = await panel.openIt(page);
           await expectOpaque(found, `${panel.name} at ${width}px, ${theme}`);
-
-          // Back to the page itself, ready for the next one. The editor's
-          // discard dialog leaves the form behind it, so reload rather than
-          // trusting Escape to land us back on the list.
-          await page.keyboard.press("Escape");
-          await expect(found).toHaveCount(0);
-          if (panel.name === "Discard changes confirmation") currentPath = "";
         }
       });
     }
 
     // Alignment is a question of width, not of colour, so once per width is enough.
-    test("every dialog's title and description are left-aligned", async ({ page }) => {
+    test("a dialog's title and description are left-aligned", async ({ page }) => {
       await signInUI(page, adminEmail);
       await open(page, "/admin/employees");
       await page.getByRole("button", { name: "Invite employee" }).click();

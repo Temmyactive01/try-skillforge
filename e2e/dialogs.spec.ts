@@ -152,41 +152,58 @@ const PANELS: { name: string; path: string; openIt: (page: Page) => Promise<Loca
   },
 ];
 
+/*
+ * The nine dialogs live on three pages. Walking them in page order and closing
+ * each one with Escape turns three dozen page loads into three, which matters:
+ * this runs four times over.
+ */
+const BY_PAGE = [...PANELS].sort((a, b) => a.path.localeCompare(b.path));
+
 for (const width of [375, 1280]) {
   test.describe(`at ${width}px`, () => {
     test.use({ viewport: { width, height: 812 } });
 
     for (const theme of ["light", "dark"] as const) {
-      test.describe(`in the ${theme} theme`, () => {
-        test.use({ colorScheme: theme });
+      test(`every dialog sits on an opaque surface in the ${theme} theme`, async ({ page }) => {
+        await page.emulateMedia({ colorScheme: theme });
+        await signInUI(page, adminEmail);
 
-        test("every dialog sits on an opaque surface", async ({ page }) => {
-          await signInUI(page, adminEmail);
-          for (const panel of PANELS) {
+        let currentPath = "";
+        for (const panel of BY_PAGE) {
+          if (panel.path !== currentPath) {
             await open(page, panel.path);
-            const found = await panel.openIt(page);
-            await expectOpaque(found, `${panel.name} at ${width}px, ${theme}`);
+            currentPath = panel.path;
           }
-        });
+          const found = await panel.openIt(page);
+          await expectOpaque(found, `${panel.name} at ${width}px, ${theme}`);
 
-        test("every dialog's title and description are left-aligned", async ({ page }) => {
-          await signInUI(page, adminEmail);
-          await open(page, "/admin/employees");
-          await page.getByRole("button", { name: "Invite employee" }).click();
-
-          const dialog = page.getByRole("dialog");
-          for (const role of ["heading", "paragraph"]) {
-            const part = dialog.getByRole(role === "heading" ? "heading" : "paragraph").first();
-            await expect(part).toBeVisible();
-            // Centred on a phone and left on a desktop is the shadcn default;
-            // DESIGN.md wants one reading position at every width.
-            expect(
-              await part.evaluate((el) => getComputedStyle(el).textAlign),
-              `${role} alignment at ${width}px`,
-            ).not.toBe("center");
-          }
-        });
+          // Back to the page itself, ready for the next one. The editor's
+          // discard dialog leaves the form behind it, so reload rather than
+          // trusting Escape to land us back on the list.
+          await page.keyboard.press("Escape");
+          await expect(found).toHaveCount(0);
+          if (panel.name === "Discard changes confirmation") currentPath = "";
+        }
       });
     }
+
+    // Alignment is a question of width, not of colour, so once per width is enough.
+    test("every dialog's title and description are left-aligned", async ({ page }) => {
+      await signInUI(page, adminEmail);
+      await open(page, "/admin/employees");
+      await page.getByRole("button", { name: "Invite employee" }).click();
+
+      const dialog = page.getByRole("dialog");
+      for (const role of ["heading", "paragraph"] as const) {
+        const part = dialog.getByRole(role).first();
+        await expect(part).toBeVisible();
+        // Centred on a phone and left on a desktop is the shadcn default;
+        // DESIGN.md wants one reading position at every width.
+        expect(
+          await part.evaluate((el) => getComputedStyle(el).textAlign),
+          `${role} alignment at ${width}px`,
+        ).not.toBe("center");
+      }
+    });
   });
 }

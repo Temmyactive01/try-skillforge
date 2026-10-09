@@ -247,6 +247,21 @@ test("the editor keeps its actions in reach and can add a question from the foot
     () => document.documentElement.scrollHeight > window.innerHeight + 100,
   );
   expect(scrollable, "the editor is taller than the viewport").toBe(true);
+
+  /*
+   * The bar belongs to the content column, not the window: at this width the
+   * sidebar is open, and a bar that spanned the viewport would sit on top of
+   * it. Sticky inside the column is what keeps it clear.
+   */
+  const sidebar = await page
+    .locator('[data-slot="sidebar-container"], [data-sidebar="sidebar"]')
+    .first()
+    .boundingBox();
+  const bar = await save.boundingBox();
+  expect(sidebar, "the sidebar is on screen at this width").not.toBeNull();
+  expect(bar!.x, "the action bar starts clear of the sidebar").toBeGreaterThanOrEqual(
+    sidebar!.x + sidebar!.width,
+  );
 });
 
 test("editing an assigned course warns that finished training stays finished", async ({ page }) => {

@@ -112,7 +112,20 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
           await page.getByRole("menuitem", { name: "Edit course" }).click();
           await page.getByRole("heading", { name: "Edit course" }).waitFor();
           await page.getByRole("textbox", { name: "Question 1, option 1", exact: true }).waitFor();
-          await shoot(page, `course-editor-${suffix}`);
+
+          /*
+           * Two shots, because one can't show both things. A full-page capture
+           * resolves the sticky action bar against the viewport, so in the
+           * stitched image it lands a screen down and looks like it is
+           * floating in the middle of the form. The viewport shot shows where
+           * the bar really sits; the full one shows the whole form.
+           */
+          await page.evaluate(() => window.scrollTo(0, 0));
+          await page.evaluate(() => document.fonts.ready);
+          await page.screenshot({ path: path.join(outDir, `course-editor-${suffix}.png`) });
+          taken.push(`course-editor-${suffix}.png`);
+
+          await shoot(page, `course-editor-full-${suffix}`);
         }
 
         if (wanted.has("invite-dialog")) {

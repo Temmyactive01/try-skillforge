@@ -61,6 +61,19 @@ const ASSIGNMENTS: [number, number, Status, number | null, number | null][] = [
   [2, 0, "cancelled", 5, null],
 ];
 
+/**
+ * Has this employee done anything that requires having signed in? Any status
+ * past "not started", or any recorded attempt. Derived from ASSIGNMENTS rather
+ * than listed by hand, so editing that table can't leave the two out of step.
+ */
+function hasStartedSomething(employeeIndex: number) {
+  return ASSIGNMENTS.some(
+    ([emp, , status, , score]) =>
+      emp === employeeIndex &&
+      (status === "in_progress" || status === "complete" || score !== null),
+  );
+}
+
 export type ScreenshotData = Awaited<ReturnType<typeof createScreenshotData>>;
 
 export async function createScreenshotData() {
@@ -95,10 +108,12 @@ export async function createScreenshotData() {
     employeeIds.push(user.id);
     /*
      * "Invited" means an account nobody has signed in to yet, which is what
-     * createUser leaves behind. Sign the first four in so the Employees list
-     * shows both tags rather than a column of identical ones.
+     * createUser leaves behind. Anyone the table above gives progress to must
+     * therefore be signed in once: you cannot start a course, let alone pass
+     * its quiz, without signing in, so "Invited" beside a completion figure is
+     * a state the real app can never produce.
      */
-    if (index < 4) await signedInClient(user.email);
+    if (hasStartedSomething(index)) await signedInClient(user.email);
   }
 
   const courseIds: string[] = [];

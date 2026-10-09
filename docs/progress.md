@@ -2,7 +2,96 @@
 
 What has been done, why, what broke and what's next. Newest session first. Update this file at the end of every working session.
 
-## Where things stand (2026-10-08, end of session 4)
+## Where things stand (2026-10-09, end of session 5)
+
+- **Phase 2 of the redesign is done.** Courses and Employees now follow `DESIGN.md` like the admin shell, Dashboard and Assignments before them: sortable tables on a desktop, cards on a phone, kit components throughout, and no hand-built markup.
+- **Nothing in the admin uses a native browser dialog any more.** Confirmations are the kit's `AlertDialog`, messages are a toast. ESLint's `no-alert` now fails the build if one comes back.
+- **Two security holes closed** (found while proving an unrelated policy was safe — see below). Any signed-in user could rewrite their own `profiles.email` and move themselves into any team, including another company's.
+- Admins can now move an employee between teams, and manage teams properly (rename, delete).
+- Work is on the **`redesign-phase-2` branch**, **not merged and not pushed**.
+- **55 end-to-end tests pass** (26 before), and `verify:security` has grown from 40 checks to 55.
+
+## Session 5: 2026-10-09 (redesign, phase 2)
+
+### What we did
+
+1. **Captured a "before" baseline** of Courses and Employees (`docs/screenshots/before-phase-2`).
+2. **Redesigned the Courses page**: a sortable table (course and category, questions, assigned, completion on the temper scale, created) with cards below `md`, an empty state that says what to do next, Assign on the row, and Edit and Delete behind the "⋯" menu.
+3. **Built a real course editor**: a full page rather than a dialog, because a course plus its quiz is far too tall for a phone-sized dialog. It asks before discarding unsaved work, warns when the course already has completions, and states the pass mark.
+4. **Redesigned the Employees page**: Teams (with rename and delete) and People (name, email, team, invite status, completion) in two panels, cards on a phone, an invite dialog that confirms with the address it sent to.
+5. **Finished the phase-1 leftovers**: "No due date" on assignment cards, a row-naming accessible label on every "⋯", the last `alert()` replaced by a toast, and a real hydration signal for the tests instead of a retry.
+6. **Closed two profile security holes** and gave admins the narrowest possible power to change a colleague's team.
+7. **Added 24 end-to-end tests** and brought the existing suite up to the redesigned screens.
+
+### Key decisions and why
+
+| Decision                                                    | Why                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The course editor is a page, not a dialog**               | A course with content and four questions is well over a phone screen tall. `DESIGN.md` reserves `radius-lg` for dialogs, which tells you what a dialog is for: something small enough to sit over the page.                                                                                       |
+| **A course can only be deleted when nothing would be lost** | Assignments and quiz results cascade from the course. The first rule tried — block whenever any assignment exists — was a dead end, because nothing in the app can delete an assignment, only cancel one. The rule is now about consequences: every assignment cancelled, and nobody ever passed. |
+| **Remove employee left out** (your call)                    | Deleting the account cascades to their assignments and results, which destroys completed training records. Waiting for a deactivate flag that keeps the history.                                                                                                                                  |
+| **Resend invite left out** (your call)                      | Needs a server function that sends real email, which belongs with the SMTP setup.                                                                                                                                                                                                                 |
+| **"Last updated" on Courses became "Created"** (your call)  | `courses` has only a `created_at` column. Showing a real date beats adding a column for a nicety.                                                                                                                                                                                                 |
+| **Invited and Active get no temper colour**                 | The temper scale means progress and nothing else. Whether somebody has accepted an invite is not a stage of progress, so the word and the weight of the ink carry it.                                                                                                                             |
+| **"Not assigned yet" instead of a 0% bar**                  | A full-width empty progress bar reads as failure. Nothing has been asked of that person yet.                                                                                                                                                                                                      |
+| **One toast mechanism for the whole admin**                 | Confirmations ("Invite sent to ada@company.com.") and failures needed somewhere to go once the browser dialogs were gone. Failures stay until dismissed; a message that vanishes before it is read is worse than none. `DESIGN.md` gained a short Toast entry to say so.                          |
+| **The pass mark comes from one constant** (your call)       | A hint reading "Employees pass at 70%" while the grader used something else would be worse than no hint. `PASS_MARK` lives in `scores.ts`; the grader, the employee's result message and the editor hint all read it.                                                                             |
+| **Policy for "who", trigger for "which column"**            | A `FOR UPDATE` policy cannot compare the new row with the old one, so the policy alone would have let an admin rewrite a colleague's name or role. The same split already guards assignments.                                                                                                     |
+| **Both restrictions are allow-lists** (your call)           | `to_jsonb(NEW) - 'team_id'` compared against the same of `OLD`, rather than a list of forbidden columns. A column added to `profiles` in future is protected the day it lands.                                                                                                                    |
+| **The admin table markup moved into the kit**               | Phase 1 left `table`, `textarea`, `radio-group` and `label` on the shadcn aliases, which is why Assignments hand-built its table. All four now follow the tokens, and all three admin tables share one `SortableHeader` and one sorting rule.                                                     |
+
+### Bugs and holes found, and what fixed them
+
+| Found                                                                    | Cause                                                                                                                                        | Fix                                                                                                                                                                                       |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Any signed-in user could change their own `profiles.email`**           | The "update own profile" policy pins `role` and `company_id` and nothing else.                                                               | The new trigger allows only `name` on the self path. Not an auth bypass — `auth.users.email` governs sign-in — but an employee could make their row show any address in the admin's list. |
+| **Any signed-in user could move themselves into another company's team** | `profiles.team_id` has a foreign key to `teams`, which proves the team exists but not whose it is.                                           | The trigger requires the team's `company_id` to match the employee's, on every path.                                                                                                      |
+| **On a phone, the Employees table lost two columns entirely**            | The wrapper was `overflow-hidden` with no scroll container, so Team and Status were clipped off-screen — not scrollable, simply unreachable. | The card layout.                                                                                                                                                                          |
+| **`AssignCourseModal` was unreadable in dark mode**                      | It was still on hardcoded `slate`, `green` and `red` from before the redesign.                                                               | Rebuilt on the kit and the tokens.                                                                                                                                                        |
+| **The quiz editor's "correct answer" radio had no visible label**        | Its only label was a `title` tooltip, which most people never see.                                                                           | A visible "Options — choose the correct answer" legend, and an accessible name per radio naming its question and option.                                                                  |
+| **A `verify:security` check failed against a rule that held**            | The check compared `after.email` with the stored value, but its `stored()` helper didn't select `email`, so it compared against `undefined`. | Select every column the comparison uses. Confirmed separately with a throwaway probe that the database really does refuse the write.                                                      |
+
+### Commits
+
+|           |                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `cf8097f` | Captured the before-phase-2 screenshots; the screenshot run takes a list of screens per project |
+| `877f807` | `PASS_MARK` moved into `scores.ts`, so nothing restates the number                              |
+| `b468414` | `table`, `textarea`, `radio-group` and `label` brought onto the tokens                          |
+| `1836a12` | Toast entry in `DESIGN.md`; Toaster restyled and mounted in `AdminShell`                        |
+| `d8cf452` | Shared sorting, `SortableHeader` and `Tag`; the last `alert()` gone; "No due date" on cards     |
+| `f093f34` | `data-hydrated` on `<html>`; the e2e sign-in retry deleted; ESLint `no-alert` on                |
+| `825cfa2` | Courses page, course editor, `getCourseForEdit`, `AssignCourseModal` restyled                   |
+| `465e99f` | Employees page                                                                                  |
+| `44d47ea` | Contrast checks for the new tag and error pairs                                                 |
+| `531aa1d` | Course deletion reworked around what would actually be lost                                     |
+| `291533d` | Admin team-change policy and trigger; two profile holes closed                                  |
+| `5dc3698` | Older tests brought up to the redesigned screens                                                |
+
+### Checks at the end of the session
+
+| Check                                   | Result                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------- |
+| `npm run test:e2e`                      | **55 passed**, 9.0 minutes (26 before this session)                                   |
+| `npm run check:contrast`                | **all passed** — 56 checks across both themes                                         |
+| `npx tsc --noEmit`                      | clean                                                                                 |
+| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                 |
+| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                   |
+| `npm run lint`                          | 399 problems, down from 412 on `main`; **no errors in any file this session touched** |
+| `npm run verify:security`               | **all passed** — 55 checks (40 before)                                                |
+| `npm run test:mcp`                      | all passed                                                                            |
+
+### Screenshots
+
+`docs/screenshots/before-phase-2` (4, light only) and `docs/screenshots/phase-2` (24: Courses, Employees, the course editor, the invite dialog and both empty states, each at 1440x900 and 375x812, in both themes).
+
+### What phase 2 did not cover
+
+- The employee screens and the marketing pages still have their old layout.
+- The marketing home page still has the centred hero and three feature cards that `DESIGN.md` says to avoid.
+- Login and signup are untouched.
+
+## Where things stood (2026-10-08, end of session 4)
 
 - **The redesign has started.** `DESIGN.md` is now live: cool steel colours, Archivo, and the temper scale for progress. The cream/terracotta/Fraunces look is gone.
 - Phase 1 covered the foundations and three screens: the admin shell, the admin dashboard and the Assignments table. Everything else inherits the new colours and typeface but keeps its old layout until its phase.
@@ -251,9 +340,13 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 ### Known issues (not fixed yet)
 
 - ~~**Employees can mark their own course complete without the quiz.**~~ Fixed in session 3 (`f192771`).
+- ~~**Security fix: employees could set their own `team_id` (including another company's team) and `profiles.email`.**~~ Closed in Phase 2 migration (`291533d`).
+- ~~**Row actions report failures with a browser `alert()`.**~~ Fixed in session 5: nothing in the admin uses a native dialog, and ESLint's `no-alert` keeps it that way.
+- ~~**`AssignCourseModal` is on a raw grey/green/red palette.**~~ Rebuilt on the tokens in session 5.
+- **A course that anyone has passed can never be deleted.** That is deliberate — it protects the training record — but there is also no way to archive or hide a course that is no longer taught. See the Stage 4 backlog.
 - **Cancelled assignments aren't handled everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type don't know about the `cancelled` status.
 - **npm reports security advisories** in some dependencies. `npm audit fix` wasn't run, because it changes versions.
-- **About 290 old lint problems** remain, mostly formatting in the Supabase helper files and the generated `types.ts`.
+- **About 290 old lint problems** remain, mostly formatting in the Supabase helper files and the generated `types.ts`. Session 5 brought the count down from 412 to 399 and added none.
 - **The full AI-assistant sign-in through the consent page** (manual test 6, with a real AI client) hasn't been tried. The signed-in `/mcp` call itself is tested.
 - **The production build targets Cloudflare Workers** by default. This needs checking when setting up Netlify.
 - **The old Lovable site** (try-skillforge.lovable.app) and its Supabase project still exist, frozen at the old version.
@@ -265,18 +358,28 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 ## Before launch
 
 - [ ] **Set up an email service** (e.g. Resend) under Supabase → Authentication → Emails → SMTP Settings. The built-in sender only reaches your own address, a few times an hour, so real invites and resets won't arrive without it.
+- [ ] **Add "Resend invite"** to the Employees page, once that email service is in place. The list already shows who is still Invited; the action needs a server function that re-sends the invite, and there is no point shipping it before the mail actually arrives.
 - [ ] **Update Supabase Site URL and Redirect URLs for Netlify** (Authentication → URL Configuration). Set Site URL to the Netlify address and add `https://YOUR-SITE.netlify.app/**` to Redirect URLs. Keep `http://localhost:8080/**` for local work.
 - [ ] **Remove the Northwind demo data and your test company** from the production database. The demo accounts share a public password.
 - [ ] **Add a favicon** (the browser-tab icon). Do it with the redesign so it matches `DESIGN.md`.
 - [x] **Update the deprecated `inputValidator()` code** in the server functions (done in session 2, `77062fd`).
 - [ ] **Run `npm run test:e2e` before every deploy.**
 
+## Stage 4 backlog
+
+Product decisions and features worth doing, none of them blocking a launch.
+
+- [ ] **Deactivate employee (keeps training history).** Phase 2 deliberately shipped no "Remove employee": `assignments` and `quiz_results` cascade from `auth.users`, so deleting the account destroys completed training records. A deactivated employee should stop being able to sign in and drop out of assignment lists, while their history stays.
+- [ ] **Archive course.** Same shape of problem from the other end: a course anyone has passed can't be deleted, so a course no longer taught has nowhere to go. Archiving would hide it from the Courses list and the Assign dialog without touching what people have already earned.
+- [ ] **Decide whether admins should be able to cancel a Complete assignment** (it currently hides a completion record). Cancelling is reversible and the result rows survive, but a cancelled row drops out of the dashboard figures and the employee's list, so a completion can be made invisible without being deleted.
+- [ ] **Handle `cancelled` everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type still don't know the status exists.
+
 ## What's next
 
-1. Merge the `redesign` branch and push it.
-2. Continue the redesign: the employee screens, Courses and Employees, then the marketing pages. Run `npm run test:e2e` and `npm run check:contrast` after each.
+1. Review phase 2, then merge `redesign-phase-2` and push it.
+2. Continue the redesign: the employee screens, then the marketing pages. Run `npm run test:e2e` and `npm run check:contrast` after each.
 3. Deploy to Netlify and confirm the build works there, then work through "Before launch".
-4. Fix the known issues above, starting with `cancelled` assignments.
+4. Work through the Stage 4 backlog above.
 5. Try connecting a real AI assistant through `/oauth/consent`.
 6. Optionally, run the tests automatically on GitHub for every push (GitHub Actions). That needs the Supabase secret stored as a GitHub secret, and ideally a separate test Supabase project.
 
@@ -289,7 +392,8 @@ npm run verify:security   # prove RLS and quiz-answer protection
 npm run seed              # (re)load Northwind demo data
 npm run test:mcp          # test the AI-assistant endpoint (needs npm run dev)
 npm run check:contrast    # check the design colours meet WCAG AA, both themes
-npm run screenshots       # capture the admin screens for review
+npm run screenshots       # capture the phase-1 admin screens for review
+npm run screenshots:phase-2  # capture the phase-2 screens (Courses, Employees)
 npm run test:e2e          # all browser tests (~6 min, no email, cleans up)
 npm run test:e2e:report   # open the last test report
 npx supabase db push      # apply new migrations (see README "Database changes")

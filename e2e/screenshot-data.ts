@@ -2,7 +2,7 @@
 // every temper stage and the overdue case, plus an empty company for the
 // getting-started state. Uses the same E2E naming and guarded cleanup as the tests,
 // so demo data and real companies are never touched.
-import { adminClient, createUser, testCompanyName, type Question } from "./helpers";
+import { adminClient, createUser, signedInClient, testCompanyName, type Question } from "./helpers";
 
 function must<T>(result: { data: T; error: { message: string } | null }, what: string) {
   if (result.error || result.data == null) {
@@ -90,9 +90,15 @@ export async function createScreenshotData() {
   const teamId = (name: string) => teams.find((t) => t.name === name)?.id ?? null;
 
   const employeeIds: string[] = [];
-  for (const e of EMPLOYEES) {
+  for (const [index, e] of EMPLOYEES.entries()) {
     const user = await createUser(company.id, e.name, "employee", teamId(e.team));
     employeeIds.push(user.id);
+    /*
+     * "Invited" means an account nobody has signed in to yet, which is what
+     * createUser leaves behind. Sign the first four in so the Employees list
+     * shows both tags rather than a column of identical ones.
+     */
+    if (index < 4) await signedInClient(user.email);
   }
 
   const courseIds: string[] = [];

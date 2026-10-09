@@ -111,7 +111,7 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
           await page.getByRole("button", { name: "More actions for Fire safety at work" }).click();
           await page.getByRole("menuitem", { name: "Edit course" }).click();
           await page.getByRole("heading", { name: "Edit course" }).waitFor();
-          await page.getByLabel("Question 1, option 1").waitFor();
+          await page.getByRole("textbox", { name: "Question 1, option 1", exact: true }).waitFor();
           await shoot(page, `course-editor-${suffix}`);
         }
 

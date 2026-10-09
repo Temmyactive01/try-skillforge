@@ -216,6 +216,39 @@ test("leaving the editor with unsaved changes asks first", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Courses" })).toBeVisible();
 });
 
+test("the editor keeps its actions in reach and can add a question from the foot", async ({
+  page,
+}) => {
+  await signInUI(page, adminEmail);
+  await open(page, "/admin/courses");
+  await page.getByRole("button", { name: "Create course" }).click();
+
+  // Two ways to add a question: one at the head of the section, one after the
+  // last question, where you are once the list is long.
+  const addButtons = page.getByRole("button", { name: "Add question" });
+  await expect(addButtons).toHaveCount(2);
+  await addButtons.last().click();
+  await expect(page.getByRole("textbox", { name: "Question 2", exact: true })).toBeVisible();
+
+  // Still one primary action, not two.
+  await expect(page.getByRole("button", { name: "Save course" })).toHaveCount(1);
+
+  /*
+   * Scrolled to the top of a form several screens tall, Save must still be on
+   * screen: it is sticky, so its box sits inside the viewport either way.
+   */
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const save = page.getByRole("button", { name: "Save course" });
+  await expect(save).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Cancel" })).toBeInViewport();
+
+  // And the form really is taller than the window, or the check above is free.
+  const scrollable = await page.evaluate(
+    () => document.documentElement.scrollHeight > window.innerHeight + 100,
+  );
+  expect(scrollable, "the editor is taller than the viewport").toBe(true);
+});
+
 test("editing an assigned course warns that finished training stays finished", async ({ page }) => {
   await signInUI(page, adminEmail);
   await open(page, "/admin/courses");

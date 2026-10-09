@@ -478,6 +478,21 @@ export function CourseEditor({
               </li>
             ))}
           </ol>
+
+          {/*
+           * The same action again at the foot of the list. With four questions
+           * on screen the button at the top of the section has scrolled away,
+           * and the place you want the next question is here.
+           */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => patch({ questions: [...draft.questions, emptyQuestion()] })}
+          >
+            <Plus aria-hidden />
+            Add question
+          </Button>
         </section>
 
         {error && (
@@ -489,13 +504,22 @@ export function CourseEditor({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Saving…" : "Save course"}
-          </Button>
-          <Button type="button" variant="outline" onClick={leave}>
-            Cancel
-          </Button>
+        {/*
+         * The actions stay on screen rather than sitting at the bottom of a
+         * form that is several screens tall. Sticky inside the content column,
+         * so it stops at the sidebar on a desktop instead of spanning the
+         * window, and opaque so the form scrolls underneath it rather than
+         * showing through. Still one primary button.
+         */}
+        <div className="sticky bottom-0 -mx-4 border-t border-steel bg-ground px-4 py-4 md:mx-0 md:px-0">
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save course"}
+            </Button>
+            <Button type="button" variant="outline" onClick={leave}>
+              Cancel
+            </Button>
+          </div>
         </div>
       </form>
 

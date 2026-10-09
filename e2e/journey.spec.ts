@@ -103,7 +103,7 @@ test("the admin creates a course with a quiz and assigns it", async () => {
   await admin.locator("#course-category").fill("Testing");
 
   for (let qi = 0; qi < DEFAULT_QUESTIONS.length; qi++) {
-    if (qi > 0) await admin.getByRole("button", { name: "Add question" }).click();
+    if (qi > 0) await admin.getByRole("button", { name: "Add question" }).first().click();
     const q = DEFAULT_QUESTIONS[qi];
     const label = `Question ${qi + 1}`;
     await admin.getByRole("textbox", { name: label, exact: true }).fill(q.text);

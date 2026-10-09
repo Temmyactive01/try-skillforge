@@ -205,4 +205,21 @@
     outline: 2px solid var(--color-temper-blue);
     outline-offset: 2px;
   }
+
+  /*
+   * Honour the operating system's "reduce motion" setting. Nothing in the app
+   * needs movement to be understood, so for anyone who has asked for less of
+   * it every transition finishes at once rather than merely going faster.
+   * Focus rings and scroll position are untouched.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }

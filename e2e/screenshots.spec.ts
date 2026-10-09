@@ -2,6 +2,7 @@
 //   npm run screenshots:before          → docs/screenshots/before (pre-phase-1 design, light only)
 //   npm run screenshots                 → docs/screenshots/phase-1 (light and dark)
 //   npm run screenshots:before-phase-2  → docs/screenshots/before-phase-2 (Courses and Employees as they were)
+//   npm run screenshots:phase-2         → docs/screenshots/phase-2 (light and dark)
 import { test } from "@playwright/test";
 import path from "node:path";
 import type { Browser, Page } from "@playwright/test";
@@ -10,7 +11,17 @@ import { createScreenshotData } from "./screenshot-data";
 
 type Theme = "light" | "dark";
 /** Which screens a project captures. Each project lists only the ones it needs. */
-type Screen = "dashboard" | "assignments" | "courses" | "employees" | "shell" | "getting-started";
+type Screen =
+  | "dashboard"
+  | "assignments"
+  | "courses"
+  | "employees"
+  | "shell"
+  | "course-editor"
+  | "invite-dialog"
+  | "getting-started"
+  | "courses-empty"
+  | "employees-empty";
 type Meta = { dir: string; themes: Theme[]; screens: Screen[] };
 
 const VIEWPORTS = [
@@ -93,6 +104,32 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
           await shoot(page, `employees-${suffix}`);
         }
 
+        if (wanted.has("course-editor")) {
+          await open(page, "/admin/courses");
+          await page.getByRole("heading", { name: "Courses" }).first().waitFor();
+          // Edit a course that has been assigned, so the warning hint shows too.
+          await page.getByRole("button", { name: "More actions for Fire safety at work" }).click();
+          await page.getByRole("menuitem", { name: "Edit course" }).click();
+          await page.getByRole("heading", { name: "Edit course" }).waitFor();
+          await page.getByLabel("Question 1, option 1").waitFor();
+          await shoot(page, `course-editor-${suffix}`);
+        }
+
+        if (wanted.has("invite-dialog")) {
+          await open(page, "/admin/employees");
+          await page.getByRole("heading", { name: "Employees" }).first().waitFor();
+          await page.getByRole("button", { name: "Invite employee" }).click();
+          await page.getByRole("dialog").waitFor();
+          await page.locator("#invite-name").fill("Ada Lovelace");
+          await page.locator("#invite-email").fill("ada@northwind.example.com");
+          // A dialog is positioned over the page, so capture the viewport only.
+          await page.evaluate(() => document.fonts.ready);
+          await page.screenshot({
+            path: path.join(outDir, `invite-dialog-${suffix}.png`),
+          });
+          taken.push(`invite-dialog-${suffix}.png`);
+        }
+
         if (wanted.has("shell")) {
           // The shell's other states: collapsed rail on desktop, open drawer on mobile.
           // The rail carries the same label, so take the trigger in the header.
@@ -110,13 +147,31 @@ test("capture the admin screens", async ({ browser, baseURL }, info) => {
         }
       });
 
-      // The brand-new company: the getting-started state.
-      if (wanted.has("getting-started")) {
+      // The brand-new company, for every "nothing here yet" state.
+      const emptyScreens = (
+        ["getting-started", "courses-empty", "employees-empty"] as const
+      ).filter((name) => wanted.has(name));
+      if (emptyScreens.length) {
         await withPage(browser, theme, vp, async (page) => {
           await signInUI(page, data.newAdmin.email);
-          await open(page, "/admin/dashboard");
-          await page.getByRole("heading", { name: "Welcome to SkillForge" }).waitFor();
-          await shoot(page, `getting-started-${suffix}`);
+
+          if (wanted.has("getting-started")) {
+            await open(page, "/admin/dashboard");
+            await page.getByRole("heading", { name: "Welcome to SkillForge" }).waitFor();
+            await shoot(page, `getting-started-${suffix}`);
+          }
+
+          if (wanted.has("courses-empty")) {
+            await open(page, "/admin/courses");
+            await page.getByText("No courses yet.").waitFor();
+            await shoot(page, `courses-empty-${suffix}`);
+          }
+
+          if (wanted.has("employees-empty")) {
+            await open(page, "/admin/employees");
+            await page.getByText("No employees yet.").waitFor();
+            await shoot(page, `employees-empty-${suffix}`);
+          }
         });
       }
     }

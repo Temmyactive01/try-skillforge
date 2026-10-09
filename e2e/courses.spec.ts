@@ -16,7 +16,8 @@ import {
 
 const STAMP = Date.now();
 const DELETABLE = `Deletable course ${STAMP}`;
-const ASSIGNED = `Assigned course ${STAMP}`;
+const ASSIGNED = `Busy course ${STAMP}`;
+const COMPLETED = `Finished course ${STAMP}`;
 const CANCELLED_ONLY = `Cancelled only course ${STAMP}`;
 const ONCE_PASSED = `Once passed course ${STAMP}`;
 const EDITABLE = `Editable course ${STAMP}`;
@@ -34,8 +35,13 @@ test.beforeAll(async () => {
   const employee = await createUser(company.id, "Ada Mensah");
   await createCourse(company.id, DELETABLE);
   await createCourse(company.id, EDITABLE);
+  // Assigned and under way, but nobody has passed it.
   const assigned = await createCourse(company.id, ASSIGNED);
-  await assign(assigned, employee.id, { status: "complete", dueInDays: 7 });
+  await assign(assigned, employee.id, { dueInDays: 7 });
+
+  // Assigned and passed, for the editor's "completed training stays complete".
+  const completed = await createCourse(company.id, COMPLETED);
+  await assign(completed, employee.id, { status: "complete", dueInDays: 7 });
 
   // Cancelled, and nobody ever passed: nothing would be lost by deleting it.
   const cancelledOnly = await createCourse(company.id, CANCELLED_ONLY);
@@ -97,9 +103,15 @@ test("creating a course saves its details and its quiz", async ({ page }) => {
   await page.locator("#course-category").fill("Safety");
   await page.locator("#course-content").fill("Read this, then take the quiz.");
 
-  await page.locator('[id$="-text"]').first().fill("Where is the fire exit?");
-  await page.getByLabel("Question 1, option 1").fill("Through the kitchen");
-  await page.getByLabel("Question 1, option 2").fill("Past the lifts");
+  await page
+    .getByRole("textbox", { name: "Question 1", exact: true })
+    .fill("Where is the fire exit?");
+  await page
+    .getByRole("textbox", { name: "Question 1, option 1", exact: true })
+    .fill("Through the kitchen");
+  await page
+    .getByRole("textbox", { name: "Question 1, option 2", exact: true })
+    .fill("Past the lifts");
   await page.getByRole("radio", { name: "Question 1, option 2 is the correct answer" }).click();
 
   await page.getByRole("button", { name: "Save course" }).click();
@@ -131,15 +143,15 @@ test("a course cannot be saved without a title or a correct answer", async ({ pa
 
   // A written question with options but nothing marked correct.
   await page.locator("#course-title").fill(`Half-finished ${STAMP}`);
-  await page.locator('[id$="-text"]').first().fill("Is this saved?");
-  await page.getByLabel("Question 1, option 1").fill("Yes");
-  await page.getByLabel("Question 1, option 2").fill("No");
+  await page.getByRole("textbox", { name: "Question 1", exact: true }).fill("Is this saved?");
+  await page.getByRole("textbox", { name: "Question 1, option 1", exact: true }).fill("Yes");
+  await page.getByRole("textbox", { name: "Question 1, option 2", exact: true }).fill("No");
   await page.getByRole("button", { name: "Save course" }).click();
   await expect(page.getByText("Select which option is correct.")).toBeVisible();
 
   // One option on its own isn't a question either.
   await page.getByRole("radio", { name: "Question 1, option 1 is the correct answer" }).click();
-  await page.getByLabel("Question 1, option 2").fill("");
+  await page.getByRole("textbox", { name: "Question 1, option 2", exact: true }).fill("");
   await page.getByRole("button", { name: "Save course" }).click();
   await expect(page.getByText("Give this question at least two options.")).toBeVisible();
 
@@ -158,13 +170,15 @@ test("editing a course shows the stored correct answer and saves a change", asyn
    * fetches it through getCourseForEdit. If that broke, this radio would be
    * unchecked and an admin would silently wipe the answer on every save.
    */
-  await expect(page.getByLabel("Question 1, option 2")).toHaveValue("Blue");
+  await expect(
+    page.getByRole("textbox", { name: "Question 1, option 2", exact: true }),
+  ).toHaveValue("Blue");
   await expect(
     page.getByRole("radio", { name: "Question 1, option 2 is the correct answer" }),
   ).toBeChecked();
 
   await page.locator("#course-title").fill(`${EDITABLE} (revised)`);
-  await page.getByLabel("Question 1, option 1").fill("Emerald");
+  await page.getByRole("textbox", { name: "Question 1, option 1", exact: true }).fill("Emerald");
   await page.getByRole("button", { name: "Save course" }).click();
 
   await expect(page.getByText(`Saved ${EDITABLE} (revised).`)).toBeVisible();
@@ -206,7 +220,7 @@ test("editing an assigned course warns that finished training stays finished", a
   await signInUI(page, adminEmail);
   await open(page, "/admin/courses");
 
-  await openMenu(page, ASSIGNED, "Edit course");
+  await openMenu(page, COMPLETED, "Edit course");
   await expect(
     page.getByText(/Changes apply to future attempts\. Completed training stays complete/),
   ).toBeVisible();
@@ -334,7 +348,7 @@ test.describe("on a phone", () => {
     const card = cards(page).filter({ hasText: ASSIGNED });
     await expect(card).toBeVisible();
     await expect(card).toContainText("Created");
-    await expect(card.getByRole("button", { name: "Assign" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Assign", exact: true })).toBeVisible();
     await expect(card.getByRole("button", { name: `More actions for ${ASSIGNED}` })).toBeVisible();
 
     // Nothing scrolls sideways: the page fits the screen.

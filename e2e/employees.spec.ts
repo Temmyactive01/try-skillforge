@@ -15,6 +15,7 @@ import {
   expect,
   open,
   signInUI,
+  signedInClient,
 } from "./helpers";
 
 const STAMP = Date.now();
@@ -61,6 +62,13 @@ test.beforeAll(async () => {
   const ada = await createUser(company.id, "Ada Mensah", "employee", operationsId);
   await createUser(company.id, "Ben Okafor", "employee", salesId);
   movable = { id: ada.id, name: ada.name };
+
+  /*
+   * "Invited" means an account that has never been signed in to, which is what
+   * createUser leaves behind. Signing Ada in once makes her Active, so the list
+   * has one of each.
+   */
+  await signedInClient(ada.email);
 
   // Ada has two assignments, one finished, so her completion bar reads 50%.
   const course = await createCourse(company.id, `Induction ${STAMP}`);
@@ -208,9 +216,12 @@ test("a failed action is reported in a toast, not a browser dialog", async ({ pa
   await signInUI(page, adminEmail);
   await open(page, "/admin/employees");
 
-  // A native dialog would stall the run; failing here proves one appeared.
-  page.on("dialog", (d) => {
-    throw new Error(`A native browser dialog appeared: ${d.message()}`);
+  // Record any native dialog rather than throwing in the handler: an
+  // unhandled dialog blocks the page, which would hide the real assertion.
+  const nativeDialogs: string[] = [];
+  page.on("dialog", async (d) => {
+    nativeDialogs.push(d.message());
+    await d.dismiss();
   });
 
   // Make the write fail the way a dropped connection would.
@@ -230,6 +241,7 @@ test("a failed action is reported in a toast, not a browser dialog", async ({ pa
   ).toBeVisible();
   // The dialog stays open with the work still in it, so nothing is lost.
   await expect(page.getByRole("dialog")).toBeVisible();
+  expect(nativeDialogs, "native browser dialogs during the failure").toEqual([]);
 });
 
 test("a company with no people is told what to do next", async ({ page }) => {

@@ -36,12 +36,19 @@ test.describe("one company can't see another company's data", () => {
   test("in the admin pages", async ({ page }) => {
     await signInUI(page, b.admin.email);
 
+    /*
+     * Courses and Employees now render a table and a card list at once and
+     * show whichever fits, so a name that appears in both needs the visible
+     * one. A name that must NOT appear still has to be absent from both.
+     */
+    const onScreen = (text: string) => page.getByText(text).filter({ visible: true });
+
     await open(page, "/admin/courses");
-    await expect(page.getByText(b.courseTitle)).toBeVisible();
+    await expect(onScreen(b.courseTitle).first()).toBeVisible();
     await expect(page.getByText(a.courseTitle)).toHaveCount(0);
 
     await open(page, "/admin/employees");
-    await expect(page.getByText(b.employee.email)).toBeVisible();
+    await expect(onScreen(b.employee.email).first()).toBeVisible();
     await expect(page.getByText(a.employee.email)).toHaveCount(0);
     await expect(page.getByText(a.admin.email)).toHaveCount(0);
 

@@ -51,6 +51,21 @@ export default defineConfig({
       name: "before-phase-2",
       metadata: { dir: "before-phase-2", themes: ["light"], screens: ["courses", "employees"] },
     },
+    {
+      name: "phase-2",
+      metadata: {
+        dir: "phase-2",
+        themes: ["light", "dark"],
+        screens: [
+          "courses",
+          "employees",
+          "course-editor",
+          "invite-dialog",
+          "courses-empty",
+          "employees-empty",
+        ],
+      },
+    },
   ],
   webServer: {
     command: `npm run dev -- --port ${PORT} --strictPort`,

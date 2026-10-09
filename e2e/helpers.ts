@@ -2,7 +2,7 @@
 // @e2e.example.com email or an "E2E Test " company name, and cleanup only ever
 // deletes rows matching those, so demo data and real companies are never touched.
 import { createClient } from "@supabase/supabase-js";
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import type { Database } from "../src/integrations/supabase/types";
 
 export const E2E_DOMAIN = "e2e.example.com";
@@ -278,13 +278,6 @@ export async function signInUI(page: Page, email: string, password = PASSWORD) {
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL(/\/(admin|employee)\//);
-}
-
-/** The input, textarea or select that follows a visible label (forms without htmlFor). */
-export function field(scope: Page | Locator, label: string) {
-  return scope
-    .locator(`div:has(> label:text-is("${label}"))`)
-    .locator(":scope > input, :scope > textarea, :scope > select");
 }
 
 export async function fillSetPasswordForm(page: Page, password: string, confirm = password) {

@@ -355,8 +355,8 @@ export function CourseEditor({
             >
               {CONTENT_TYPES.map((t) => (
                 <div key={t.value} className="flex items-center gap-2">
-                  <RadioGroupItem id={`content-type-${t.value}`} value={t.value} />
-                  <Label htmlFor={`content-type-${t.value}`} className="font-normal">
+                  <RadioGroupItem id={`content-type-radio-${t.value}`} value={t.value} />
+                  <Label htmlFor={`content-type-radio-${t.value}`} className="font-normal">
                     {t.label}
                   </Label>
                 </div>
@@ -415,7 +415,8 @@ export function CourseEditor({
             {draft.questions.map((q, index) => (
               <li key={q.key} className="rounded-md border border-steel p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-small font-medium text-ink">Question {index + 1}</p>
+                  {/* One label, not a heading plus a label both saying "Question". */}
+                  <Label htmlFor={`${q.key}-text`}>Question {index + 1}</Label>
                   {draft.questions.length > 1 && (
                     <Button
                       type="button"
@@ -432,14 +433,11 @@ export function CourseEditor({
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor={`${q.key}-text`}>Question</Label>
-                  <Input
-                    id={`${q.key}-text`}
-                    value={q.question_text}
-                    onChange={(e) => patchQuestion(q.key, { question_text: e.target.value })}
-                  />
-                </div>
+                <Input
+                  id={`${q.key}-text`}
+                  value={q.question_text}
+                  onChange={(e) => patchQuestion(q.key, { question_text: e.target.value })}
+                />
 
                 <fieldset className="mt-4 space-y-2">
                   <legend className="mb-2 block text-small font-medium text-ink">

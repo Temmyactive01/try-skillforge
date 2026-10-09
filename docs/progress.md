@@ -9,7 +9,7 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 - **Two security holes closed** (found while proving an unrelated policy was safe — see below). Any signed-in user could rewrite their own `profiles.email` and move themselves into any team, including another company's.
 - Admins can now move an employee between teams, and manage teams properly (rename, delete).
 - Work is on the **`redesign-phase-2` branch**, **not merged and not pushed**.
-- **55 end-to-end tests pass** (26 before), and `verify:security` has grown from 40 checks to 55.
+- **63 end-to-end tests pass** (26 before), and `verify:security` has grown from 40 checks to 55.
 
 ## Session 5: 2026-10-09 (redesign, phase 2)
 
@@ -93,20 +93,20 @@ Also found on the way: **the app ignored `prefers-reduced-motion` entirely**. Pl
 
 ### Checks at the end of the session
 
-| Check                                   | Result                                                                                |
-| --------------------------------------- | ------------------------------------------------------------------------------------- |
-| `npm run test:e2e`                      | **55 passed**, 9.0 minutes (26 before this session)                                   |
-| `npm run check:contrast`                | **all passed** — 56 checks across both themes                                         |
-| `npx tsc --noEmit`                      | clean                                                                                 |
-| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                 |
-| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                   |
-| `npm run lint`                          | 399 problems, down from 412 on `main`; **no errors in any file this session touched** |
-| `npm run verify:security`               | **all passed** — 55 checks (40 before)                                                |
-| `npm run test:mcp`                      | all passed                                                                            |
+| Check                                   | Result                                                                                                                                                                |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:e2e`                      | **63 passed** (26 before this session). 10 minutes on a quiet machine; the final verification run took 14.6, sharing the machine with the build and the other checks. |
+| `npm run check:contrast`                | **all passed** — 56 checks across both themes                                                                                                                         |
+| `npx tsc --noEmit`                      | clean                                                                                                                                                                 |
+| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                                                                                 |
+| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                                                                                   |
+| `npm run lint`                          | 399 problems, down from 412 on `main`; **no errors in any file this session touched**                                                                                 |
+| `npm run verify:security`               | **all passed** — 55 checks (40 before)                                                                                                                                |
+| `npm run test:mcp`                      | all passed                                                                                                                                                            |
 
 ### Screenshots
 
-`docs/screenshots/before-phase-2` (4, light only) and `docs/screenshots/phase-2` (24: Courses, Employees, the course editor, the invite dialog and both empty states, each at 1440x900 and 375x812, in both themes).
+`docs/screenshots/before-phase-2` (4, light only) and `docs/screenshots/phase-2` (28: Courses, Employees, the course editor, the invite dialog and both empty states, each at 1440x900 and 375x812, in both themes). The editor gets two shots per size: `course-editor-*` is the viewport, which is where the sticky action bar really sits, and `course-editor-full-*` is the whole form.
 
 ### What phase 2 did not cover
 

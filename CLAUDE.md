@@ -31,11 +31,12 @@ npm run screenshots:phase-2  # design screenshots → docs/screenshots/phase-2
 
 **After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
 
-**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (55 tests, about 9 minutes). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (63 tests, 10–15 minutes depending on what else is running). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
 
 - **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
 - **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.
 - **Navigate with `open(page, url)`.** It waits for `networkidle` and then for `html[data-hydrated="true"]`, which `__root.tsx` sets in an effect once React has attached. Interacting before that makes forms submit natively, and the URL gains a `?`. Never paper over it with a retry or a timeout.
+- **Dialogs must not fade their own opacity.** `DialogContent` and `AlertDialogContent` fade only their backdrop; animating the panel makes the page behind readable straight through the form while it opens. `e2e/dialogs.spec.ts` measures the rendered opacity and background alpha of every admin dialog, so re-adding `fade-in-0` fails the suite.
 - **Courses and Employees keep a table and a card list in the DOM at once** and show whichever fits the width, so a name appears twice. Scope to `getByRole("row")` or the card list by its `aria-label`, or filter to the visible one.
 - `npm run verify:security` and `npm run test:mcp` are separate script checks (see the README).
 

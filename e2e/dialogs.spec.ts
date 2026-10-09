@@ -197,6 +197,30 @@ for (const width of [375, 1280]) {
     }
 
     // Alignment is a question of width, not of colour, so once per width is enough.
+    test("a dialog's footer buttons never touch", async ({ page }) => {
+      await signInUI(page, adminEmail);
+      await open(page, "/admin/employees");
+      await page.getByRole("button", { name: "Invite employee" }).click();
+
+      const dialog = page.getByRole("dialog");
+      const send = await dialog.getByRole("button", { name: "Send invite" }).boundingBox();
+      const cancel = await dialog.getByRole("button", { name: "Cancel" }).boundingBox();
+      expect(send, "Send invite is on screen").not.toBeNull();
+      expect(cancel, "Cancel is on screen").not.toBeNull();
+
+      /*
+       * Stacked on a phone and side by side on a desktop, so measure whichever
+       * axis they are separated on. The old sm:space-x-2 set a horizontal
+       * margin above sm only, which left the stacked pair with nothing between
+       * them; space-2 is 8px.
+       */
+      const stacked = send!.y !== cancel!.y;
+      const gap = stacked
+        ? Math.abs(send!.y - (cancel!.y + cancel!.height))
+        : Math.abs(send!.x - (cancel!.x + cancel!.width));
+      expect(gap, `gap between the footer buttons at ${width}px`).toBeGreaterThanOrEqual(8);
+    });
+
     test("a dialog's title and description are left-aligned", async ({ page }) => {
       await signInUI(page, adminEmail);
       await open(page, "/admin/employees");

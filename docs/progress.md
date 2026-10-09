@@ -57,12 +57,13 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 
 ### Your phase-2 review, and what changed because of it
 
-You found four things. Three were real; one was a seed-data mistake behind a correct rule.
+You found five things. Four were real; one was a seed-data mistake behind a correct rule.
 
 1. **The invite dialog was see-through on a phone.** Not a missing background — `bg-surface` was already on `DialogContent` and its alpha measured 1 at every width in both themes. The panel was animating **its own opacity** from 0 over 200ms, so for the length of that fade the page behind was legible straight through the form. The new test catches it at 0.708 on the first frame. The panel no longer fades; the backdrop still does and the panel still zooms, so the transition reads the same with no see-through frame. `AlertDialogContent` was also still on `bg-background` and a colourless border — the shadcn default rather than the tokens — and is now on `surface` and `steel` like the rest.
 2. **"Invited" beside 50% complete** was the screenshot seed, not the logic. Invited means an account nobody has signed in to, and you cannot start a course — let alone pass its quiz — without signing in, so the rule is right. The seed signed in the first four employees _by index_, and the fifth had a completed assignment. It now derives who signs in from the assignment table itself, so editing one can't leave the other behind.
 3. **The course editor's actions** are a sticky bar at the foot of the content column, inside it so it stops at the sidebar rather than spanning the window, with an opaque background so the form scrolls under it. A second "Add question" sits after the last question. Both Add buttons are secondary; there is still one primary button.
 4. **Dialog titles and descriptions left-align at every width.** They were centred below `sm` and left-aligned above it, which gave one dialog two reading positions.
+5. **Stacked dialog footers had no gap.** `sm:space-x-2` sets a horizontal margin, and only above `sm`, so on a phone Send invite and Cancel touched. Both footers now use `gap-2`, which works on either axis.
 
 Also found on the way: **the app ignored `prefers-reduced-motion` entirely**. Playwright had been asking for reduced motion during every screenshot run and getting full animations. It now honours it.
 

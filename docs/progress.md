@@ -8,8 +8,8 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 - **Nothing in the admin uses a native browser dialog any more.** Confirmations are the kit's `AlertDialog`, messages are a toast. ESLint's `no-alert` now fails the build if one comes back.
 - **Two security holes closed** (found while proving an unrelated policy was safe — see below). Any signed-in user could rewrite their own `profiles.email` and move themselves into any team, including another company's.
 - Admins can now move an employee between teams, and manage teams properly (rename, delete).
-- Work is on the **`redesign-phase-2` branch**, **not merged and not pushed**.
-- **63 end-to-end tests pass** (26 before), and `verify:security` has grown from 40 checks to 55.
+- Phase 2 is **merged into `main` and pushed** (`adac2bc`, a merge commit). The `redesign-phase-2` branch is pushed too, so the history of the phase is still readable.
+- **65 end-to-end tests pass** (26 before), and `verify:security` has grown from 40 checks to 55.
 
 ## Session 5: 2026-10-09 (redesign, phase 2)
 
@@ -94,16 +94,17 @@ Also found on the way: **the app ignored `prefers-reduced-motion` entirely**. Pl
 
 ### Checks at the end of the session
 
-| Check                                   | Result                                                                                                                                                                |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run test:e2e`                      | **63 passed** (26 before this session). 10 minutes on a quiet machine; the final verification run took 14.6, sharing the machine with the build and the other checks. |
-| `npm run check:contrast`                | **all passed** — 56 checks across both themes                                                                                                                         |
-| `npx tsc --noEmit`                      | clean                                                                                                                                                                 |
-| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                                                                                 |
-| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                                                                                   |
-| `npm run lint`                          | 399 problems, down from 412 on `main`; **no errors in any file this session touched**                                                                                 |
-| `npm run verify:security`               | **all passed** — 55 checks (40 before)                                                                                                                                |
-| `npm run test:mcp`                      | all passed                                                                                                                                                            |
+| Check                                   | Result                                                                                                                                        |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:e2e`                      | **65 passed** (26 before this session). 10 minutes on a quiet machine, 14 sharing it with the other checks. Re-run on `main` after the merge. |
+| `npm run check:contrast`                | **all passed** — 56 checks across both themes                                                                                                 |
+| `npx tsc --noEmit`                      | clean                                                                                                                                         |
+| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                                                         |
+| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                                                           |
+| `npm run lint`                          | 399 problems, down from 412 on `main`; **no errors in any file this session touched**                                                         |
+| `npm run verify:security`               | **all passed** — 55 checks (40 before). Re-run on `main` after the merge.                                                                     |
+| secret scan                             | clean — no secret-shaped strings in any commit on the branch; `.env.local` has never been tracked                                             |
+| `npm run test:mcp`                      | all passed                                                                                                                                    |
 
 ### Screenshots
 

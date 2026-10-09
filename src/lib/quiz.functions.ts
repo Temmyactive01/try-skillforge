@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { PASS_MARK } from "@/lib/scores";
 
 const submitSchema = z.object({
   assignment_id: z.string().uuid(),
@@ -69,7 +70,7 @@ export const submitQuiz = createServerFn({ method: "POST" })
       });
     }
     const score = Math.round((correct / questions.length) * 100);
-    const passed = score >= 70;
+    const passed = score >= PASS_MARK;
 
     // Only this grader may record results and set "complete": the database refuses both
     // from employees, so write with the admin client now that ownership is verified above.

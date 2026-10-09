@@ -124,6 +124,16 @@ The app uses Tailwind. Map each token to a CSS variable in `src/styles.css` (for
 - `radius-md`: 8px: Buttons and panels.
 - `radius-lg`: 14px: Dialogs and the marketing hero frame only.
 
+## Toast
+
+How the app answers an action that finished somewhere other than the screen the user is looking at: an invite sent, a row action that failed. Anything the user must read before carrying on is a dialog, not a toast.
+
+- One toaster per shell, bottom right on desktop, full width at the bottom on a phone. `surface`, a `steel` hairline, `radius-md`, `body` text with `small` detail.
+- **A confirmation repeats the verb and names the thing**: "Invite sent to ada@company.com." It dismisses itself after a few seconds.
+- **A failure says what went wrong and how to fix it**, and **stays until dismissed** — a message that disappears before it has been read is worse than none. It carries a close button labelled "Dismiss".
+- Failures are `oxide` text on a soft `oxide` fill, always with words. Confirmations stay in `ink`: finishing a task is not progress on the temper scale, so it gets no temper colour.
+- Toasts are announced to screen readers through a live region, so never put anything in one that is not also recoverable from the page itself.
+
 ## TemperProgress component
 
 A progress bar whose fill colour follows the temper scale, so completion reads at a glance across a whole table.

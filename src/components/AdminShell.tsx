@@ -4,6 +4,7 @@ import { BookOpen, ClipboardList, LayoutDashboard, LogOut, Users } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
+import { Toaster } from "@/components/ui/sonner";
 import {
   Sidebar,
   SidebarContent,
@@ -116,6 +117,8 @@ export function AdminShell({ children, name }: { children: ReactNode; name?: str
           </div>
         </header>
         <main className="min-w-0 px-4 py-8 md:px-8">{children}</main>
+        {/* One toaster for the whole admin: see DESIGN.md → "Toast". */}
+        <Toaster />
       </SidebarInset>
     </SidebarProvider>
   );

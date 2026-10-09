@@ -8,7 +8,7 @@ SkillForge is a multi-tenant B2B learning & development app: a company admin cre
 
 This GitHub repo is the only home for SkillForge. Keep `main` working and don't rewrite pushed history. `AGENTS.md` only points other coding agents here, so keep guidance in this file.
 
-`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table. Other screens inherit the new tokens but keep their old hand-built layout until their phase.
+`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table; phase 2 covered Courses and Employees. **Every admin screen now follows it.** The employee screens, the marketing pages and login/signup inherit the new tokens but keep their old hand-built layout until their phase.
 
 ## Progress log
 
@@ -26,15 +26,18 @@ npx tsc --noEmit   # type-check (no script for it); e2e: npx tsc --noEmit -p e2e
 npm run test:e2e   # Playwright end-to-end tests (add `-- e2e/<file>.spec.ts` for one file)
 npm run check:contrast   # WCAG AA check on the design tokens, both themes
 npm run screenshots      # design screenshots → docs/screenshots/phase-1
+npm run screenshots:phase-2  # design screenshots → docs/screenshots/phase-2
 ```
 
 **After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
 
-**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (26 tests, about 6 minutes). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (63 tests, 10–15 minutes depending on what else is running). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
 
 - **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
 - **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.
-- **Navigate with `open(page, url)`** (it waits for `networkidle`). Interacting before hydration makes forms submit natively, and the URL gains a `?`.
+- **Navigate with `open(page, url)`.** It waits for `networkidle` and then for `html[data-hydrated="true"]`, which `__root.tsx` sets in an effect once React has attached. Interacting before that makes forms submit natively, and the URL gains a `?`. Never paper over it with a retry or a timeout.
+- **Dialogs must not fade their own opacity.** `DialogContent` and `AlertDialogContent` fade only their backdrop; animating the panel makes the page behind readable straight through the form while it opens. `e2e/dialogs.spec.ts` measures the rendered opacity and background alpha of every admin dialog, so re-adding `fade-in-0` fails the suite.
+- **Courses and Employees keep a table and a card list in the DOM at once** and show whichever fits the width, so a name appears twice. Scope to `getByRole("row")` or the card list by its `aria-label`, or filter to the visible one.
 - `npm run verify:security` and `npm run test:mcp` are separate script checks (see the README).
 
 ## Stack
@@ -74,7 +77,7 @@ Existing server functions:
 
 - `signupCompanyAdmin` (`signup.functions.ts`) — creates company → auth user → admin profile with the service role, rolling back on failure.
 - `createEmployee` / `listPendingEmployeeIds` (`employees.functions.ts`) — admin-only: sends a Supabase invite email (redirect to `/accept-invite`) and inserts the employee profile; "pending" = auth user that has never signed in.
-- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest.
+- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest. The pass mark is `PASS_MARK` in `src/lib/scores.ts` — anything that mentions it reads it from there rather than restating the number.
 
 Files under `src/integrations/supabase/` (clients, auth middleware/attacher) are ordinary project code. `types.ts` mirrors the DB schema; regenerate it with `npx supabase gen types typescript --project-id <id> > src/integrations/supabase/types.ts` after schema changes rather than editing it by hand.
 
@@ -85,7 +88,10 @@ Tables (all `public`, RLS enabled): `companies`, `teams`, `profiles` (1:1 with `
 Key invariants enforced in SQL — keep them when changing things:
 
 - RLS policies scope every table to `private.get_user_company_id(auth.uid())`; admin writes also require `private.is_admin(auth.uid())`. Assignments link a user and a course, and admin writes require **both** to be in the admin's company. Any new cross-table reference needs the same both-sides check, and `submitQuiz` refuses courses the caller can't see. These helpers live in the `private` schema (SECURITY DEFINER, not exposed via the API) to avoid RLS recursion.
-- **Profiles are never created from client-supplied metadata.** The old `on_auth_user_created` trigger was removed; only server functions using the service role insert profiles. Users can update their own profile but cannot change `role` or `company_id`.
+- `getCourseForEdit` (`courses.functions.ts`) — admin-only, read-only. The one path that returns `quiz_questions.correct_answer`, which no signed-in user can read (see the column grants below). It reads the course through the caller's own RLS first, so it can only ever answer for the caller's company, then reads the answers with the service role. The course editor needs it; nothing else should.
+
+- **Profiles are never created from client-supplied metadata.** The old `on_auth_user_created` trigger was removed; only server functions using the service role insert profiles.
+- **Who may change what on a profile** is split between a policy (who) and the `private.restrict_admin_profile_update` trigger (which column), because a `FOR UPDATE` policy can't compare the new row with the old one. A user may change **only their own `name`**; an admin may change **only `team_id`**, and only for a profile in their own company. Both halves of the trigger are allow-lists over `to_jsonb(NEW)` minus the permitted columns, so a new column on `profiles` is protected the day it lands — don't rewrite them as lists of forbidden columns. A team must also belong to the same company as the employee; the foreign key only proves the team exists.
 - `quiz_questions.correct_answer` is not selectable by `authenticated` (column-level grants), so clients must select explicit columns (`id, question_text, options`) — `select("*")` will fail. Grading must happen server-side.
 - A trigger (`private.restrict_assignment_user_update`) lets non-admin employees change only `status` on their own assignments, and only from `not_started` to `in_progress`. **Only `submitQuiz` may set `complete` or write `quiz_results`**: it writes them with the service role after checking ownership. Employees have no insert policy on `quiz_results`. The trigger restricts only `authenticated` callers, so the service role and direct database connections stay trusted.
 - Cancelling an assignment sets `status = 'cancelled'` (kept on record, admin can "Undo" back to `not_started`); cancelled rows are excluded from dashboard stats and the employee's list. Some older code (e.g. the MCP `list_my_assignments` status filter, the course page's `Assignment` type) doesn't know about `cancelled`.

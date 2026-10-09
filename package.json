@@ -18,6 +18,8 @@
     "test:e2e:report": "playwright show-report",
     "screenshots": "playwright test -c playwright.screenshots.config.ts --project=phase-1",
     "screenshots:before": "playwright test -c playwright.screenshots.config.ts --project=before",
+    "screenshots:before-phase-2": "playwright test -c playwright.screenshots.config.ts --project=before-phase-2",
+    "screenshots:phase-2": "playwright test -c playwright.screenshots.config.ts --project=phase-2",
     "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {

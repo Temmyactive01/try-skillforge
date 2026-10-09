@@ -6,7 +6,6 @@ import {
   PASSWORD,
   expect,
   open,
-  field,
   fillSetPasswordForm,
   inviteLink,
   testCompanyName,
@@ -63,19 +62,24 @@ test("a new company signs up and lands on the admin dashboard", async () => {
 
 test("the admin creates a team and invites an employee (no email sent)", async () => {
   await open(admin, "/admin/employees");
-  await admin.getByRole("button", { name: "+ Add Team" }).click();
-  await field(admin, "Team name").fill(teamName);
-  await admin.getByRole("button", { name: "Save team" }).click();
-  await expect(admin.getByRole("cell", { name: teamName, exact: true })).toBeVisible();
+  await admin.getByRole("button", { name: "Add team" }).click();
+  await admin.locator("#team-name").fill(teamName);
+  await admin.getByRole("dialog").getByRole("button", { name: "Add team" }).click();
+  await expect(admin.getByText(`Added the team ${teamName}.`)).toBeVisible();
+  await expect(
+    admin.getByRole("list", { name: "Teams" }).getByRole("listitem").filter({ hasText: teamName }),
+  ).toBeVisible();
 
-  await admin.getByRole("button", { name: "+ Add Employee" }).click();
-  await field(admin, "Name").fill(employeeName);
-  await field(admin, "Email").fill(employeeEmail);
-  await field(admin, "Team (optional)").selectOption({ label: teamName });
-  await admin.getByRole("button", { name: "Save employee" }).click();
+  await admin.getByRole("button", { name: "Invite employee" }).click();
+  await admin.locator("#invite-name").fill(employeeName);
+  await admin.locator("#invite-email").fill(employeeEmail);
+  await admin.locator("#invite-team").selectOption({ label: teamName });
+  await admin.getByRole("button", { name: "Send invite" }).click();
+  await expect(admin.getByText(`Invite sent to ${employeeEmail}.`)).toBeVisible();
+
   const row = admin.getByRole("row").filter({ hasText: employeeEmail });
   await expect(row).toContainText(teamName);
-  await expect(row).toContainText("Pending");
+  await expect(row).toContainText("Invited");
 });
 
 test("the employee accepts the invite and sets a password", async ({ baseURL }) => {
@@ -92,37 +96,40 @@ test("the employee accepts the invite and sets a password", async ({ baseURL }) 
 
 test("the admin creates a course with a quiz and assigns it", async () => {
   await open(admin, "/admin/courses");
-  await admin.getByRole("button", { name: "+ Create Course" }).click();
-  await field(admin, "Title").fill(courseTitle);
-  await field(admin, "Description").fill("A short course made by the journey test.");
-  await field(admin, "Content").fill("Read this, then take the quiz.");
-  await field(admin, "Category").fill("Testing");
+  await admin.getByRole("button", { name: "Create course" }).click();
+  await admin.locator("#course-title").fill(courseTitle);
+  await admin.locator("#course-description").fill("A short course made by the journey test.");
+  await admin.locator("#course-content").fill("Read this, then take the quiz.");
+  await admin.locator("#course-category").fill("Testing");
 
   for (let qi = 0; qi < DEFAULT_QUESTIONS.length; qi++) {
-    if (qi > 0) await admin.getByRole("button", { name: "+ Add question" }).click();
+    if (qi > 0) await admin.getByRole("button", { name: "Add question" }).first().click();
     const q = DEFAULT_QUESTIONS[qi];
-    const block = admin.locator(`div:has(> div > span:text-is("Question ${qi + 1}"))`);
-    await block.getByPlaceholder("Question text").fill(q.text);
+    const label = `Question ${qi + 1}`;
+    await admin.getByRole("textbox", { name: label, exact: true }).fill(q.text);
     for (let oi = 0; oi < q.options.length; oi++) {
-      await block.getByPlaceholder(`Option ${oi + 1}`, { exact: true }).fill(q.options[oi]);
+      await admin
+        .getByRole("textbox", { name: `${label}, option ${oi + 1}`, exact: true })
+        .fill(q.options[oi]);
     }
-    await block.locator('input[type="radio"]').nth(q.options.indexOf(q.correct)).check();
+    await admin
+      .getByRole("radio", {
+        name: `${label}, option ${q.options.indexOf(q.correct) + 1} is the correct answer`,
+      })
+      .click();
   }
   await admin.getByRole("button", { name: "Save course" }).click();
+  await expect(admin.getByText(`Created ${courseTitle}.`)).toBeVisible();
 
   const courseRow = admin.getByRole("row").filter({ hasText: courseTitle });
   await expect(courseRow).toBeVisible();
-  await courseRow.getByRole("button", { name: "Assign" }).click();
-  await expect(admin.getByRole("heading", { name: "Assign Course" })).toBeVisible();
-  await admin
-    .locator("label")
-    .filter({ hasText: employeeEmail })
-    .locator('input[type="checkbox"]')
-    .check();
+  await courseRow.getByRole("button", { name: "Assign", exact: true }).click();
+  await expect(admin.getByRole("heading", { name: "Assign course" })).toBeVisible();
+  await admin.locator("label").filter({ hasText: employeeEmail }).getByRole("checkbox").click();
   const due = new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
-  await field(admin, "Due date").fill(due);
-  await admin.locator("form").getByRole("button", { name: "Assign", exact: true }).click();
-  await expect(admin.getByText(`Assigned "${courseTitle}" to 1 employee(s).`)).toBeVisible();
+  await admin.locator("#assign-due").fill(due);
+  await admin.getByRole("button", { name: "Assign course" }).click();
+  await expect(admin.getByText(`Assigned ${courseTitle} to 1 person.`)).toBeVisible();
 });
 
 test("the employee fails the quiz, then retakes it and passes", async () => {

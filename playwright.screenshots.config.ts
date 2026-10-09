@@ -29,9 +29,43 @@ export default defineConfig({
     headless: true,
   },
   projects: [
-    // The design as it was before this phase. Dark mode didn't exist yet, so light only.
-    { name: "before", metadata: { dir: "before", themes: ["light"], shell: false } },
-    { name: "phase-1", metadata: { dir: "phase-1", themes: ["light", "dark"], shell: true } },
+    // The design as it was before phase 1. Dark mode didn't exist yet, so light only.
+    {
+      name: "before",
+      metadata: {
+        dir: "before",
+        themes: ["light"],
+        screens: ["dashboard", "assignments", "getting-started"],
+      },
+    },
+    {
+      name: "phase-1",
+      metadata: {
+        dir: "phase-1",
+        themes: ["light", "dark"],
+        screens: ["dashboard", "assignments", "shell", "getting-started"],
+      },
+    },
+    // The two screens phase 2 redesigns, as they were before it started.
+    {
+      name: "before-phase-2",
+      metadata: { dir: "before-phase-2", themes: ["light"], screens: ["courses", "employees"] },
+    },
+    {
+      name: "phase-2",
+      metadata: {
+        dir: "phase-2",
+        themes: ["light", "dark"],
+        screens: [
+          "courses",
+          "employees",
+          "course-editor",
+          "invite-dialog",
+          "courses-empty",
+          "employees-empty",
+        ],
+      },
+    },
   ],
   webServer: {
     command: `npm run dev -- --port ${PORT} --strictPort`,

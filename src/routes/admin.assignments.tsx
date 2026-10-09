@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronsUpDown, ChevronUp, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { AdminShell } from "@/components/AdminShell";
@@ -9,6 +9,18 @@ import { daysLate, formatDate, overdueLabel } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { TemperProgress } from "@/components/ui/temper-progress";
+import { toastFailed } from "@/components/ui/sonner";
+import { Tag, type TagTone } from "@/components/ui/tag";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { sortRows, type Sort } from "@/lib/sorting";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -67,7 +79,6 @@ type Course = { id: string; title: string };
 type Employee = { id: string; name: string; team_id: string | null };
 
 type SortColumn = "employee_name" | "course_title" | "status" | "best_score" | "due_date";
-type Sort = { column: SortColumn; direction: "asc" | "desc" };
 
 const STATUSES: Status[] = ["not_started", "in_progress", "complete", "cancelled"];
 
@@ -125,7 +136,7 @@ function AdminAssignments() {
     setStatusFilter(statusFromUrl ?? "");
   }, [statusFromUrl]);
   // The soonest deadline first, matching the order the rows arrive in.
-  const [sort, setSort] = useState<Sort>({ column: "due_date", direction: "asc" });
+  const [sort, setSort] = useState<Sort<SortColumn>>({ column: "due_date", direction: "asc" });
 
   useEffect(() => {
     if (checking) return;
@@ -141,18 +152,16 @@ function AdminAssignments() {
         supabase.from("profiles").select("id, name, team_id, role"),
       ]);
       const profMap = new Map<string, { name: string; team_id: string | null }>();
-      (p ?? []).forEach((row: any) =>
-        profMap.set(row.id, { name: row.name, team_id: row.team_id }),
-      );
+      (p ?? []).forEach((row) => profMap.set(row.id, { name: row.name, team_id: row.team_id }));
       setTeams(t ?? []);
       setCourses(c ?? []);
       setEmployees(
         (p ?? [])
-          .filter((row: any) => row.role === "employee")
-          .map((row: any) => ({ id: row.id, name: row.name, team_id: row.team_id })),
+          .filter((row) => row.role === "employee")
+          .map((row) => ({ id: row.id, name: row.name, team_id: row.team_id })),
       );
       setRows(
-        (a ?? []).map((r: any) => {
+        (a ?? []).map((r) => {
           const prof = profMap.get(r.user_id);
           return {
             id: r.id,
@@ -184,31 +193,24 @@ function AdminAssignments() {
     [rows, teamFilter, courseFilter, statusFilter],
   );
 
-  const sorted = useMemo(() => {
-    const by = (r: Row): string | number | null => {
-      switch (sort.column) {
-        case "employee_name":
-          return r.employee_name.toLocaleLowerCase();
-        case "course_title":
-          return r.course_title.toLocaleLowerCase();
-        case "status":
-          return STATUS_ORDER[r.status];
-        case "best_score":
-          return r.best_score;
-        case "due_date":
-          return r.due_date ? new Date(r.due_date).getTime() : null;
-      }
-    };
-    return [...filtered].sort((x, y) => {
-      const a = by(x);
-      const b = by(y);
-      // Rows with nothing to compare — no score yet, no due date — always sit last.
-      if (a === null) return b === null ? 0 : 1;
-      if (b === null) return -1;
-      const order = a < b ? -1 : a > b ? 1 : 0;
-      return sort.direction === "asc" ? order : -order;
-    });
-  }, [filtered, sort]);
+  const sorted = useMemo(
+    () =>
+      sortRows(filtered, sort, (r, column) => {
+        switch (column) {
+          case "employee_name":
+            return r.employee_name.toLocaleLowerCase();
+          case "course_title":
+            return r.course_title.toLocaleLowerCase();
+          case "status":
+            return STATUS_ORDER[r.status];
+          case "best_score":
+            return r.best_score;
+          case "due_date":
+            return r.due_date ? new Date(r.due_date).getTime() : null;
+        }
+      }),
+    [filtered, sort],
+  );
 
   /** Cancel and Undo both just move the status, optimistically. */
   async function patchStatus(id: string, status: Status) {
@@ -216,12 +218,14 @@ function AdminAssignments() {
     setRows((curr) => curr.map((x) => (x.id === id ? { ...x, status } : x)));
     const { error } = await supabase.from("assignments").update({ status }).eq("id", id);
     if (error) {
-      alert(
-        status === "cancelled"
-          ? "Failed to cancel assignment: " + error.message
-          : "Failed to restore assignment: " + error.message,
-      );
+      // The row goes back to how it was, so the page never shows a change the
+      // database refused. The toast says which way the change was going.
       setRows(previous);
+      toastFailed(
+        status === "cancelled"
+          ? "Couldn't cancel the assignment. Check your connection and try again."
+          : "Couldn't restore the assignment. Check your connection and try again.",
+      );
     }
   }
 
@@ -303,10 +307,10 @@ function AdminAssignments() {
                 ))}
               </ul>
 
-              <div className="hidden w-full overflow-x-auto md:block">
-                <table className="w-full text-small">
-                  <thead>
-                    <tr className="border-b border-steel">
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                       <SortableHeader column="employee_name" sort={sort} onSort={setSort}>
                         Employee
                       </SortableHeader>
@@ -322,12 +326,12 @@ function AdminAssignments() {
                       <SortableHeader column="due_date" sort={sort} onSort={setSort}>
                         Due date
                       </SortableHeader>
-                      <th scope="col" className="px-3 py-3 text-right font-medium text-ink-muted">
+                      <TableHead scope="col" className="text-right">
                         Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {sorted.map((r) => (
                       <AssignmentRow
                         key={r.id}
@@ -336,8 +340,8 @@ function AdminAssignments() {
                         onStatusChange={(status) => patchStatus(r.id, status)}
                       />
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </>
           )}
@@ -407,49 +411,14 @@ function Filter({
   );
 }
 
-function SortableHeader({
-  column,
-  sort,
-  onSort,
-  className,
-  children,
-}: {
-  column: SortColumn;
-  sort: Sort;
-  onSort: (sort: Sort) => void;
-  className?: string;
-  children: ReactNode;
-}) {
-  const active = sort.column === column;
-  return (
-    <th
-      scope="col"
-      aria-sort={active ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}
-      className={cn("px-3 py-3 text-left font-medium text-ink-muted", className)}
-    >
-      <button
-        type="button"
-        onClick={() =>
-          onSort({ column, direction: active && sort.direction === "asc" ? "desc" : "asc" })
-        }
-        className="inline-flex items-center gap-1 rounded-sm hover:text-ink"
-      >
-        {children}
-        {!active ? (
-          <ChevronsUpDown aria-hidden className="size-4 text-steel-strong" />
-        ) : sort.direction === "asc" ? (
-          <ChevronUp aria-hidden className="size-4" />
-        ) : (
-          <ChevronDown aria-hidden className="size-4" />
-        )}
-      </button>
-    </th>
-  );
-}
-
-/** The due date, with how late it is underneath when it has passed. */
-function DueDate({ row }: { row: Row }) {
-  if (!row.due_date) return <span className="text-ink-muted">—</span>;
+/**
+ * The due date, with how late it is underneath when it has passed.
+ *
+ * A card has no column header to explain a lone dash, so it asks for the words
+ * instead. The table keeps the dash: "Due date" is written above it.
+ */
+function DueDate({ row, emptyLabel = "—" }: { row: Row; emptyLabel?: string }) {
+  if (!row.due_date) return <span className="text-ink-muted">{emptyLabel}</span>;
   const late = isOverdue(row) ? daysLate(row.due_date) : null;
   return (
     <>
@@ -551,22 +520,22 @@ function AssignmentRow({
   onStatusChange: (status: Status) => void;
 }) {
   return (
-    <tr className="border-b border-steel last:border-b-0">
-      <td className="px-3 py-3 text-ink">{row.employee_name}</td>
-      <td className="px-3 py-3 text-ink">{row.course_title}</td>
-      <td className="px-3 py-3">
+    <TableRow>
+      <TableCell>{row.employee_name}</TableCell>
+      <TableCell>{row.course_title}</TableCell>
+      <TableCell>
         <StatusTag status={row.status} />
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <Score row={row} />
-      </td>
-      <td className="px-3 py-3">
+      </TableCell>
+      <TableCell>
         <DueDate row={row} />
-      </td>
-      <td className="px-3 py-3 text-right whitespace-nowrap">
+      </TableCell>
+      <TableCell className="text-right whitespace-nowrap">
         <RowActions row={row} onEdit={onEdit} onStatusChange={onStatusChange} />
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -594,7 +563,7 @@ function AssignmentCard({
 
       <div className="flex items-end justify-between gap-3">
         <p className="text-small">
-          <DueDate row={row} />
+          <DueDate row={row} emptyLabel="No due date" />
         </p>
         <RowActions row={row} onEdit={onEdit} onStatusChange={onStatusChange} />
       </div>
@@ -609,21 +578,16 @@ function AssignmentCard({
  * a tag is never mistaken for a button.
  */
 function StatusTag({ status }: { status: Status }) {
-  const tone: Record<Status, string> = {
-    not_started: "bg-steel/40 text-ink-muted",
-    in_progress: "bg-temper-bronze/15 text-temper-bronze",
-    complete: "bg-temper-blue/15 text-temper-blue",
-    cancelled: "bg-steel/40 text-ink-muted line-through",
+  const tone: Record<Status, TagTone> = {
+    not_started: "quiet",
+    in_progress: "bronze",
+    complete: "blue",
+    cancelled: "quiet",
   };
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center rounded-sm px-2 py-0.5 text-small font-medium whitespace-nowrap",
-        tone[status],
-      )}
-    >
+    <Tag tone={tone[status]} className={status === "cancelled" ? "line-through" : undefined}>
       {statusLabel(status)}
-    </span>
+    </Tag>
   );
 }
 

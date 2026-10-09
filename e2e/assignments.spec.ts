@@ -21,6 +21,8 @@ const COURSE_B = `Data protection ${Date.now()}`;
 let adminEmail: string;
 let cancelRow: { id: string; employee: string; course: string };
 let keepRow: { id: string; employee: string; course: string };
+/** An assignment with no deadline at all, for the card's "No due date". */
+let undatedRow: { id: string; employee: string; course: string };
 /** Exactly two assignments are past their due date and unfinished. */
 const EXPECTED_OVERDUE = 2;
 
@@ -28,10 +30,11 @@ test.beforeAll(async () => {
   const company = await createCompany("Assignments");
   adminEmail = company.admin.email;
 
-  const [ada, ben, cleo] = await Promise.all([
+  const [ada, ben, cleo, dara] = await Promise.all([
     createUser(company.id, "Ada Mensah"),
     createUser(company.id, "Ben Okafor"),
     createUser(company.id, "Cleo Raman"),
+    createUser(company.id, "Dara Obi"),
   ]);
   const courseA = await createCourse(company.id, COURSE_A);
   const courseB = await createCourse(company.id, COURSE_B);
@@ -40,6 +43,9 @@ test.beforeAll(async () => {
   const keepId = await assign(courseA, ben.id, { status: "in_progress", dueInDays: 21 });
   cancelRow = { id: cancelId, employee: ada.name, course: COURSE_A };
   keepRow = { id: keepId, employee: ben.name, course: COURSE_A };
+
+  const undatedId = await assign(courseB, dara.id);
+  undatedRow = { id: undatedId, employee: dara.name, course: COURSE_B };
 
   // Two overdue, plus two past-dated rows that must NOT count as overdue.
   await assign(courseB, cleo.id, { dueInDays: -6 });
@@ -157,6 +163,17 @@ test.describe("on a phone", () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test("an assignment with no deadline says so in words", async ({ page }) => {
+    await signInUI(page, adminEmail);
+    await open(page, "/admin/assignments");
+
+    /*
+     * A card has no "Due date" header above it, so a lone dash means nothing.
+     * The table keeps the dash, because there the column says what it is.
+     */
+    await expect(cardFor(page, undatedRow)).toContainText("No due date");
   });
 });
 

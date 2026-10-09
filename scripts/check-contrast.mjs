@@ -70,6 +70,12 @@ const CHECKS = [
   ["'Complete' tag text", "temper-blue", "surface", 4.5, ["temper-blue", 0.15]],
   ["'Not started' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
   ["'Cancelled' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
+  ["'Invited' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
+  ["'Active' tag text", "ink", "surface", 4.5, ["steel", 0.25]],
+
+  // Inline form errors and the failure toast: oxide on its own soft fill.
+  ["error text on its soft fill", "oxide", "surface", 4.5, ["oxide", 0.1]],
+  ["error text on a panel's soft fill", "oxide", "ground", 4.5, ["oxide", 0.1]],
 
   // Filled controls.
   ["text on a primary button", "on-temper-blue", "temper-blue", 4.5],

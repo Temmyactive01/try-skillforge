@@ -2,7 +2,7 @@
 // every temper stage and the overdue case, plus an empty company for the
 // getting-started state. Uses the same E2E naming and guarded cleanup as the tests,
 // so demo data and real companies are never touched.
-import { adminClient, createUser, testCompanyName, type Question } from "./helpers";
+import { adminClient, createUser, signedInClient, testCompanyName, type Question } from "./helpers";
 
 function must<T>(result: { data: T; error: { message: string } | null }, what: string) {
   if (result.error || result.data == null) {
@@ -61,6 +61,19 @@ const ASSIGNMENTS: [number, number, Status, number | null, number | null][] = [
   [2, 0, "cancelled", 5, null],
 ];
 
+/**
+ * Has this employee done anything that requires having signed in? Any status
+ * past "not started", or any recorded attempt. Derived from ASSIGNMENTS rather
+ * than listed by hand, so editing that table can't leave the two out of step.
+ */
+function hasStartedSomething(employeeIndex: number) {
+  return ASSIGNMENTS.some(
+    ([emp, , status, , score]) =>
+      emp === employeeIndex &&
+      (status === "in_progress" || status === "complete" || score !== null),
+  );
+}
+
 export type ScreenshotData = Awaited<ReturnType<typeof createScreenshotData>>;
 
 export async function createScreenshotData() {
@@ -90,9 +103,17 @@ export async function createScreenshotData() {
   const teamId = (name: string) => teams.find((t) => t.name === name)?.id ?? null;
 
   const employeeIds: string[] = [];
-  for (const e of EMPLOYEES) {
+  for (const [index, e] of EMPLOYEES.entries()) {
     const user = await createUser(company.id, e.name, "employee", teamId(e.team));
     employeeIds.push(user.id);
+    /*
+     * "Invited" means an account nobody has signed in to yet, which is what
+     * createUser leaves behind. Anyone the table above gives progress to must
+     * therefore be signed in once: you cannot start a course, let alone pass
+     * its quiz, without signing in, so "Invited" beside a completion figure is
+     * a state the real app can never produce.
+     */
+    if (hasStartedSomething(index)) await signedInClient(user.email);
   }
 
   const courseIds: string[] = [];

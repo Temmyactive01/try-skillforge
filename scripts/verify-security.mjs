@@ -70,12 +70,17 @@ try {
   const triggers = await sql`
     select tgname, c.relname, n.nspname from pg_trigger t
     join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace
-    where not t.tgisinternal and tgname in ('restrict_assignment_user_update', 'on_auth_user_created')`;
+    where not t.tgisinternal and tgname in (
+      'restrict_assignment_user_update', 'restrict_admin_profile_update', 'on_auth_user_created')`;
   check(
     triggers.some(
       (t) => t.tgname === "restrict_assignment_user_update" && t.relname === "assignments",
     ),
     "trigger stops employees changing anything but status on their assignments",
+  );
+  check(
+    triggers.some((t) => t.tgname === "restrict_admin_profile_update" && t.relname === "profiles"),
+    "trigger holds an admin to changing only an employee's team",
   );
   check(
     !triggers.some((t) => t.tgname === "on_auth_user_created"),
@@ -173,9 +178,72 @@ if (signInError) {
     );
   }
   {
-    await browser.from("profiles").update({ role: "admin" }).eq("id", me);
-    const { data } = await admin.from("profiles").select("role").eq("id", me).single();
-    check(data.role === "employee", "cannot promote themselves to admin");
+    /*
+     * The self-update path. "update own profile" pins role and company_id;
+     * the restrict_admin_profile_update trigger pins everything except name,
+     * which is what closed employees rewriting their own profiles.email or
+     * filing themselves under any team they liked.
+     */
+    const before = (
+      await admin
+        .from("profiles")
+        .select("name, email, role, company_id, team_id")
+        .eq("id", me)
+        .single()
+    ).data;
+
+    // Somewhere else to try to go: another company, with a team of its own.
+    const { data: elsewhere } = await admin
+      .from("companies")
+      .insert({ name: "Self-update check (temporary)" })
+      .select("id")
+      .single();
+    const { data: elsewhereTeam } = await admin
+      .from("teams")
+      .insert({ company_id: elsewhere.id, name: "Another company's team" })
+      .select("id")
+      .single();
+    // And a team of their own company's, to prove the lock isn't just about companies.
+    const { data: ownTeam } = await admin
+      .from("teams")
+      .insert({ company_id: myCompany, name: "Self-update check (temporary)" })
+      .select("id")
+      .single();
+
+    const stored = async () =>
+      (
+        await admin
+          .from("profiles")
+          .select("name, email, role, company_id, team_id")
+          .eq("id", me)
+          .single()
+      ).data;
+
+    try {
+      for (const [what, patch, field] of [
+        ["promote themselves to admin", { role: "admin" }, "role"],
+        ["move themselves to another company", { company_id: elsewhere.id }, "company_id"],
+        ["change their own email", { email: "hijacked@example.invalid" }, "email"],
+        ["move themselves into another team", { team_id: ownTeam.id }, "team_id"],
+        ["file themselves under another company's team", { team_id: elsewhereTeam.id }, "team_id"],
+      ]) {
+        const { error } = await browser.from("profiles").update(patch).eq("id", me);
+        const after = await stored();
+        check(Boolean(error) && after[field] === before[field], `cannot ${what}`);
+      }
+
+      // The one thing they may change about themselves.
+      const renamed = await browser
+        .from("profiles")
+        .update({ name: before.name })
+        .eq("id", me)
+        .select("id");
+      check(!renamed.error, "can still change their own name");
+    } finally {
+      await admin.from("profiles").update(before).eq("id", me);
+      await admin.from("teams").delete().eq("id", ownTeam.id);
+      await admin.from("companies").delete().eq("id", elsewhere.id);
+    }
   }
   {
     const { data: mine } = await browser.from("assignments").select("id").limit(1).single();
@@ -255,6 +323,128 @@ if (signInError) {
     await admin.from("companies").delete().eq("id", other.id);
   }
   await browser.auth.signOut();
+}
+
+// 4. Signed-in demo admin ----------------------------------------------------
+// An admin is still a signed-in user: the answer sheet is closed to them too
+// (which is why getCourseForEdit exists), and the only thing they may change on
+// a colleague's profile is which team it is in.
+console.log("Signed-in admin");
+{
+  const browser = publicClient();
+  const { data: signIn, error } = await browser.auth.signInWithPassword({
+    email: DEMO.admin.email,
+    password: DEMO.password(),
+  });
+  if (error) {
+    console.log(`  skip  could not sign in as ${DEMO.admin.email} (run npm run seed first)`);
+  } else {
+    const adminId = signIn.user.id;
+    const { data: adminProfile } = await admin
+      .from("profiles")
+      .select("company_id")
+      .eq("id", adminId)
+      .single();
+    const companyId = adminProfile.company_id;
+    console.log(`  (signed in as ${DEMO.admin.email})`);
+
+    const answers = await browser.from("quiz_questions").select("correct_answer");
+    check(denied(answers.error), "an admin cannot SELECT quiz_questions.correct_answer either");
+
+    const { data: colleague } = await admin
+      .from("profiles")
+      .select("id, name, email, role, team_id, company_id")
+      .eq("company_id", companyId)
+      .eq("role", "employee")
+      .limit(1)
+      .single();
+
+    // A scratch team to move them into, plus another company whose people and
+    // teams must stay out of reach. Both are removed again below.
+    const { data: scratch } = await admin
+      .from("teams")
+      .insert({ company_id: companyId, name: "Policy check (temporary)" })
+      .select("id")
+      .single();
+    const { data: other } = await admin
+      .from("companies")
+      .insert({ name: "Policy check (temporary)" })
+      .select("id")
+      .single();
+
+    // Every column the loop below compares has to be in this select, or the
+    // comparison reads undefined and the check fails against a rule that holds.
+    const stored = async (id) =>
+      (
+        await admin
+          .from("profiles")
+          .select("name, email, role, team_id, company_id")
+          .eq("id", id)
+          .single()
+      ).data;
+
+    try {
+      const { data: otherTeam } = await admin
+        .from("teams")
+        .insert({ company_id: other.id, name: "Other company's team" })
+        .select("id")
+        .single();
+      const { data: outsider } = await admin.auth.admin.createUser({
+        email: `policy-check-${Date.now()}@policy.invalid`,
+        password: DEMO.password(),
+        email_confirm: true,
+      });
+      await admin.from("profiles").insert({
+        id: outsider.user.id,
+        company_id: other.id,
+        name: "Outsider",
+        email: outsider.user.email,
+        role: "employee",
+      });
+
+      const moved = await browser
+        .from("profiles")
+        .update({ team_id: scratch.id })
+        .eq("id", colleague.id);
+      check(
+        !moved.error && (await stored(colleague.id)).team_id === scratch.id,
+        "an admin can move an employee between teams",
+      );
+
+      for (const [what, patch, field] of [
+        ["rename an employee", { name: "Renamed by an admin" }, "name"],
+        ["change an employee's email", { email: "rewritten@example.invalid" }, "email"],
+        ["promote an employee to admin", { role: "admin" }, "role"],
+        ["move an employee to another company", { company_id: other.id }, "company_id"],
+      ]) {
+        const attempt = await browser.from("profiles").update(patch).eq("id", colleague.id);
+        const after = await stored(colleague.id);
+        check(Boolean(attempt.error) && after[field] === colleague[field], `cannot ${what}`);
+      }
+
+      const intoOther = await browser
+        .from("profiles")
+        .update({ team_id: otherTeam.id })
+        .eq("id", colleague.id);
+      check(
+        Boolean(intoOther.error) && (await stored(colleague.id)).team_id === scratch.id,
+        "cannot file an employee under another company's team",
+      );
+
+      await browser.from("profiles").update({ team_id: scratch.id }).eq("id", outsider.user.id);
+      check(
+        (await stored(outsider.user.id)).team_id === null,
+        "cannot touch another company's employee at all",
+      );
+    } finally {
+      await admin.from("profiles").update({ team_id: colleague.team_id }).eq("id", colleague.id);
+      await admin.from("teams").delete().eq("id", scratch.id);
+      const { data: strays } = await admin.from("profiles").select("id").eq("company_id", other.id);
+      for (const stray of strays ?? []) await admin.auth.admin.deleteUser(stray.id);
+      await admin.from("companies").delete().eq("id", other.id);
+    }
+    await browser.auth.signOut();
+  }
 }
 
 console.log(failures ? `\n${failures} check(s) failed.` : "\nAll security checks passed.");

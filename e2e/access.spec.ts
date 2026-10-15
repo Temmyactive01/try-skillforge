@@ -103,11 +103,11 @@ test.describe("an employee can't use admin features", () => {
     "/admin/assignments",
     "/admin/employees",
   ]) {
-    test(`opening ${path} sends them to My Learning`, async ({ page }) => {
+    test(`opening ${path} sends them to My training`, async ({ page }) => {
       await signInUI(page, a.employee.email);
       await open(page, path);
       await page.waitForURL("**/employee/home");
-      await expect(page.getByRole("heading", { name: "My Learning" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "My training" })).toBeVisible();
     });
   }
 

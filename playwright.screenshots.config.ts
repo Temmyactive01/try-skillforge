@@ -25,6 +25,8 @@ const PHASE_3_SCREENS = [
   "result-passed",
   "login",
   "signup",
+  "forgot-password",
+  "forgot-password-sent",
   "set-password-invite",
   "set-password-reset",
   "set-password-expired",

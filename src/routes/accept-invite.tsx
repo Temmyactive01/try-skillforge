@@ -8,7 +8,10 @@ import {
   type AuthError,
 } from "@supabase/supabase-js";
 import { createTabSessionClient, supabase } from "@/integrations/supabase/client";
-import { PasswordField } from "@/components/PasswordField";
+import { AuthCard, authLink } from "@/components/AuthCard";
+import { PasswordField } from "@/components/AuthField";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/accept-invite")({
   head: () => ({
@@ -81,14 +84,15 @@ function clearLinkSession() {
   pendingCheck = undefined;
 }
 
+/** A dead link says what happened and who can give them a working one. */
 function expiredMessage(kind: LinkKind) {
   if (kind === "recovery") {
-    return "This reset link has expired or was already used. Request a new one from the login page.";
+    return "This reset link has expired or has already been used. Reset links work once and last an hour. Request a new one below.";
   }
   if (kind === "invite") {
-    return "This invite link has expired or was already used. Ask your administrator to send you a new invite.";
+    return "This invite link has expired or has already been used. Ask your admin to send you a new invite.";
   }
-  return "This link has expired or was already used. Request a new reset link from the login page, or ask your administrator for a new invite.";
+  return "This link has expired or has already been used. Request a new reset link below, or ask your admin for a new invite.";
 }
 
 function isLinkDead(error: AuthError) {
@@ -100,22 +104,22 @@ function isLinkDead(error: AuthError) {
 
 function friendlyError(error: AuthError) {
   if (isAuthWeakPasswordError(error)) {
-    return "That password is too easy to guess. Use at least 8 characters with a mix of letters, numbers and symbols.";
+    return "That password is too easy to guess. Use at least 8 characters, with a mix of letters, numbers and symbols.";
   }
   if (error.code === "same_password") {
     return "Your new password must be different from your current one.";
   }
   if (isAuthRetryableFetchError(error)) {
-    return "We couldn't reach the server. Check your internet connection and try again.";
+    return "Couldn't reach the server. Check your connection and try again.";
   }
-  return "We couldn't save your password. Please try again.";
+  return "Your password wasn't saved. Try again.";
 }
 
 function AcceptInvitePage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ password?: string; confirm?: string; form?: string }>({});
   const [loading, setLoading] = useState(false);
   const [link, setLink] = useState<LinkCheck | null>(null);
 
@@ -136,25 +140,23 @@ function AcceptInvitePage() {
       .eq("id", userId)
       .maybeSingle();
     if (pErr || !profile) {
-      setError("Your account has no profile. Contact your administrator.");
+      setErrors({ form: "Your account has no profile. Contact your administrator." });
       await supabase.auth.signOut();
       return;
     }
     navigate({ to: profile.role === "admin" ? "/admin/dashboard" : "/employee/home" });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     if (!link) return;
-    setError(null);
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
+
+    const found: typeof errors = {};
+    if (password.length < 8) found.password = "Use at least 8 characters.";
+    if (confirm !== password) found.confirm = "Both passwords must match.";
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
     setLoading(true);
     const client = getLinkClient();
     const { error: uErr } = await client.auth.updateUser({ password });
@@ -164,7 +166,7 @@ function AcceptInvitePage() {
         clearLinkSession();
         setLink({ valid: false, kind: link.kind });
       } else {
-        setError(friendlyError(uErr));
+        setErrors({ form: friendlyError(uErr) });
       }
       return;
     }
@@ -181,74 +183,66 @@ function AcceptInvitePage() {
       : { error: true };
     setLoading(false);
     if (!session || sErr) {
-      setError("Your password was saved. Please sign in with your new password.");
+      setErrors({ form: "Your password was saved. Sign in with your new password." });
       return;
     }
     await routeByRole(session.user.id);
   }
 
+  const recovery = link?.kind === "recovery";
+  const title = recovery ? "Choose a new password" : "Set your password";
+  const description = recovery
+    ? "Pick a new password for your SkillForge account."
+    : "Pick a password, and your SkillForge account is ready.";
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
-        <h1 className="mb-1 font-serif text-2xl font-semibold text-foreground">SkillForge</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
-          {link?.kind === "recovery"
-            ? "Choose a new password for your SkillForge account."
-            : "Choose a password for your SkillForge account."}
-        </p>
+    <AuthCard
+      title={title}
+      description={description}
+      footer={
+        <Link to="/login" className={authLink}>
+          Back to sign in
+        </Link>
+      }
+    >
+      {!link ? (
+        <p className="text-small text-ink-muted">Checking your link…</p>
+      ) : !link.valid ? (
+        <div className="space-y-4">
+          <Alert variant="error">{expiredMessage(link.kind)}</Alert>
+          {link.kind !== "invite" && (
+            <Button asChild className="w-full">
+              <Link to="/forgot-password">Request a new link</Link>
+            </Button>
+          )}
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <PasswordField
+            id="password"
+            label="New password"
+            autoComplete="new-password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+            hint="At least 8 characters."
+          />
+          <PasswordField
+            id="confirm"
+            label="Confirm password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={setConfirm}
+            error={errors.confirm}
+          />
 
-        {!link ? (
-          <p className="text-sm text-muted-foreground">Verifying your link…</p>
-        ) : !link.valid ? (
-          <>
-            <div
-              role="alert"
-              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {expiredMessage(link.kind)}
-            </div>
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              <Link to="/login" className="font-medium text-primary hover:underline">
-                Go to sign in
-              </Link>
-            </p>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <PasswordField
-              id="password"
-              label="New password"
-              value={password}
-              onChange={setPassword}
-              autoComplete="new-password"
-            />
-            <PasswordField
-              id="confirm"
-              label="Confirm password"
-              value={confirm}
-              onChange={setConfirm}
-              autoComplete="new-password"
-            />
+          {errors.form && <Alert variant="error">{errors.form}</Alert>}
 
-            {error && (
-              <div
-                role="alert"
-                className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-            >
-              {loading ? "Saving…" : "Set password & continue"}
-            </button>
-          </form>
-        )}
-      </div>
-    </main>
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Saving…" : "Set password and continue"}
+          </Button>
+        </form>
+      )}
+    </AuthCard>
   );
 }

@@ -44,10 +44,12 @@ test("Forgot password asks for a link to the set-password page (no email sent)",
   });
 
   await open(page, "/login");
+  await page.getByRole("link", { name: "Forgot your password?" }).click();
+  await page.waitForURL("**/forgot-password");
   await page.locator("#email").fill(user.email);
-  await page.getByRole("button", { name: "Forgot password?" }).click();
-  await expect(page.getByRole("status")).toHaveText(
-    "If an account exists for this email, a password reset link has been sent.",
+  await page.getByRole("button", { name: "Send reset link" }).click();
+  await expect(page.getByRole("status").first()).toContainText(
+    `If an account exists for ${user.email}, a reset link is on its way.`,
   );
   expect(requestedEmail).toBe(user.email);
   expect(redirectTo).toMatch(/\/accept-invite\?type=recovery$/);
@@ -56,7 +58,7 @@ test("Forgot password asks for a link to the set-password page (no email sent)",
 test("a fresh reset link sets a new password", async ({ page, baseURL }) => {
   const user = await newEmployee();
   await open(page, await recoveryLink(user.email, baseURL!));
-  await expect(page.getByText("Choose a new password for your SkillForge account.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a new password" })).toBeVisible();
   expect(page.url()).not.toContain("access_token");
 
   await expect(page.locator("#password")).toHaveAttribute("type", "password");
@@ -110,11 +112,13 @@ test("an already-used reset link shows a plain message and no form", async ({
   try {
     const second = await otherContext.newPage();
     await open(second, link);
-    await expect(second.getByRole("alert")).toHaveText(
-      "This reset link has expired or was already used. Request a new one from the login page.",
+    await expect(second.getByRole("alert")).toContainText(
+      "This reset link has expired or has already been used.",
     );
     await expect(second.locator("#password")).toHaveCount(0);
-    await expect(second.getByRole("link", { name: "Go to sign in" })).toBeVisible();
+    // A dead link has to offer a way out, not just bad news.
+    await expect(second.getByRole("link", { name: "Request a new link" })).toBeVisible();
+    await expect(second.getByRole("link", { name: "Back to sign in" })).toBeVisible();
   } finally {
     await otherContext.close();
   }

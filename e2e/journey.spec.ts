@@ -41,11 +41,14 @@ test.afterAll(async () => {
 const assignmentRow = (page: Page) =>
   page.getByRole("row").filter({ hasText: employeeName }).filter({ hasText: courseTitle });
 
+/** Walks the quiz one question at a time, then hands it in from the summary. */
 async function answerQuiz(page: Page, pick: (q: (typeof DEFAULT_QUESTIONS)[number]) => string) {
   for (const q of DEFAULT_QUESTIONS) {
-    await page.getByLabel(pick(q), { exact: true }).check();
+    await page.getByText(q.text).first().waitFor();
+    await page.getByRole("radio", { name: pick(q), exact: true }).check();
+    await page.getByRole("button", { name: "Next" }).click();
   }
-  await page.getByRole("button", { name: "Submit Quiz" }).click();
+  await page.getByRole("button", { name: "Submit quiz" }).click();
 }
 
 test("a new company signs up and lands on the admin dashboard", async () => {
@@ -84,11 +87,11 @@ test("the admin creates a team and invites an employee (no email sent)", async (
 
 test("the employee accepts the invite and sets a password", async ({ baseURL }) => {
   await open(employee, await inviteLink(employeeEmail, baseURL!));
-  await expect(employee.getByText("Choose a password for your SkillForge account.")).toBeVisible();
+  await expect(employee.getByRole("heading", { name: "Set your password" })).toBeVisible();
   await fillSetPasswordForm(employee, PASSWORD);
   await employee.waitForURL("**/employee/home");
-  await expect(employee.getByRole("heading", { name: "My Learning" })).toBeVisible();
-  await expect(employee.getByText("No courses assigned yet.")).toBeVisible();
+  await expect(employee.getByRole("heading", { name: "My training" })).toBeVisible();
+  await expect(employee.getByText("No training assigned yet.")).toBeVisible();
 
   await admin.reload({ waitUntil: "networkidle" });
   await expect(admin.getByRole("row").filter({ hasText: employeeEmail })).toContainText("Active");
@@ -134,48 +137,49 @@ test("the admin creates a course with a quiz and assigns it", async () => {
 
 test("the employee fails the quiz, then retakes it and passes", async () => {
   await open(employee, "/employee/home");
-  await employee.getByRole("link").filter({ hasText: courseTitle }).click();
-  await employee.getByRole("button", { name: "I've reviewed the content" }).click();
-  await employee.getByRole("button", { name: "Take Quiz" }).click();
+  await employee
+    .getByRole("link", { name: new RegExp(`(Start|Continue|Review) ${courseTitle}`) })
+    .click();
+  await employee.getByRole("button", { name: "Start the quiz" }).click();
 
   // Every answer wrong.
   await answerQuiz(employee, (q) => q.options.find((o) => o !== q.correct)!);
-  await expect(employee.getByRole("heading", { name: "Quiz Not Passed" })).toBeVisible();
+  await expect(employee.getByRole("heading", { name: "You didn't pass this time" })).toBeVisible();
   await expect(employee.getByText(/You scored 0%/)).toBeVisible();
 
   await open(admin, "/admin/assignments");
   await expect(assignmentRow(admin)).toContainText("In progress");
 
-  await employee.getByRole("button", { name: "Retake Quiz" }).click();
+  await employee.getByRole("button", { name: "Retake the quiz" }).click();
   await answerQuiz(employee, (q) => q.correct);
-  await expect(employee.getByRole("heading", { name: "Quiz Passed" })).toBeVisible();
+  await expect(employee.getByRole("heading", { name: "You passed" })).toBeVisible();
   await expect(employee.getByText(/You scored 100%/)).toBeVisible();
 
-  await employee
-    .getByRole("button", { name: "Back to my learning" })
-    .or(employee.getByRole("link", { name: "Back to my learning" }))
-    .click();
+  await employee.getByRole("button", { name: "Back to my training" }).click();
   await employee.waitForURL("**/employee/home");
-  await expect(employee.getByRole("link").filter({ hasText: courseTitle })).toContainText(
-    /Completed\s*·\s*100%/,
-  );
+  await expectComplete(employee);
 });
 
+/** The item carries a status tag and the best score on the temper scale. */
+async function expectComplete(page: Page) {
+  const item = page.getByRole("listitem").filter({ hasText: courseTitle });
+  await expect(item).toContainText("Complete");
+  await expect(item).toContainText("100%");
+}
+
 test("a practice retake after passing keeps the course Complete and the best score", async () => {
-  await employee.getByRole("link").filter({ hasText: courseTitle }).click();
-  await employee.getByRole("button", { name: "Take Quiz" }).click();
+  await employee
+    .getByRole("link", { name: new RegExp(`(Start|Continue|Review) ${courseTitle}`) })
+    .click();
+  await employee.getByRole("button", { name: "Retake the quiz" }).click();
 
   // A worse attempt (every answer wrong) is only practice.
   await answerQuiz(employee, (q) => q.options.find((o) => o !== q.correct)!);
-  await expect(employee.getByRole("heading", { name: "Quiz Not Passed" })).toBeVisible();
-  await expect(
-    employee.getByText(/You already passed, so the course stays complete\./),
-  ).toBeVisible();
+  await expect(employee.getByRole("heading", { name: "You didn't pass this time" })).toBeVisible();
+  await expect(employee.getByText(/Retaking it is for practice/)).toBeVisible();
 
   await open(employee, "/employee/home");
-  await expect(employee.getByRole("link").filter({ hasText: courseTitle })).toContainText(
-    /Completed\s*·\s*100%/,
-  );
+  await expectComplete(employee);
 });
 
 test("the admin sees the assignment as Complete with the best score", async () => {

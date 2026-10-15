@@ -38,6 +38,8 @@ type Screen =
   | "result-passed"
   | "login"
   | "signup"
+  | "forgot-password"
+  | "forgot-password-sent"
   | "set-password-invite"
   | "set-password-reset"
   | "set-password-expired";
@@ -238,7 +240,11 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
       }
 
       // --- Auth: nobody signed in ------------------------------------------
-      if (wanted.has("login") || wanted.has("signup")) {
+      if (
+        ["login", "signup", "forgot-password", "forgot-password-sent"].some((s) =>
+          wanted.has(s as Screen),
+        )
+      ) {
         await withPage(browser, theme, vp, async (page) => {
           if (wanted.has("login")) {
             await open(page, "/login");
@@ -249,6 +255,26 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
             await open(page, "/signup");
             await page.locator("#confirm").waitFor();
             await shoot(page, `signup-${suffix}`);
+          }
+          if (wanted.has("forgot-password")) {
+            await open(page, "/forgot-password");
+            await page.locator("#email").waitFor();
+            await shoot(page, `forgot-password-${suffix}`);
+          }
+          if (wanted.has("forgot-password-sent")) {
+            /*
+             * The confirmation, without sending anything. Supabase's recover
+             * call is answered here instead of reaching it — the suite never
+             * sends real email, and a screenshot is no reason to start.
+             */
+            await page.route(`${process.env.SUPABASE_URL}/auth/v1/recover**`, (route) =>
+              route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+            );
+            await open(page, "/forgot-password");
+            await page.locator("#email").fill("ada@northwind.example.com");
+            await page.getByRole("button", { name: "Send reset link" }).click();
+            await page.getByRole("status").first().waitFor();
+            await shoot(page, `forgot-password-sent-${suffix}`);
           }
         });
       }

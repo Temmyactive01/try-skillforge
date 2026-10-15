@@ -9,7 +9,7 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 - **A date bug closed that affected the admin pages as well.** Due dates were read as midnight UTC rather than as calendar days, so west of Greenwich every date in the app read a day early.
 - The quiz is now **one question at a time at every width**, with a step to check your answers before handing them in, and a warning before leaving with answers unsubmitted.
 - **Forgot password has a page of its own** (`/forgot-password`) instead of a muted link on the sign-in form that failed when the field above it was empty.
-- **115 end-to-end tests pass** (65 before), and the suite got **faster**: 12.4 minutes against 14.7 for the smaller one.
+- **118 end-to-end tests pass** (65 before), and the suite got faster per test: 11–15 minutes for nearly twice as many, against 14.7 for the 65.
 - Work is on **`redesign-phase-3`**, 9 commits, **not merged and not pushed**.
 
 ## Session 6: 2026-10-15 (redesign, phase 3)
@@ -24,7 +24,7 @@ What has been done, why, what broke and what's next. Newest session first. Updat
 6. **Rebuilt every sign-in page** on a shared `AuthCard`, with per-field validation, and gave forgot password its own route.
 7. **Closed the answer-sheet leak** in `submitQuiz`.
 8. **Fixed the UTC date bug** in the shared helpers, which also corrects the admin pages.
-9. **Added 54 tests** (30 end-to-end, 24 unit) and **made the suite faster** while it grew.
+9. **Added 57 tests** (33 end-to-end, 24 unit) and **made the suite faster** while it grew.
 
 ### Key decisions and why
 
@@ -80,7 +80,7 @@ The suite was 14.7 minutes for 65 tests, which is at the edge of the 15-minute l
 
 `workers` stays at 1: parallelism is what would risk Supabase's auth rate limits, which is why the run was made serial in the first place.
 
-**115 tests in 12.4 minutes**, against 65 in 14.7.
+**118 tests in 11–15 minutes** depending on what else the machine is doing, against 65 in 14.7.
 
 ### Commits
 
@@ -94,20 +94,22 @@ The suite was 14.7 minutes for 65 tests, which is at the edge of the 15-minute l
 | `700997d` | The two suite speed-ups                                                                                        |
 | `1ca1357` | The assertion budget takes on what `open()` used to absorb; `focusFirstError` moves to `lib`                   |
 | `9ec35bd` | The grader stops handing the answer sheet to failed attempts                                                   |
+| `98ca726` | The progress log and CLAUDE.md                                                                                 |
+| `b4b29b4` | The four fixes from your review                                                                                |
 
 ### Checks at the end of the session
 
-| Check                                   | Result                                                                                                |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `npm run test:e2e`                      | **115 passed** (65 before this session), in **10.9 minutes** — against 14.7 for the smaller suite     |
-| `npm run check:contrast`                | **all passed** — 60 checks across both themes (56 before)                                             |
-| `npx tsc --noEmit`                      | clean                                                                                                 |
-| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                 |
-| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                   |
-| `npm run lint`                          | 367 problems, down from 399 on `main`; **no errors and no warnings in any file this session touched** |
-| `npm run verify:security`               | **all passed** — 55 checks                                                                            |
-| `npm run test:mcp`                      | all passed                                                                                            |
-| secret scan                             | clean — no secret-shaped strings anywhere in the branch; `.env.local` has never been tracked          |
+| Check                                   | Result                                                                                                                                   |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run test:e2e`                      | **118 passed** (65 before this session), in 11–15 minutes depending on what else the machine is doing — against 14.7 for the suite of 65 |
+| `npm run check:contrast`                | **all passed** — 60 checks across both themes (56 before)                                                                                |
+| `npx tsc --noEmit`                      | clean                                                                                                                                    |
+| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                                                    |
+| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                                                      |
+| `npm run lint`                          | 367 problems, down from 399 on `main`; **no errors and no warnings in any file this session touched**                                    |
+| `npm run verify:security`               | **all passed** — 55 checks                                                                                                               |
+| `npm run test:mcp`                      | all passed                                                                                                                               |
+| secret scan                             | clean — no secret-shaped strings anywhere in the branch; `.env.local` has never been tracked                                             |
 
 Two failures were seen on the way and both were understood rather than retried: a `journey.spec.ts` assertion that ran out of budget under full-suite load (fixed in `1ca1357`), and one 26-second timeout on the first request after editing `quiz.functions.ts`, which was Vite transforming the changed module and passed at 14 seconds on a re-run. Worth knowing if the suite ever looks flaky immediately after a change.
 
@@ -116,6 +118,17 @@ Two failures were seen on the way and both were understood rather than retried: 
 `docs/screenshots/before-phase-3` (22, light only) and `docs/screenshots/phase-3` (52: the training list with items and empty, the course page, the quiz mid-question, both results, and all six auth screens — sign in, sign up, forgot password and its confirmation, set password for an invite and for a reset, and a link that has expired — each at 1440x900 and 375x812 in both themes).
 
 The quiz shot is a viewport capture rather than a full-page one, because mid-question on a phone is the thing it exists to show.
+
+### Your phase-3 review, and what changed because of it
+
+You found four things. All four were real, and one of them turned out to be hiding a second problem behind it.
+
+1. **"New to SkillForge? Create an account" on the sign-in page** would have sent invited employees to sign up — which builds them a company of their own and leaves them the admin of nothing, with their real invite still unused. The two paths are now named separately: "Setting up SkillForge for your company?" leads to signup, and a line underneath tells everyone else to use the invite link in their email. The signup page is retitled "Create a company account" and says what it makes.
+2. **The score bar is labelled "Best score" on the page**, not only to a screen reader. 50% against an In progress course could otherwise read as being halfway through the course rather than as the best a quiz attempt has managed.
+3. **The forgot-password confirmation is now word for word the same whatever the address was**, and no longer repeats the address back. Checking this turned up a second oracle in the error path: Supabase answers the same whether or not an account exists, but its _send rate limit_ can only be tripped by an address it really emails, so surfacing that error would have said "this one exists". Only a failure to reach the server at all is reported now — that reveals nothing, because the request never arrived, and silently claiming success there would be a worse lie than the one this avoids. Anything else is logged to the console and shows the confirmation. A test sends a real address and an invented one down the same path and compares the rendered text character for character.
+4. **Finished training says "Completed 14 Oct 2026" instead of the due date.** No backend change was needed: `quiz_results.completed_at` already exists and employees can already read their own rows. It is the **first** passing attempt, not the latest — completion is when they showed they knew the material, and practising afterwards doesn't move that day. An assignment marked complete with no passing attempt behind it, which the app can't produce but older data might, keeps the due date rather than showing a gap.
+
+One residual that cannot be fixed in the page: **timing**. A reset for a real address takes longer, because an email actually goes out. That is the provider's behaviour, not this form's, and no wording closes it.
 
 ### What phase 3 did not cover
 

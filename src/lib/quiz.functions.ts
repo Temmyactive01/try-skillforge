@@ -49,25 +49,15 @@ export const submitQuiz = createServerFn({ method: "POST" })
       throw new Response("No quiz questions for this course", { status: 400 });
     }
 
+    /*
+     * Grade first, and build the review afterwards, so that whether the
+     * answers may be revealed is settled before anything is written down to
+     * send back. Building the full review and then stripping it would work
+     * today and leak the day someone returns it one line earlier.
+     */
     let correct = 0;
-    const review: {
-      id: string;
-      question_text: string;
-      your_answer: string | null;
-      correct_answer: string;
-      is_correct: boolean;
-    }[] = [];
     for (const q of questions) {
-      const given = data.answers[q.id] ?? null;
-      const isCorrect = given === q.correct_answer;
-      if (isCorrect) correct++;
-      review.push({
-        id: q.id,
-        question_text: q.question_text,
-        your_answer: given,
-        correct_answer: q.correct_answer,
-        is_correct: isCorrect,
-      });
+      if ((data.answers[q.id] ?? null) === q.correct_answer) correct++;
     }
     const score = Math.round((correct / questions.length) * 100);
     const passed = score >= PASS_MARK;
@@ -90,6 +80,34 @@ export const submitQuiz = createServerFn({ method: "POST" })
         .eq("id", assignment.id);
       if (uErr) throw new Error(uErr.message);
     }
+
+    /*
+     * The correct answers go back only to someone who has already earned
+     * them: this attempt passed, or the assignment was already complete, in
+     * which case they were shown the answers when they passed.
+     *
+     * A failed attempt still learns which questions it got wrong — that is
+     * the half worth having — but not what the right answer was, so failing
+     * on purpose is no longer a way to read the answer sheet. Hiding it in
+     * the page would not have been enough: it would still have arrived in the
+     * browser, where anyone can read it.
+     *
+     * `assignment.status` here is the status *before* this attempt, read from
+     * the database at the top of this handler under the caller's own RLS. The
+     * request body carries only an assignment id and the answers, so nothing
+     * the browser sends can widen what comes back.
+     */
+    const reveal = passed || assignment.status === "complete";
+    const review = questions.map((q) => {
+      const given = data.answers[q.id] ?? null;
+      return {
+        id: q.id,
+        question_text: q.question_text,
+        your_answer: given,
+        is_correct: given === q.correct_answer,
+        ...(reveal ? { correct_answer: q.correct_answer } : {}),
+      };
+    });
 
     return { score, passed, review, status };
   });

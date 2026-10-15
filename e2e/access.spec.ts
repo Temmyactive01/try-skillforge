@@ -182,10 +182,16 @@ test.describe("an employee can't use admin features", () => {
 });
 
 /*
- * getCourseForEdit is the only path that returns quiz_questions.correct_answer,
- * which is revoked from every signed-in user at the column level. It reads with
- * the service role, so its two guards — admin only, and the course must come
- * back from an RLS-scoped read as the caller — are the whole boundary.
+ * getCourseForEdit reads quiz_questions.correct_answer, which is revoked from
+ * every signed-in user at the column level. It reads with the service role, so
+ * its two guards — admin only, and the course must come back from an
+ * RLS-scoped read as the caller — are the whole boundary.
+ *
+ * It is not the only path that returns an answer: submitQuiz returns them too,
+ * to an attempt that passed. This comment used to claim it was the only one,
+ * and that claim is how submitQuiz came to hand the answers to failed attempts
+ * as well. "a failed attempt is not given the correct answers" in
+ * employee.spec.ts guards the other path.
  *
  * These call it the way the app does: from a signed-in page, so the real auth
  * middleware attaches the real token.

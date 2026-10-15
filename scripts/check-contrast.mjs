@@ -72,6 +72,13 @@ const CHECKS = [
   ["'Cancelled' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
   ["'Invited' tag text", "ink-muted", "surface", 4.5, ["steel", 0.4]],
   ["'Active' tag text", "ink", "surface", 4.5, ["steel", 0.25]],
+  /*
+   * "Due in 2 days" is the one deadline on a temper colour (DESIGN.md gives
+   * stage 1 the second meaning "due soon"). Straw is a fill and not a text
+   * colour in the light theme, so the word stays ink on a straw tint.
+   */
+  ["'Due soon' tag text", "ink", "surface", 4.5, ["temper-straw", 0.2]],
+  ["'Due soon' tag text on the page", "ink", "ground", 4.5, ["temper-straw", 0.2]],
 
   // Inline form errors and the failure toast: oxide on its own soft fill.
   ["error text on its soft fill", "oxide", "surface", 4.5, ["oxide", 0.1]],

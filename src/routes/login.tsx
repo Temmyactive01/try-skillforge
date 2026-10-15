@@ -1,7 +1,11 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, GraduationCap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { AuthCard, authLink } from "@/components/AuthCard";
+import { PasswordField, TextField } from "@/components/AuthField";
+import { focusFirstError } from "@/lib/forms";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => ({
@@ -16,24 +20,20 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+/** Only ever send people to a path on this site, never to a URL someone supplied. */
 function safeNext(next: string | undefined | null): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
   return next;
 }
 
-
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [resetting, setResetting] = useState(false);
-  const [resetMessage, setResetMessage] = useState<string | null>(null);
-  const [resetError, setResetError] = useState<string | null>(null);
-
-  const { next } = Route.useSearch();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -54,150 +54,104 @@ function LoginPage() {
       .eq("id", userId)
       .maybeSingle();
     if (pErr || !profile) {
-      setError("Your account has no profile. Contact your administrator.");
+      setErrors({ form: "Your account has no profile. Contact your administrator." });
       await supabase.auth.signOut();
       return;
     }
     navigate({ to: profile.role === "admin" ? "/admin/dashboard" : "/employee/home" });
   }
 
-  async function handleForgotPassword() {
-    setResetError(null);
-    setResetMessage(null);
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
 
-    const trimmed = email.trim();
-    if (!trimmed) {
-      setResetError("Please enter your email address first.");
+    // Checked here so an empty field is answered instantly, rather than by a
+    // round trip that comes back saying the password was wrong.
+    const found: typeof errors = {};
+    if (!email.trim()) found.email = "Enter the email address you were invited with.";
+    if (!password) found.password = "Enter your password.";
+    setErrors(found);
+    if (Object.keys(found).length > 0) {
+      focusFirstError(["email", "password"], found);
       return;
     }
 
-    setResetting(true);
-    // The emailed link signs the user in on /accept-invite, which asks for a new password.
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: `${window.location.origin}/accept-invite?type=recovery`,
-    });
-    setResetting(false);
-
-    if (resetErr) {
-      setResetError("Unable to send reset email. Please try again.");
-      return;
-    }
-
-    setResetMessage("If an account exists for this email, a password reset link has been sent.");
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
     setLoading(true);
-    const { data, error: authErr } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
     setLoading(false);
-    if (authErr || !data.user) {
-      setError("Invalid email or password. Please try again.");
+
+    if (error || !data.user) {
+      /*
+       * One message for both a wrong address and a wrong password, on purpose:
+       * saying which was wrong tells anyone who asks whether an address has an
+       * account here.
+       */
+      setErrors({
+        form: "That email and password don't match an account. Check both and try again.",
+      });
       return;
     }
     await routeByRole(data.user.id);
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
-        <Link to="/" className="mb-1 inline-flex items-center gap-2">
-          <GraduationCap className="h-6 w-6 text-primary" />
-          <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-        </Link>
-        <p className="mb-6 text-sm text-muted-foreground">Sign in to your account</p>
+    <AuthCard
+      title="Sign in"
+      description="Sign in to see the training assigned to you."
+      /*
+       * "New to SkillForge? Create an account" sent invited employees to sign
+       * up, which builds them a company of their own and leaves them an admin
+       * of nothing, with their real invite unused. Signing up is for the
+       * person bringing SkillForge to a company; everyone else arrives by
+       * invitation, so the two paths are now named separately.
+       */
+      footer={
+        <>
+          <p>
+            Setting up SkillForge for your company?{" "}
+            <Link to="/signup" className={authLink}>
+              Create a company account
+            </Link>
+          </p>
+          <p className="mt-2">Joining your team? Use the invite link in your email.</p>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={setEmail}
+          error={errors.email}
+        />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-foreground">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-foreground">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-input bg-card px-3 py-2 pr-10 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            <div className="mt-1 flex justify-end">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={resetting}
-                className="text-sm font-normal text-muted-foreground hover:text-foreground focus:outline-none disabled:opacity-60"
-              >
-                {resetting ? "Sending…" : "Forgot password?"}
-              </button>
-            </div>
-          </div>
+        <div>
+          <PasswordField
+            id="password"
+            label="Password"
+            autoComplete="current-password"
+            value={password}
+            onChange={setPassword}
+            error={errors.password}
+          />
+          <p className="mt-2 text-small">
+            <Link to="/forgot-password" className={authLink}>
+              Forgot your password?
+            </Link>
+          </p>
+        </div>
 
-          {resetMessage && (
-            <div role="status" className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
-              {resetMessage}
-            </div>
-          )}
+        {errors.form && <Alert variant="error">{errors.form}</Alert>}
 
-          {resetError && (
-            <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {resetError}
-            </div>
-          )}
-
-          {error && (
-            <div
-              role="alert"
-              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          New to SkillForge?{" "}
-          <Link to="/signup" className="font-medium text-primary hover:underline">
-            Create an account
-          </Link>
-        </p>
-      </div>
-    </main>
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+    </AuthCard>
   );
 }

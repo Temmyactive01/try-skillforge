@@ -11,7 +11,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
 } from "./helpers";
 
 const STAMP = Date.now();
@@ -90,7 +90,7 @@ async function storedQuestions(title: string) {
 
 test("creating a course saves its details and its quiz", async ({ page }) => {
   const title = `Fire safety ${STAMP}`;
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await page.getByRole("button", { name: "Create course" }).click();
@@ -132,7 +132,7 @@ test("creating a course saves its details and its quiz", async ({ page }) => {
 });
 
 test("a course cannot be saved without a title or a correct answer", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
   await page.getByRole("button", { name: "Create course" }).click();
 
@@ -159,7 +159,7 @@ test("a course cannot be saved without a title or a correct answer", async ({ pa
 });
 
 test("editing a course shows the stored correct answer and saves a change", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await openMenu(page, EDITABLE, "Edit course");
@@ -191,7 +191,7 @@ test("editing a course shows the stored correct answer and saves a change", asyn
 });
 
 test("leaving the editor with unsaved changes asks first", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   // Nothing typed: Cancel just leaves.
@@ -219,7 +219,7 @@ test("leaving the editor with unsaved changes asks first", async ({ page }) => {
 test("the editor keeps its actions in reach and can add a question from the foot", async ({
   page,
 }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
   await page.getByRole("button", { name: "Create course" }).click();
 
@@ -265,7 +265,7 @@ test("the editor keeps its actions in reach and can add a question from the foot
 });
 
 test("editing an assigned course warns that finished training stays finished", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await openMenu(page, COMPLETED, "Edit course");
@@ -277,7 +277,7 @@ test("editing an assigned course warns that finished training stays finished", a
 });
 
 test("deleting a course goes through the menu and a confirmation", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   const row = rowFor(page, DELETABLE);
@@ -305,7 +305,7 @@ test("deleting a course goes through the menu and a confirmation", async ({ page
 });
 
 test("a course someone has been assigned cannot be deleted", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await openMenu(page, ASSIGNED, "Delete course");
@@ -322,7 +322,7 @@ test("a course someone has been assigned cannot be deleted", async ({ page }) =>
 });
 
 test("cancelling isn't enough if somebody passed the course", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   // Every assignment is cancelled, so nothing is "assigned" any more — but a
@@ -343,7 +343,7 @@ test("cancelling isn't enough if somebody passed the course", async ({ page }) =
 test("a course whose assignments were all cancelled, and never passed, can go", async ({
   page,
 }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await openMenu(page, CANCELLED_ONLY, "Delete course");
@@ -360,7 +360,7 @@ test("a course whose assignments were all cancelled, and never passed, can go", 
 });
 
 test("every row's menu button names its course", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   const menus = page.getByRole("button", { name: /^More actions for / });
@@ -375,7 +375,7 @@ test("every row's menu button names its course", async ({ page }) => {
 });
 
 test("a company with no courses is told what to do next", async ({ page }) => {
-  await signInUI(page, emptyAdminEmail);
+  await signIn(page, emptyAdminEmail);
   await open(page, "/admin/courses");
 
   await expect(page.getByText("No courses yet.")).toBeVisible();
@@ -389,7 +389,7 @@ test.describe("on a phone", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("courses are cards, not a table", async ({ page }) => {
-    await signInUI(page, adminEmail);
+    await signIn(page, adminEmail);
     await open(page, "/admin/courses");
 
     await expect(page.locator("table")).toBeHidden();
@@ -408,7 +408,7 @@ test.describe("on a phone", () => {
 });
 
 test("the table comes back on a wider screen", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/courses");
 
   await expect(page.locator("table")).toBeVisible();

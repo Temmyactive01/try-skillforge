@@ -10,7 +10,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
 } from "./helpers";
 
 const COURSE_A = `Fire safety ${Date.now()}`;
@@ -74,7 +74,7 @@ async function openCancelDialog(page: Page, r: { employee: string; course: strin
 }
 
 test("cancelling goes through the menu and a confirmation, and can be undone", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/assignments");
 
   const row = rowFor(page, cancelRow);
@@ -102,7 +102,7 @@ test("cancelling goes through the menu and a confirmation, and can be undone", a
 });
 
 test("choosing to keep the assignment changes nothing", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/assignments");
 
   const row = rowFor(page, keepRow);
@@ -121,7 +121,7 @@ test("choosing to keep the assignment changes nothing", async ({ page }) => {
 });
 
 test("the dashboard's overdue panel opens the matching rows", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/dashboard");
 
   const panel = page.getByRole("link").filter({ hasText: "Overdue assignments" });
@@ -145,7 +145,7 @@ test.describe("on a phone", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("assignments are cards, not a table", async ({ page }) => {
-    await signInUI(page, adminEmail);
+    await signIn(page, adminEmail);
     await open(page, "/admin/assignments");
 
     await expect(page.locator("table")).toBeHidden();
@@ -166,7 +166,7 @@ test.describe("on a phone", () => {
   });
 
   test("an assignment with no deadline says so in words", async ({ page }) => {
-    await signInUI(page, adminEmail);
+    await signIn(page, adminEmail);
     await open(page, "/admin/assignments");
 
     /*
@@ -178,7 +178,7 @@ test.describe("on a phone", () => {
 });
 
 test("the table comes back on a wider screen", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/assignments");
 
   await expect(page.locator("table")).toBeVisible();

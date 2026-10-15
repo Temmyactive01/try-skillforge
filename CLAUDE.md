@@ -8,7 +8,7 @@ SkillForge is a multi-tenant B2B learning & development app: a company admin cre
 
 This GitHub repo is the only home for SkillForge. Keep `main` working and don't rewrite pushed history. `AGENTS.md` only points other coding agents here, so keep guidance in this file.
 
-`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table; phase 2 covered Courses and Employees. **Every admin screen now follows it.** The employee screens, the marketing pages and login/signup inherit the new tokens but keep their old hand-built layout until their phase.
+`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table; phase 2 covered Courses and Employees; phase 3 covered the employee screens and every page you sign in through. **Only the marketing pages still have their old hand-built layout**, which is phase 4; they inherit the new tokens meanwhile.
 
 ## Progress log
 
@@ -27,15 +27,18 @@ npm run test:e2e   # Playwright end-to-end tests (add `-- e2e/<file>.spec.ts` fo
 npm run check:contrast   # WCAG AA check on the design tokens, both themes
 npm run screenshots      # design screenshots → docs/screenshots/phase-1
 npm run screenshots:phase-2  # design screenshots → docs/screenshots/phase-2
+npm run screenshots:phase-3  # design screenshots → docs/screenshots/phase-3
 ```
 
 **After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
 
-**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (65 tests, 10–15 minutes depending on what else is running). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
+**End-to-end tests** (`e2e/`, `playwright.config.ts`) run in installed Edge against their own dev server on port 8090 (118 tests, 11-15 minutes depending on what else is running). That port must be in Supabase's Redirect URLs; `e2e/global-setup.ts` checks this. Run them after any change to a flow they cover, and keep them passing.
 
 - **No email, ever.** The test server sets `E2E_SKIP_INVITE_EMAIL=1`, and `createEmployee` then uses `generateLink` instead of `inviteUserByEmail` (honoured only when `import.meta.env.DEV`). Tests get invite and reset links from `admin.generateLink` and intercept the browser's `/auth/v1/recover` call. Never call a path that emails.
 - **Own data only.** Test users must use `@e2e.example.com` emails and test companies must be named `E2E Test …` (use the helpers in `e2e/helpers.ts`). `cleanupE2EData()` deletes only those, in global setup and teardown.
-- **Navigate with `open(page, url)`.** It waits for `networkidle` and then for `html[data-hydrated="true"]`, which `__root.tsx` sets in an effect once React has attached. Interacting before that makes forms submit natively, and the URL gains a `?`. Never paper over it with a retry or a timeout.
+- **Navigate with `open(page, url)`.** It waits for `html[data-hydrated="true"]`, which `__root.tsx` sets in an effect once React has attached. Interacting before that makes forms submit natively, and the URL gains a `?`. Never paper over it with a retry or a timeout.
+- **Sign in with `signIn(page, email)`**, which writes the session into `localStorage` before the first navigation. Use `signInUI` only where signing in is the thing under test — `journey`, `auth` and `password-reset` do.
+- **`dates.spec.ts` and `training.spec.ts` are unit tests** on pure functions, run by the same Playwright runner because it is already here and already reads TypeScript. They need no browser and take a tenth of a second.
 - **Dialogs must not fade their own opacity.** `DialogContent` and `AlertDialogContent` fade only their backdrop; animating the panel makes the page behind readable straight through the form while it opens. `e2e/dialogs.spec.ts` measures the rendered opacity and background alpha of every admin dialog, so re-adding `fade-in-0` fails the suite.
 - **Courses and Employees keep a table and a card list in the DOM at once** and show whichever fits the width, so a name appears twice. Scope to `getByRole("row")` or the card list by its `aria-label`, or filter to the visible one.
 - `npm run verify:security` and `npm run test:mcp` are separate script checks (see the README).
@@ -58,7 +61,7 @@ npm run screenshots:phase-2  # design screenshots → docs/screenshots/phase-2
 Routes are files in `src/routes/` (see `src/routes/README.md` for conventions: `admin.courses.tsx` → `/admin/courses`, `$param` for dynamic segments). `src/routeTree.gen.ts` is generated — never edit it. `__root.tsx` is the only layout and must keep `<Outlet />`.
 
 - Public marketing: `/`, `/about`, `/features`, `/pricing`, `/security`, `/privacy`, `/terms` (static, share `Footer`).
-- Auth: `/login` (email+password, forgot-password, role-based redirect, safe `?next=`), `/signup` (creates a new company + its admin), `/accept-invite` (invited employee sets password).
+- Auth: `/login` (email+password, role-based redirect, safe `?next=`), `/forgot-password` (asks Supabase for a reset link, which lands on `/accept-invite`), `/signup` (creates a new company + its admin), `/accept-invite` (invited employee sets password; also where a reset link lands). All four are built on `AuthCard`.
 - Admin (wrapped in `AdminShell`): `/admin/dashboard`, `/admin/courses`, `/admin/assignments`, `/admin/employees`.
 - Employee (wrapped in `EmployeeShell`): `/employee/home`, `/employee/course/$assignmentId`.
 - Machine endpoints: `/mcp`, `/.well-known/oauth-protected-resource`, `/oauth/consent` (see MCP below).
@@ -77,7 +80,7 @@ Existing server functions:
 
 - `signupCompanyAdmin` (`signup.functions.ts`) — creates company → auth user → admin profile with the service role, rolling back on failure.
 - `createEmployee` / `listPendingEmployeeIds` (`employees.functions.ts`) — admin-only: sends a Supabase invite email (redirect to `/accept-invite`) and inserts the employee profile; "pending" = auth user that has never signed in.
-- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest. The pass mark is `PASS_MARK` in `src/lib/scores.ts` — anything that mentions it reads it from there rather than restating the number.
+- `submitQuiz` (`quiz.functions.ts`) — checks the assignment is the caller's, is not cancelled, and uses a course they can see. It grades on the server (reads `correct_answer` via service role), writes `quiz_results` and sets the assignment to `complete` (≥70%) or `in_progress` with the service role, and returns a per-question review and the final status. **The review carries `correct_answer` only when the attempt passed, or the assignment was already complete** — a failed attempt learns which questions were wrong but not what the right answer was, so failing on purpose isn't a way to read the answer sheet. Decide that before building the review, not by stripping it afterwards. **Once complete, an assignment stays complete**: later attempts are practice and are still recorded. Pages show the **best** score (`bestScore` in `src/lib/scores.ts`), never the latest. The pass mark is `PASS_MARK` in `src/lib/scores.ts` — anything that mentions it reads it from there rather than restating the number.
 
 Files under `src/integrations/supabase/` (clients, auth middleware/attacher) are ordinary project code. `types.ts` mirrors the DB schema; regenerate it with `npx supabase gen types typescript --project-id <id> > src/integrations/supabase/types.ts` after schema changes rather than editing it by hand.
 

@@ -10,12 +10,19 @@ import { cn } from "@/lib/utils";
  * Tones follow DESIGN.md. The temper colours mean progress and nothing else,
  * so a tag only gets one when it really is a stage of progress: `bronze` for
  * work under way, `blue` for finished. Everything else is steel.
+ *
+ * `straw` is the one deadline that wears a temper colour, because DESIGN.md's
+ * own temper table gives stage 1 two meanings: "1–33% complete, or due soon".
+ * It is a fill and not a text colour in the light theme, so the tint carries it
+ * and the word stays `ink` — writing in straw is what made "Due in 2 days"
+ * unreadable on the old employee page.
  */
-export type TagTone = "neutral" | "quiet" | "bronze" | "blue" | "oxide";
+export type TagTone = "neutral" | "quiet" | "straw" | "bronze" | "blue" | "oxide";
 
 const TONE: Record<TagTone, string> = {
   neutral: "bg-steel/25 text-ink",
   quiet: "bg-steel/40 text-ink-muted",
+  straw: "bg-temper-straw/20 text-ink",
   bronze: "bg-temper-bronze/15 text-temper-bronze",
   blue: "bg-temper-blue/15 text-temper-blue",
   oxide: "bg-oxide/10 text-oxide",

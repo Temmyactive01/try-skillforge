@@ -9,7 +9,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
   signedInClient,
 } from "./helpers";
 
@@ -34,7 +34,7 @@ test.beforeAll(async () => {
 
 test.describe("one company can't see another company's data", () => {
   test("in the admin pages", async ({ page }) => {
-    await signInUI(page, b.admin.email);
+    await signIn(page, b.admin.email);
 
     /*
      * Courses and Employees now render a table and a card list at once and
@@ -103,11 +103,11 @@ test.describe("an employee can't use admin features", () => {
     "/admin/assignments",
     "/admin/employees",
   ]) {
-    test(`opening ${path} sends them to My Learning`, async ({ page }) => {
-      await signInUI(page, a.employee.email);
+    test(`opening ${path} sends them to My training`, async ({ page }) => {
+      await signIn(page, a.employee.email);
       await open(page, path);
       await page.waitForURL("**/employee/home");
-      await expect(page.getByRole("heading", { name: "My Learning" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "My training" })).toBeVisible();
     });
   }
 
@@ -182,10 +182,16 @@ test.describe("an employee can't use admin features", () => {
 });
 
 /*
- * getCourseForEdit is the only path that returns quiz_questions.correct_answer,
- * which is revoked from every signed-in user at the column level. It reads with
- * the service role, so its two guards — admin only, and the course must come
- * back from an RLS-scoped read as the caller — are the whole boundary.
+ * getCourseForEdit reads quiz_questions.correct_answer, which is revoked from
+ * every signed-in user at the column level. It reads with the service role, so
+ * its two guards — admin only, and the course must come back from an
+ * RLS-scoped read as the caller — are the whole boundary.
+ *
+ * It is not the only path that returns an answer: submitQuiz returns them too,
+ * to an attempt that passed. This comment used to claim it was the only one,
+ * and that claim is how submitQuiz came to hand the answers to failed attempts
+ * as well. "a failed attempt is not given the correct answers" in
+ * employee.spec.ts guards the other path.
  *
  * These call it the way the app does: from a signed-in page, so the real auth
  * middleware attaches the real token.
@@ -206,7 +212,7 @@ async function callGetCourseForEdit(page: Page, courseId: string) {
 
 test.describe("the quiz answers a course editor needs", () => {
   test("an admin gets their own company's answers", async ({ page }) => {
-    await signInUI(page, a.admin.email);
+    await signIn(page, a.admin.email);
     await open(page, "/admin/courses");
 
     const result = await callGetCourseForEdit(page, a.courseId);
@@ -216,7 +222,7 @@ test.describe("the quiz answers a course editor needs", () => {
   });
 
   test("an admin is refused another company's answers", async ({ page }) => {
-    await signInUI(page, b.admin.email);
+    await signIn(page, b.admin.email);
     await open(page, "/admin/courses");
 
     const result = await callGetCourseForEdit(page, a.courseId);
@@ -224,7 +230,7 @@ test.describe("the quiz answers a course editor needs", () => {
   });
 
   test("an employee is refused, even for their own course", async ({ page }) => {
-    await signInUI(page, a.employee.email);
+    await signIn(page, a.employee.email);
     await open(page, "/employee/home");
 
     const result = await callGetCourseForEdit(page, a.courseId);

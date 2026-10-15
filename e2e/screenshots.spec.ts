@@ -12,7 +12,7 @@
 import { test } from "@playwright/test";
 import path from "node:path";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
-import { open, sessionTokens, signInUI } from "./helpers";
+import { open, sessionTokens, signIn } from "./helpers";
 import { createAdminScreenshotData, createEmployeeScreenshotData } from "./screenshot-data";
 
 type Theme = "light" | "dark";
@@ -123,7 +123,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
       if (adminData) {
         // The company with real data: every screen except the getting-started state.
         await withPage(browser, theme, vp, async (page) => {
-          await signInUI(page, adminData.admin.email);
+          await signIn(page, adminData.admin.email);
 
           if (wanted.has("dashboard")) {
             await open(page, "/admin/dashboard");
@@ -216,7 +216,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
         ).filter((name) => wanted.has(name));
         if (emptyScreens.length) {
           await withPage(browser, theme, vp, async (page) => {
-            await signInUI(page, adminData.newAdmin.email);
+            await signIn(page, adminData.newAdmin.email);
 
             if (wanted.has("getting-started")) {
               await open(page, "/admin/dashboard");
@@ -319,7 +319,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
         // --- The employee's own screens ------------------------------------
         if (wanted.has("training-list")) {
           await withPage(browser, theme, vp, async (page) => {
-            await signInUI(page, employeeData.learner.email);
+            await signIn(page, employeeData.learner.email);
             await open(page, "/employee/home");
             await page.getByText("Fire safety at work").first().waitFor();
             await shoot(page, `training-list-${suffix}`);
@@ -328,7 +328,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
 
         if (wanted.has("training-list-empty")) {
           await withPage(browser, theme, vp, async (page) => {
-            await signInUI(page, employeeData.newStarter.email);
+            await signIn(page, employeeData.newStarter.email);
             await open(page, "/employee/home");
             await page.getByText(/No (courses|training)/i).waitFor();
             await shoot(page, `training-list-empty-${suffix}`);
@@ -343,7 +343,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
           const taker = await employeeData.quizTaker();
           const { questions, title } = employeeData.quizCourse;
           await withPage(browser, theme, vp, async (page) => {
-            await signInUI(page, taker.email);
+            await signIn(page, taker.email);
             await open(page, "/employee/home");
             await page.getByRole("link", { name: `Start ${title}` }).click();
             await page.getByRole("heading", { name: title, level: 1 }).waitFor();

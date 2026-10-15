@@ -266,18 +266,64 @@ export async function waitForHydration(page: Page) {
   await page.waitForSelector("html[data-hydrated='true']", { state: "attached" });
 }
 
-/** Loads a page and waits until React has hydrated, so a test can interact with it. */
+/**
+ * Loads a page and waits until React has hydrated, so a test can interact with it.
+ *
+ * It waits on the hydration flag alone. It used to wait for `networkidle`
+ * first, which is a guess — half a second of quiet, which a page that polls or
+ * refreshes a token may never give — and then waited for the real signal
+ * anyway. Dropping it took roughly two minutes off a full run, across the
+ * couple of hundred navigations a run makes.
+ */
 export async function open(page: Page, url: string) {
-  await page.goto(url, { waitUntil: "networkidle" });
+  await page.goto(url);
   await waitForHydration(page);
 }
 
+/**
+ * Signs in through the real form.
+ *
+ * Use this where signing in is the thing being tested. Everywhere else, prefer
+ * `signIn`, which puts the session straight into the browser and skips a page
+ * load and a round trip the test is not interested in.
+ */
 export async function signInUI(page: Page, email: string, password = PASSWORD) {
   await open(page, "/login");
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL(/\/(admin|employee)\//);
+}
+
+/**
+ * Signs in without the form, by writing the session where the app keeps it.
+ *
+ * The app's Supabase client stores its session in localStorage under a key
+ * derived from the project ref, and reads it on load — so a session put there
+ * before the first navigation is indistinguishable from one the form left.
+ * The sign-in form has tests of its own; everything else only needs to be
+ * signed in, and paying for the form in every one of them costs minutes.
+ */
+export async function signIn(page: Page, email: string, password = PASSWORD) {
+  const { access_token, refresh_token, expires_at, expires_in, user } = await session(
+    email,
+    password,
+  );
+  const projectRef = new URL(process.env.SUPABASE_URL!).hostname.split(".")[0];
+
+  // addInitScript runs before any page script, so the client never sees an
+  // empty store and never has to be told the session arrived late.
+  await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [
+    `sb-${projectRef}-auth-token`,
+    JSON.stringify({
+      access_token,
+      refresh_token,
+      expires_at,
+      expires_in,
+      token_type: "bearer",
+      user,
+    }),
+  ] as const);
 }
 
 export async function fillSetPasswordForm(page: Page, password: string, confirm = password) {
@@ -291,8 +337,17 @@ export const alertText = async (page: Page) =>
 
 export { expect };
 
+/** A live session for a user, signed in away from the browser. */
+export async function session(email: string, password = PASSWORD) {
+  const client = publicClient();
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error || !data.session)
+    throw new Error(`sign in ${email}: ${error?.message ?? "no session"}`);
+  return data.session;
+}
+
 /**
- * A live access/refresh token pair for a user, obtained by signing in.
+ * A live access/refresh token pair for a user.
  *
  * The set-password page accepts a session from the URL fragment, which is how
  * invite and reset emails deliver one. Minting the pair here lets a screenshot
@@ -300,12 +355,6 @@ export { expect };
  * needing the capturing server's port in Supabase's Redirect URLs.
  */
 export async function sessionTokens(email: string, password = PASSWORD) {
-  const client = publicClient();
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.session)
-    throw new Error(`sign in ${email}: ${error?.message ?? "no session"}`);
-  return {
-    access_token: data.session.access_token,
-    refresh_token: data.session.refresh_token,
-  };
+  const { access_token, refresh_token } = await session(email, password);
+  return { access_token, refresh_token };
 }

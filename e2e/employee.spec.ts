@@ -13,7 +13,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
   type Question,
 } from "./helpers";
 import { PASS_MARK } from "../src/lib/scores";
@@ -69,7 +69,7 @@ async function itemTitles(page: Page) {
 }
 
 test("what is most urgent comes first, and finished training sits last", async ({ page }) => {
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, "/employee/home");
   await page.getByText("Overdue by three days").first().waitFor();
 
@@ -91,14 +91,14 @@ test("what is most urgent comes first, and finished training sits last", async (
 });
 
 test("a cancelled assignment never appears", async ({ page }) => {
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, "/employee/home");
   await page.getByText("Overdue by three days").first().waitFor();
   await expect(page.getByText("Cancelled course")).toHaveCount(0);
 });
 
 test("only the most urgent thing outstanding gets the primary button", async ({ page }) => {
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, "/employee/home");
   await page.getByText("Overdue by three days").first().waitFor();
 
@@ -109,7 +109,7 @@ test("only the most urgent thing outstanding gets the primary button", async ({ 
 });
 
 test("a company with no training says so, and says who assigns it", async ({ page }) => {
-  await signInUI(page, newStarter.email);
+  await signIn(page, newStarter.email);
   await open(page, "/employee/home");
   await expect(page.getByText("No training assigned yet.")).toBeVisible();
   await expect(page.getByText("Your admin will assign courses here.")).toBeVisible();
@@ -122,7 +122,7 @@ test("starting the quiz moves the course to In progress, in the page and the dat
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
   expect(await assignmentStatus(assignmentId)).toBe("not_started");
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await expect(page.getByText("Not started")).toBeVisible();
 
@@ -151,7 +151,7 @@ test("passing sets Complete, shows the result and moves focus to it", async ({ p
   const courseId = await createCourse(company.id, "Passing course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
   await takeQuiz(page, (q) => q.correct);
@@ -173,7 +173,7 @@ test("failing says the pass mark, and the pass mark is the one the grader uses",
   const courseId = await createCourse(company.id, "Failing course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
   await takeQuiz(page, wrongAnswer);
@@ -192,7 +192,7 @@ test("a failed attempt is not given the correct answers", async ({ page }) => {
   const courseId = await createCourse(company.id, "Answer leak course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
 
   // Everything the grader sends back, so hiding an answer in the UI can't pass
   // for keeping it: it would still have arrived in the browser.
@@ -229,7 +229,7 @@ test("a retake after passing is practice, and says so before and after", async (
   const courseId = await createCourse(company.id, "Practice course");
   const assignmentId = await assign(courseId, learner.id, { status: "complete", dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
 
   // Said before they start, not only after they finish.
@@ -249,7 +249,7 @@ test("answers survive Back, Next and the summary", async ({ page }) => {
   const courseId = await createCourse(company.id, "Memory course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
 
@@ -276,7 +276,7 @@ test("pressing Enter in the quiz doesn't hand it in", async ({ page }) => {
   const courseId = await createCourse(company.id, "Enter key course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
 
@@ -296,7 +296,7 @@ test("leaving the quiz with unsubmitted answers asks first", async ({ page }) =>
   const courseId = await createCourse(company.id, "Leaving course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
   await page.getByRole("radio", { name: DEFAULT_QUESTIONS[0].correct, exact: true }).check();
@@ -322,7 +322,7 @@ test("no warning once the quiz has been handed in", async ({ page }) => {
   const courseId = await createCourse(company.id, "Submitted course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
   await takeQuiz(page, (q) => q.correct);
@@ -339,7 +339,7 @@ test("on a phone the quiz shows one question at a time", async ({ page }) => {
   const courseId = await createCourse(company.id, "Phone course");
   const assignmentId = await assign(courseId, learner.id, { dueInDays: 5 });
 
-  await signInUI(page, learner.email);
+  await signIn(page, learner.email);
   await open(page, `/employee/course/${assignmentId}`);
   await page.getByRole("button", { name: "Start the quiz" }).click();
 
@@ -381,7 +381,7 @@ test.describe("course content is treated as untrusted", () => {
       "text",
       "Safety first.\n\n<img src=x onerror=\"document.title='pwned'\"><b>Not bold</b>",
     );
-    await signInUI(page, learner.email);
+    await signIn(page, learner.email);
     await open(page, `/employee/course/${assignmentId}`);
 
     // The angle brackets are on the page as characters...
@@ -394,7 +394,7 @@ test.describe("course content is treated as untrusted", () => {
 
   test("a link that isn't https is shown rather than followed", async ({ page }) => {
     const assignmentId = await courseWithContent("video", "javascript:alert(1)");
-    await signInUI(page, learner.email);
+    await signIn(page, learner.email);
     await open(page, `/employee/course/${assignmentId}`);
 
     await expect(page.getByText("This video can't be opened.")).toBeVisible();
@@ -406,7 +406,7 @@ test.describe("course content is treated as untrusted", () => {
 
   test("a plain http PDF is refused the same way", async ({ page }) => {
     const assignmentId = await courseWithContent("pdf", "http://example.com/handbook.pdf");
-    await signInUI(page, learner.email);
+    await signIn(page, learner.email);
     await open(page, `/employee/course/${assignmentId}`);
 
     await expect(page.getByText("This PDF can't be opened.")).toBeVisible();
@@ -416,7 +416,7 @@ test.describe("course content is treated as untrusted", () => {
 
   test("an https PDF gets a link that opens in a new tab", async ({ page }) => {
     const assignmentId = await courseWithContent("pdf", "https://example.com/handbook.pdf");
-    await signInUI(page, learner.email);
+    await signIn(page, learner.email);
     await open(page, `/employee/course/${assignmentId}`);
 
     const link = page.getByRole("link", { name: /Open the PDF/ });

@@ -9,7 +9,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
   signedInClient,
 } from "./helpers";
 
@@ -34,7 +34,7 @@ test.beforeAll(async () => {
 
 test.describe("one company can't see another company's data", () => {
   test("in the admin pages", async ({ page }) => {
-    await signInUI(page, b.admin.email);
+    await signIn(page, b.admin.email);
 
     /*
      * Courses and Employees now render a table and a card list at once and
@@ -104,7 +104,7 @@ test.describe("an employee can't use admin features", () => {
     "/admin/employees",
   ]) {
     test(`opening ${path} sends them to My training`, async ({ page }) => {
-      await signInUI(page, a.employee.email);
+      await signIn(page, a.employee.email);
       await open(page, path);
       await page.waitForURL("**/employee/home");
       await expect(page.getByRole("heading", { name: "My training" })).toBeVisible();
@@ -206,7 +206,7 @@ async function callGetCourseForEdit(page: Page, courseId: string) {
 
 test.describe("the quiz answers a course editor needs", () => {
   test("an admin gets their own company's answers", async ({ page }) => {
-    await signInUI(page, a.admin.email);
+    await signIn(page, a.admin.email);
     await open(page, "/admin/courses");
 
     const result = await callGetCourseForEdit(page, a.courseId);
@@ -216,7 +216,7 @@ test.describe("the quiz answers a course editor needs", () => {
   });
 
   test("an admin is refused another company's answers", async ({ page }) => {
-    await signInUI(page, b.admin.email);
+    await signIn(page, b.admin.email);
     await open(page, "/admin/courses");
 
     const result = await callGetCourseForEdit(page, a.courseId);
@@ -224,7 +224,7 @@ test.describe("the quiz answers a course editor needs", () => {
   });
 
   test("an employee is refused, even for their own course", async ({ page }) => {
-    await signInUI(page, a.employee.email);
+    await signIn(page, a.employee.email);
     await open(page, "/employee/home");
 
     const result = await callGetCourseForEdit(page, a.courseId);

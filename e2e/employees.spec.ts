@@ -14,7 +14,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
   signedInClient,
 } from "./helpers";
 
@@ -89,7 +89,7 @@ const cards = (page: Page) => page.getByRole("list", { name: "Employees" }).getB
 
 test("inviting an employee confirms it and lists them as invited", async ({ page }) => {
   const email = `invited-${STAMP}@${E2E_DOMAIN}`;
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   await page.getByRole("button", { name: "Invite employee" }).click();
@@ -118,7 +118,7 @@ test("inviting an employee confirms it and lists them as invited", async ({ page
 });
 
 test("someone who has signed in reads as active, with their progress", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   const row = rowFor(page, "Ada Mensah");
@@ -129,7 +129,7 @@ test("someone who has signed in reads as active, with their progress", async ({ 
 });
 
 test("changing an employee's team moves them, and the database agrees", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   expect(await storedTeam(movable.id)).toBe(operationsId);
@@ -160,7 +160,7 @@ test("changing an employee's team moves them, and the database agrees", async ({
 
 test("a team can be renamed and deleted, and deleting asks first", async ({ page }) => {
   const renamed = `${SPARE} renamed`;
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   await teamItem(page, SPARE)
@@ -198,7 +198,7 @@ test("a team can be renamed and deleted, and deleting asks first", async ({ page
 });
 
 test("every row's menu button names its person or team", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   const menus = page.getByRole("button", { name: /^More actions for / });
@@ -213,7 +213,7 @@ test("every row's menu button names its person or team", async ({ page }) => {
 });
 
 test("a failed action is reported in a toast, not a browser dialog", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   // Record any native dialog rather than throwing in the handler: an
@@ -245,7 +245,7 @@ test("a failed action is reported in a toast, not a browser dialog", async ({ pa
 });
 
 test("a company with no people is told what to do next", async ({ page }) => {
-  await signInUI(page, emptyAdminEmail);
+  await signIn(page, emptyAdminEmail);
   await open(page, "/admin/employees");
 
   await expect(page.getByText("No employees yet.")).toBeVisible();
@@ -263,7 +263,7 @@ test.describe("on a phone", () => {
   test.use({ viewport: { width: 375, height: 812 } });
 
   test("employees are cards that keep the team and the status", async ({ page }) => {
-    await signInUI(page, adminEmail);
+    await signIn(page, adminEmail);
     await open(page, "/admin/employees");
 
     await expect(page.locator("table")).toBeHidden();
@@ -287,7 +287,7 @@ test.describe("on a phone", () => {
 });
 
 test("the table comes back on a wider screen", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   await open(page, "/admin/employees");
 
   await expect(page.locator("table")).toBeVisible();

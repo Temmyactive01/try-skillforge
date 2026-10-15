@@ -14,7 +14,7 @@ import {
   createUser,
   expect,
   open,
-  signInUI,
+  signIn,
 } from "./helpers";
 
 const STAMP = Date.now();
@@ -165,7 +165,7 @@ const PANELS: { name: string; path: string; openIt: (page: Page) => Promise<Loca
 
 /** A one-off override on a single dialog would only show up by checking them all. */
 test("every dialog sits on an opaque surface", async ({ page }) => {
-  await signInUI(page, adminEmail);
+  await signIn(page, adminEmail);
   for (const panel of PANELS) {
     await open(page, panel.path);
     const found = await panel.openIt(page);
@@ -189,7 +189,7 @@ for (const width of [375, 1280]) {
     for (const theme of ["light", "dark"] as const) {
       test(`a dialog and a confirmation stay opaque in the ${theme} theme`, async ({ page }) => {
         await page.emulateMedia({ colorScheme: theme });
-        await signInUI(page, adminEmail);
+        await signIn(page, adminEmail);
 
         for (const panel of REPRESENTATIVE) {
           await open(page, panel.path);
@@ -201,7 +201,7 @@ for (const width of [375, 1280]) {
 
     // Alignment is a question of width, not of colour, so once per width is enough.
     test("a dialog's footer buttons never touch", async ({ page }) => {
-      await signInUI(page, adminEmail);
+      await signIn(page, adminEmail);
       await open(page, "/admin/employees");
       await page.getByRole("button", { name: "Invite employee" }).click();
 
@@ -225,7 +225,7 @@ for (const width of [375, 1280]) {
     });
 
     test("a dialog's title and description are left-aligned", async ({ page }) => {
-      await signInUI(page, adminEmail);
+      await signIn(page, adminEmail);
       await open(page, "/admin/employees");
       await page.getByRole("button", { name: "Invite employee" }).click();
 
@@ -256,7 +256,7 @@ test.describe("the employee's one dialog", () => {
       test(`leaving the quiz is opaque at ${width}px in the ${theme} theme`, async ({ page }) => {
         await page.setViewportSize({ width, height: 812 });
         await page.emulateMedia({ colorScheme: theme });
-        await signInUI(page, employeeEmail);
+        await signIn(page, employeeEmail);
 
         await open(page, `/employee/course/${quizAssignmentId}`);
         await page.getByRole("button", { name: "Start the quiz" }).click();

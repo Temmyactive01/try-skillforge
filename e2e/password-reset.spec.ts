@@ -3,6 +3,7 @@
 import { test } from "@playwright/test";
 import {
   PASSWORD,
+  RESET_SENT,
   alertText,
   createCompany,
   createUser,
@@ -48,9 +49,7 @@ test("Forgot password asks for a link to the set-password page (no email sent)",
   await page.waitForURL("**/forgot-password");
   await page.locator("#email").fill(user.email);
   await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(page.getByRole("status").first()).toContainText(
-    `If an account exists for ${user.email}, a reset link is on its way.`,
-  );
+  await expect(page.getByRole("status").first()).toContainText(RESET_SENT);
   expect(requestedEmail).toBe(user.email);
   expect(redirectTo).toMatch(/\/accept-invite\?type=recovery$/);
 });

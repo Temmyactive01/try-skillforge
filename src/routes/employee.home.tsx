@@ -3,8 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
-import { bestScore } from "@/lib/scores";
-import { dueLabel, finishedDueLabel, type Due } from "@/lib/dates";
+import { bestScore, passedAt } from "@/lib/scores";
+import { dueLabel, finishedDueLabel, formatDate, type Due } from "@/lib/dates";
 import { splitTraining, type TrainingStatus } from "@/lib/training";
 import { Button } from "@/components/ui/button";
 import { Tag, type TagTone } from "@/components/ui/tag";
@@ -23,10 +23,13 @@ type Row = {
   status: TrainingStatus;
   course: Course | null;
   score: number | null;
+  /** When they first passed, for finished training. Null if nothing passed. */
+  completed_at: string | null;
 };
 
 /** The shape the select below really returns. */
-type Fetched = Omit<Row, "score"> & { quiz_results: { score: number }[] | null };
+type Attempt = { score: number; passed: boolean; completed_at: string };
+type Fetched = Omit<Row, "score" | "completed_at"> & { quiz_results: Attempt[] | null };
 
 const STATUS: Record<TrainingStatus, { label: string; tone: TagTone }> = {
   not_started: { label: "Not started", tone: "quiet" },
@@ -52,7 +55,9 @@ function EmployeeHome() {
       if (!userData.user) return;
       const { data } = await supabase
         .from("assignments")
-        .select("id, due_date, status, course:courses(id, title, category), quiz_results(score)")
+        .select(
+          "id, due_date, status, course:courses(id, title, category), quiz_results(score, passed, completed_at)",
+        )
         .eq("user_id", userData.user.id);
       /*
        * The generated types describe an embedded row as possibly an array,
@@ -68,6 +73,7 @@ function EmployeeHome() {
           course: a.course,
           // Practice retakes after passing don't lower the score shown.
           score: bestScore(a.quiz_results),
+          completed_at: passedAt(a.quiz_results),
         })),
       );
     })();
@@ -148,9 +154,17 @@ function TrainingGroup({
 function TrainingItem({ item, primary }: { item: Row; primary: boolean }) {
   const title = item.course?.title ?? "Untitled course";
   const status = STATUS[item.status];
+  const complete = item.status === "complete";
   // Nothing finished is overdue, however long ago it was due.
-  const due =
-    item.status === "complete" ? finishedDueLabel(item.due_date) : dueLabel(item.due_date);
+  const due = complete ? finishedDueLabel(item.due_date) : dueLabel(item.due_date);
+
+  /*
+   * Once something is finished, when it was finished is the useful fact and
+   * when it was due is history. Older data can be complete with no passing
+   * attempt behind it, which the app itself can't produce, so the due date
+   * stays as the fallback rather than leaving a gap.
+   */
+  const finishedOn = complete && item.completed_at ? formatDate(item.completed_at) : null;
 
   return (
     <li className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:gap-6 md:p-6">
@@ -162,15 +176,23 @@ function TrainingItem({ item, primary }: { item: Row; primary: boolean }) {
 
         <p className="text-small text-ink-muted">
           {item.course?.category ? `${item.course.category} · ` : ""}
-          <DueDate due={due} />
+          {finishedOn ? <span>Completed {finishedOn}</span> : <DueDate due={due} />}
         </p>
 
         {item.score !== null && (
-          <TemperProgress
-            value={item.score}
-            label={`Best score for ${title}`}
-            className="max-w-56"
-          />
+          <div className="flex items-center gap-2">
+            {/*
+             * Named on the page, not only to a screen reader: an In progress
+             * item showing 50% could otherwise read as being halfway through
+             * the course rather than as the best a quiz attempt has scored.
+             */}
+            <span className="shrink-0 text-small text-ink-muted">Best score</span>
+            <TemperProgress
+              value={item.score}
+              label={`Best score for ${title}`}
+              className="max-w-40"
+            />
+          </div>
         )}
       </div>
 

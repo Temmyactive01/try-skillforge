@@ -1,7 +1,7 @@
 // The pages you sign in through: validation that answers the person instead of
 // a round trip, and links that have died saying so with a way forward.
 import { test } from "@playwright/test";
-import { PASSWORD, createCompany, createUser, expect, open } from "./helpers";
+import { PASSWORD, RESET_SENT, createCompany, createUser, expect, open } from "./helpers";
 
 let company: Awaited<ReturnType<typeof createCompany>>;
 let employee: Awaited<ReturnType<typeof createUser>>;
@@ -129,6 +129,33 @@ test.describe("forgetting a password", () => {
     expect(requested, "a request was sent for an empty address").toBe(false);
   });
 
+  test("an address with no account gets the very same confirmation", async ({ page }) => {
+    /*
+     * The two halves of the oracle: a real account and one that has never
+     * existed must produce byte-identical text. Supabase answers the same
+     * either way, but the page's own error handling could still give it
+     * away -- its send rate limit, for one, can only be hit by an address it
+     * really sends to.
+     */
+    await page.route(`${process.env.SUPABASE_URL}/auth/v1/recover**`, (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
+    );
+
+    const seen: string[] = [];
+    for (const address of [employee.email, "definitely-nobody@e2e.example.com"]) {
+      await open(page, "/forgot-password");
+      await page.locator("#email").fill(address);
+      await page.getByRole("button", { name: "Send reset link" }).click();
+      const status = page.getByRole("status").first();
+      await expect(status).toContainText(RESET_SENT);
+      seen.push((await status.innerText()).trim());
+    }
+
+    expect(seen[0], "a real account and an unknown one read the same").toBe(seen[1]);
+    // And neither repeats the address back, which would differ on its own.
+    expect(seen[0]).not.toContain(employee.email);
+  });
+
   test("the confirmation says nothing about whether the account exists", async ({ page }) => {
     // Answered here so no email is ever sent; the suite never sends real email.
     await page.route(`${process.env.SUPABASE_URL}/auth/v1/recover**`, (route) =>
@@ -139,9 +166,7 @@ test.describe("forgetting a password", () => {
     await page.locator("#email").fill("nobody-at-all@e2e.example.com");
     await page.getByRole("button", { name: "Send reset link" }).click();
 
-    await expect(page.getByRole("status").first()).toContainText(
-      "If an account exists for nobody-at-all@e2e.example.com, a reset link is on its way.",
-    );
+    await expect(page.getByRole("status").first()).toContainText(RESET_SENT);
     await expect(page.getByText("The link works once and expires after an hour.")).toBeVisible();
   });
 });

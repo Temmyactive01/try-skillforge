@@ -358,3 +358,13 @@ export async function sessionTokens(email: string, password = PASSWORD) {
   const { access_token, refresh_token } = await session(email, password);
   return { access_token, refresh_token };
 }
+
+/**
+ * What the forgot-password page says once a request has gone off.
+ *
+ * Shared because the point of it is that it is word for word the same
+ * whoever the address belongs to: a test that retyped it could drift from the
+ * page, or from the other test, and still look like it was checking something.
+ */
+export const RESET_SENT =
+  "If an account exists for that email, we've sent a link to reset your password.";

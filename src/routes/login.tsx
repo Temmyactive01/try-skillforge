@@ -100,12 +100,22 @@ function LoginPage() {
     <AuthCard
       title="Sign in"
       description="Sign in to see the training assigned to you."
+      /*
+       * "New to SkillForge? Create an account" sent invited employees to sign
+       * up, which builds them a company of their own and leaves them an admin
+       * of nothing, with their real invite unused. Signing up is for the
+       * person bringing SkillForge to a company; everyone else arrives by
+       * invitation, so the two paths are now named separately.
+       */
       footer={
         <>
-          New to SkillForge?{" "}
-          <Link to="/signup" className={authLink}>
-            Create an account
-          </Link>
+          <p>
+            Setting up SkillForge for your company?{" "}
+            <Link to="/signup" className={authLink}>
+              Create a company account
+            </Link>
+          </p>
+          <p className="mt-2">Joining your team? Use the invite link in your email.</p>
         </>
       }
     >

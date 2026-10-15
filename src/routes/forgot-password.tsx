@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthCard, authLink } from "@/components/AuthCard";
 import { TextField } from "@/components/AuthField";
@@ -45,10 +46,22 @@ function ForgotPasswordPage() {
     });
     setSending(false);
 
-    if (resetError) {
-      setError("Couldn't send the reset link. Check your connection and try again.");
+    /*
+     * Only a failure to reach Supabase at all is reported. Supabase answers
+     * the same whether or not the address has an account, but its *other*
+     * errors are not so even-handed: the send rate limit can only be hit by an
+     * address it actually sends to, so showing it would say "this one exists".
+     * Everything except a transport failure therefore gets the confirmation.
+     *
+     * A transport failure reveals nothing — the request never arrived — and
+     * silently claiming success there would be a worse lie than the one this
+     * avoids.
+     */
+    if (resetError && isAuthRetryableFetchError(resetError)) {
+      setError("Couldn't reach the server. Check your connection and try again.");
       return;
     }
+    if (resetError) console.error("Password reset request failed", resetError);
     setSent(true);
   }
 
@@ -65,8 +78,11 @@ function ForgotPasswordPage() {
       {sent ? (
         <div className="space-y-4">
           <Alert variant="done">
-            {/* Says nothing about whether the address has an account. */}
-            If an account exists for {email.trim()}, a reset link is on its way.
+            {/*
+             * Word for word the same whatever the address was, so the page
+             * can't be used to ask whether someone has an account here.
+             */}
+            If an account exists for that email, we've sent a link to reset your password.
           </Alert>
           <p className="text-small text-ink-muted">
             The link works once and expires after an hour. If it doesn't arrive, check your spam

@@ -108,8 +108,10 @@ function SignupPage() {
 
   return (
     <AuthCard
-      title="Create your company account"
-      description="You'll be the admin: you can invite your team once you're in."
+      title="Create a company account"
+      // Says what it makes, so nobody who was invited fills it in by mistake
+      // and ends up an admin of a company of one with their invite unused.
+      description="This sets up a new company on SkillForge, with you as its admin. If you were invited to join a company, use the invite link in your email instead."
       footer={
         <>
           Already have an account?{" "}

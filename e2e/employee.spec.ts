@@ -115,6 +115,64 @@ test("a company with no training says so, and says who assigns it", async ({ pag
   await expect(page.getByText("Your admin will assign courses here.")).toBeVisible();
 });
 
+test("a finished course shows when it was finished, not when it was due", async ({ page }) => {
+  const courseId = await createCourse(company.id, "Finished on a known day");
+  const assignmentId = await assign(courseId, learner.id, {
+    status: "complete",
+    dueInDays: -40,
+  });
+
+  /*
+   * Two passes, a week apart. Completion is the first one — practising
+   * afterwards doesn't move the day they showed they knew the material.
+   */
+  const admin = adminClient();
+  await admin.from("quiz_results").insert([
+    {
+      assignment_id: assignmentId,
+      score: 100,
+      passed: true,
+      completed_at: "2026-03-02T09:30:00.000Z",
+    },
+    {
+      assignment_id: assignmentId,
+      score: 80,
+      passed: true,
+      completed_at: "2026-03-09T09:30:00.000Z",
+    },
+  ]);
+
+  await signIn(page, learner.email);
+  await open(page, "/employee/home");
+
+  const item = page.getByRole("listitem").filter({ hasText: "Finished on a known day" });
+  await expect(item).toContainText("Completed 2 Mar 2026");
+  // The due date is history once something is done, so it is not also shown.
+  await expect(item).not.toContainText("Due");
+});
+
+test("a score bar says what it is a score of", async ({ page }) => {
+  // 50% on an In progress course could otherwise read as being halfway
+  // through the course rather than as the best a quiz attempt has managed.
+  const courseId = await createCourse(company.id, "Half marked");
+  const assignmentId = await assign(courseId, learner.id, {
+    status: "in_progress",
+    dueInDays: 6,
+  });
+  await adminClient()
+    .from("quiz_results")
+    .insert({ assignment_id: assignmentId, score: 50, passed: false });
+
+  await signIn(page, learner.email);
+  await open(page, "/employee/home");
+
+  const item = page.getByRole("listitem").filter({ hasText: "Half marked" });
+  await expect(item).toContainText("Best score");
+  await expect(item).toContainText("50%");
+  // Named for a screen reader too, not only on the page.
+  await expect(item.getByRole("progressbar", { name: "Best score for Half marked" })).toBeVisible();
+});
+
 test("starting the quiz moves the course to In progress, in the page and the database", async ({
   page,
 }) => {

@@ -15,6 +15,21 @@ for (const file of [".env.local", ".env"]) {
 const PORT = 8091;
 const baseURL = `http://localhost:${PORT}`;
 
+/** Phase 3's screens: the employee's own pages, and every page you sign in through. */
+const PHASE_3_SCREENS = [
+  "training-list",
+  "training-list-empty",
+  "course-page",
+  "quiz",
+  "result-failed",
+  "result-passed",
+  "login",
+  "signup",
+  "set-password-invite",
+  "set-password-reset",
+  "set-password-expired",
+];
+
 export default defineConfig({
   testDir: "e2e",
   testMatch: /screenshots\.spec\.ts/,
@@ -65,6 +80,18 @@ export default defineConfig({
           "employees-empty",
         ],
       },
+    },
+    /*
+     * The employee and auth pages as they were before phase 3. Light only: the
+     * point is the layout that is being replaced, not the theme.
+     */
+    {
+      name: "before-phase-3",
+      metadata: { dir: "before-phase-3", themes: ["light"], screens: PHASE_3_SCREENS },
+    },
+    {
+      name: "phase-3",
+      metadata: { dir: "phase-3", themes: ["light", "dark"], screens: PHASE_3_SCREENS },
     },
   ],
   webServer: {

@@ -20,6 +20,8 @@
     "screenshots:before": "playwright test -c playwright.screenshots.config.ts --project=before",
     "screenshots:before-phase-2": "playwright test -c playwright.screenshots.config.ts --project=before-phase-2",
     "screenshots:phase-2": "playwright test -c playwright.screenshots.config.ts --project=phase-2",
+    "screenshots:before-phase-3": "playwright test -c playwright.screenshots.config.ts --project=before-phase-3",
+    "screenshots:phase-3": "playwright test -c playwright.screenshots.config.ts --project=phase-3",
     "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {

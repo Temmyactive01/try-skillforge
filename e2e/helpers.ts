@@ -290,3 +290,21 @@ export const alertText = async (page: Page) =>
   (await page.getByRole("alert").allTextContents()).join(" | ");
 
 export { expect };
+
+/**
+ * A live access/refresh token pair for a user, obtained by signing in.
+ *
+ * The set-password page accepts a session from the URL fragment, which is how
+ * invite and reset emails deliver one. Minting the pair here lets a screenshot
+ * or a test reach that page's form without a generated link — and so without
+ * needing the capturing server's port in Supabase's Redirect URLs.
+ */
+export async function sessionTokens(email: string, password = PASSWORD) {
+  const client = publicClient();
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error || !data.session) throw new Error(`sign in ${email}: ${error?.message ?? "no session"}`);
+  return {
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  };
+}

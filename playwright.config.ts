@@ -23,7 +23,16 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   timeout: 90_000,
-  expect: { timeout: 15_000 },
+  /*
+   * 15s was tuned while open() waited for networkidle before handing the page
+   * back. That wait is gone — it was a guess at hydration, which the page now
+   * signals properly — but the time it absorbed hasn't disappeared: a page
+   * that fetches its rows in an effect still fetches them, and that wait now
+   * falls inside the assertion that is looking for a row. So the assertion
+   * budget takes on what the pre-wait used to cover. It costs a passing run
+   * nothing; only a genuinely failing assertion waits the extra five seconds.
+   */
+  expect: { timeout: 20_000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,

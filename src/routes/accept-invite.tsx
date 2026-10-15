@@ -9,7 +9,8 @@ import {
 } from "@supabase/supabase-js";
 import { createTabSessionClient, supabase } from "@/integrations/supabase/client";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField, focusFirstError } from "@/components/AuthField";
+import { PasswordField } from "@/components/AuthField";
+import { focusFirstError } from "@/lib/forms";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 

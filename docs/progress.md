@@ -388,6 +388,7 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 - [ ] **Update Supabase Site URL and Redirect URLs for Netlify** (Authentication → URL Configuration). Set Site URL to the Netlify address and add `https://YOUR-SITE.netlify.app/**` to Redirect URLs. Keep `http://localhost:8080/**` for local work.
 - [ ] **Remove the Northwind demo data and your test company** from the production database. The demo accounts share a public password.
 - [ ] **Add a favicon** (the browser-tab icon). Do it with the redesign so it matches `DESIGN.md`.
+- [ ] **Prevent Supabase free-tier pausing: upgrade to Pro or add a scheduled keep-alive.** A free project is paused after a week with no activity, and a paused project takes the whole app down — sign-in included — until someone restores it by hand from the dashboard. Either pay for Pro, or schedule something that touches the database often enough to count as activity (a GitHub Action on a cron hitting a cheap endpoint is enough). Worth deciding before launch rather than discovering it from a user.
 - [x] **Update the deprecated `inputValidator()` code** in the server functions (done in session 2, `77062fd`).
 - [ ] **Run `npm run test:e2e` before every deploy.**
 

@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { signupCompanyAdmin } from "@/lib/signup.functions";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField, TextField, focusFirstError } from "@/components/AuthField";
+import { PasswordField, TextField } from "@/components/AuthField";
+import { focusFirstError } from "@/lib/forms";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 

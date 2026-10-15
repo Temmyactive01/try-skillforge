@@ -2,7 +2,8 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField, TextField, focusFirstError } from "@/components/AuthField";
+import { PasswordField, TextField } from "@/components/AuthField";
+import { focusFirstError } from "@/lib/forms";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 

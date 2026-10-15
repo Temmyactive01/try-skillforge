@@ -20,13 +20,8 @@ import {
 } from "../src/lib/dates";
 
 /** A local instant, built from local parts so it means the same in any timezone. */
-const at = (
-  year: number,
-  month: number,
-  day: number,
-  hour = 12,
-  minute = 0,
-): Date => new Date(year, month - 1, day, hour, minute);
+const at = (year: number, month: number, day: number, hour = 12, minute = 0): Date =>
+  new Date(year, month - 1, day, hour, minute);
 
 test("a date-only value is midnight on that local calendar day", () => {
   const parsed = parseLocalDate("2026-10-15");

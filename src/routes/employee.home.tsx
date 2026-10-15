@@ -4,34 +4,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
 import { bestScore } from "@/lib/scores";
+import { dueLabel, finishedDueLabel, type Due } from "@/lib/dates";
+import { splitTraining, type TrainingStatus } from "@/lib/training";
+import { Button } from "@/components/ui/button";
+import { Tag, type TagTone } from "@/components/ui/tag";
+import { TemperProgress } from "@/components/ui/temper-progress";
 
 export const Route = createFileRoute("/employee/home")({
-  head: () => ({ meta: [{ title: "Home — SkillForge" }] }),
+  head: () => ({ meta: [{ title: "My training — SkillForge" }] }),
   component: EmployeeHome,
 });
 
-type Status = "not_started" | "in_progress" | "complete" | "cancelled";
+type Course = { id: string; title: string; category: string | null };
 
 type Row = {
   id: string;
   due_date: string | null;
-  status: Status;
-  course: { id: string; title: string; category: string | null } | null;
+  status: TrainingStatus;
+  course: Course | null;
   score: number | null;
 };
 
-function daysUntilDue(dueDate: string | null): number | null {
-  if (!dueDate) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  // Parse date-only values as local midnight to avoid timezone shifts.
-  const dueStr = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
-    ? `${dueDate}T00:00:00`
-    : dueDate;
-  const due = new Date(dueStr);
-  due.setHours(0, 0, 0, 0);
-  const diff = due.getTime() - today.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+/** The shape the select below really returns. */
+type Fetched = Omit<Row, "score"> & { quiz_results: { score: number }[] | null };
+
+const STATUS: Record<TrainingStatus, { label: string; tone: TagTone }> = {
+  not_started: { label: "Not started", tone: "quiet" },
+  in_progress: { label: "In progress", tone: "bronze" },
+  complete: { label: "Complete", tone: "blue" },
+  cancelled: { label: "Cancelled", tone: "quiet" },
+};
+
+/** What this training is waiting for the employee to do. */
+function actionLabel(status: TrainingStatus) {
+  if (status === "complete") return "Review";
+  return status === "in_progress" ? "Continue" : "Start";
 }
 
 function EmployeeHome() {
@@ -45,141 +52,155 @@ function EmployeeHome() {
       if (!userData.user) return;
       const { data } = await supabase
         .from("assignments")
-        .select(
-          "id, due_date, status, course:courses(id, title, category), quiz_results(score)",
-        )
-        .eq("user_id", userData.user.id)
-        .order("created_at", { ascending: false });
-      const mapped: Row[] = (data ?? []).map((a: any) => {
-        return {
+        .select("id, due_date, status, course:courses(id, title, category), quiz_results(score)")
+        .eq("user_id", userData.user.id);
+      /*
+       * The generated types describe an embedded row as possibly an array,
+       * because they can't tell a one-to-one join from a one-to-many. This
+       * select is on the foreign key, so it is one course per assignment.
+       */
+      const fetched = (data ?? []) as unknown as Fetched[];
+      setRows(
+        fetched.map((a) => ({
           id: a.id,
           due_date: a.due_date,
           status: a.status,
           course: a.course,
           // Practice retakes after passing don't lower the score shown.
           score: bestScore(a.quiz_results),
-        };
-      });
-      setRows(mapped.filter((r) => r.status !== "cancelled"));
+        })),
+      );
     })();
   }, [checking]);
 
   if (checking) return null;
 
-  const total = rows?.length ?? 0;
-  const completed = rows?.filter((r) => r.status === "complete").length ?? 0;
-  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const { todo, done } = splitTraining(rows ?? []);
+  const total = todo.length + done.length;
+  const pct = total === 0 ? 0 : Math.round((done.length / total) * 100);
 
   return (
     <EmployeeShell name={name}>
-      <h1 className="mb-6 font-serif text-2xl font-semibold text-foreground">My Learning</h1>
-
-      <div className="mb-8 rounded-lg border border-border bg-card p-4">
-        <div className="mb-2 flex items-center justify-between text-sm text-foreground">
-          <span>Overall progress</span>
-          <span className="font-medium">
-            {completed} / {total} completed ({pct}%)
-          </span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      </div>
+      <h1 className="text-heading-1 font-expanded text-ink">My training</h1>
 
       {rows === null ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
-      ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No courses assigned yet.</p>
+        <p className="mt-8 text-small text-ink-muted">Loading…</p>
+      ) : total === 0 ? (
+        <div className="mt-8 rounded-md border border-steel bg-surface px-4 py-12 text-center">
+          <p className="text-body text-ink">No training assigned yet.</p>
+          <p className="mt-1 text-small text-ink-muted">Your admin will assign courses here.</p>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {rows.map((r) => {
-            const daysLeft = daysUntilDue(r.due_date);
-            const overdue =
-              r.status !== "complete" && daysLeft != null && daysLeft < 0;
-            const dueSoon =
-              r.status !== "complete" &&
-              daysLeft != null &&
-              daysLeft >= 0 &&
-              daysLeft <= 2;
-            return (
-              <li key={r.id}>
-                <Link
-                  to="/employee/course/$assignmentId"
-                  params={{ assignmentId: r.id }}
-                  className="block rounded-lg border border-border bg-card p-4 hover:border-primary hover:bg-muted/40"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="font-medium text-foreground">
-                        {r.course?.title ?? "Untitled course"}
-                      </div>
-                      {r.course?.category && (
-                        <div className="mt-0.5 text-xs text-muted-foreground">
-                          {r.course.category}
-                        </div>
-                      )}
-                      <div className="mt-2 text-xs text-foreground/80">
-                        {r.due_date ? (
-                          <>Due {new Date(r.due_date).toLocaleDateString()}</>
-                        ) : (
-                          <>No due date</>
-                        )}
-                        {dueSoon && (
-                          <span className="ml-2 inline-flex items-center rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-medium text-warning-foreground">
-                            {daysLeft === 0
-                              ? "Due today"
-                              : `Due in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`}
-                          </span>
-                        )}
-                        {overdue && (
-                          <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-medium text-destructive">
-                            Overdue
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <StatusBadge status={r.status} score={r.score} />
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <>
+          <section className="mt-8 rounded-md border border-steel bg-surface p-4 md:p-6">
+            <div className="mb-2 flex items-baseline justify-between gap-4">
+              <h2 className="text-heading-3 text-ink">Your progress</h2>
+              <p className="text-small text-ink-muted">
+                {done.length} of {total} complete
+              </p>
+            </div>
+            {/* DESIGN.md names this use of TemperProgress. Not animated on load. */}
+            <TemperProgress value={pct} label="Training complete" />
+          </section>
+
+          {todo.length > 0 && (
+            <TrainingGroup
+              heading="To do"
+              items={todo}
+              // DESIGN.md: one primary button per screen. The most urgent thing
+              // outstanding is the one that earns it, which is also what makes
+              // "what to do next" visible without a badge saying so.
+              primaryId={todo[0].id}
+            />
+          )}
+
+          {done.length > 0 && <TrainingGroup heading="Completed" items={done} />}
+        </>
       )}
     </EmployeeShell>
   );
 }
 
-function StatusBadge({ status, score }: { status: Status; score: number | null }) {
-  if (status === "complete") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-        <span
-          aria-hidden
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-success text-success-foreground shadow-sm"
-          style={{ transform: "rotate(-8deg)" }}
-        >
-          <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2.5 6.5l2.5 2.5 4.5-5" />
-          </svg>
-        </span>
-        Completed{score != null ? ` · ${score}%` : ""}
-      </span>
-    );
-  }
-  if (status === "in_progress") {
-    return (
-      <span className="inline-flex rounded-full bg-warning/20 px-2.5 py-1 text-xs font-medium text-foreground">
-        In Progress
-      </span>
-    );
-  }
+function TrainingGroup({
+  heading,
+  items,
+  primaryId,
+}: {
+  heading: string;
+  items: Row[];
+  primaryId?: string;
+}) {
   return (
-    <span className="inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-      Not Started
-    </span>
+    <section className="mt-8">
+      <h2 className="mb-3 text-heading-2 text-ink">{heading}</h2>
+      <ul
+        aria-label={heading}
+        className="divide-y divide-steel rounded-md border border-steel bg-surface"
+      >
+        {items.map((item) => (
+          <TrainingItem key={item.id} item={item} primary={item.id === primaryId} />
+        ))}
+      </ul>
+    </section>
   );
+}
+
+function TrainingItem({ item, primary }: { item: Row; primary: boolean }) {
+  const title = item.course?.title ?? "Untitled course";
+  const status = STATUS[item.status];
+  // Nothing finished is overdue, however long ago it was due.
+  const due =
+    item.status === "complete" ? finishedDueLabel(item.due_date) : dueLabel(item.due_date);
+
+  return (
+    <li className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:gap-6 md:p-6">
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h3 className="text-heading-3 text-ink">{title}</h3>
+          <Tag tone={status.tone}>{status.label}</Tag>
+        </div>
+
+        <p className="text-small text-ink-muted">
+          {item.course?.category ? `${item.course.category} · ` : ""}
+          <DueDate due={due} />
+        </p>
+
+        {item.score !== null && (
+          <TemperProgress
+            value={item.score}
+            label={`Best score for ${title}`}
+            className="max-w-56"
+          />
+        )}
+      </div>
+
+      <Button asChild variant={primary ? "default" : "outline"} className="self-start md:self-auto">
+        {/*
+         * The action is the only link in the item. Making the whole row a link
+         * as well would give a screen reader two routes to the same place and
+         * a keyboard user an extra stop on the way past.
+         */}
+        <Link
+          to="/employee/course/$assignmentId"
+          params={{ assignmentId: item.id }}
+          aria-label={`${actionLabel(item.status)} ${title}`}
+        >
+          {actionLabel(item.status)}
+        </Link>
+      </Button>
+    </li>
+  );
+}
+
+/** DESIGN.md: "Overdue is oxide, always with words", never colour on its own. */
+function DueDate({ due }: { due: Due }) {
+  if (due.tone === "overdue") return <span className="font-medium text-oxide">{due.label}</span>;
+  if (due.tone === "soon") {
+    return (
+      <Tag tone="straw" className="align-middle">
+        {due.label}
+      </Tag>
+    );
+  }
+  return <span>{due.label}</span>;
 }

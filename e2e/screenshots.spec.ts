@@ -319,16 +319,24 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
           await withPage(browser, theme, vp, async (page) => {
             await signInUI(page, taker.email);
             await open(page, "/employee/home");
-            await page.getByRole("link").filter({ hasText: title }).first().click();
-            await page.getByRole("heading", { name: title }).waitFor();
+            await page.getByRole("link", { name: `Start ${title}` }).click();
+            await page.getByRole("heading", { name: title, level: 1 }).waitFor();
 
             if (wanted.has("course-page")) await shoot(page, `course-page-${suffix}`);
 
-            await page.getByRole("button", { name: "I've reviewed the content" }).click();
-            await page.getByRole("button", { name: "Take Quiz" }).click();
+            await page.getByRole("button", { name: "Start the quiz" }).click();
             await page.getByText(questions[0].text).first().waitFor();
 
-            if (wanted.has("quiz")) await shoot(page, `quiz-${suffix}`);
+            // Mid-quiz, which on a phone is the whole point: one question at a time.
+            if (wanted.has("quiz")) {
+              await page.getByRole("radio", { name: questions[0].correct }).check();
+              await page.getByRole("button", { name: "Next" }).click();
+              await page.getByText(questions[1].text).first().waitFor();
+              await shootViewport(page, `quiz-${suffix}`);
+              // Back to the start, so the walk below begins where it expects to.
+              await page.getByRole("button", { name: "Back" }).click();
+              await page.getByText(questions[0].text).first().waitFor();
+            }
 
             // Half right, so the failed result shows a real score rather than zero.
             await answer(page, questions, (q, i) => (i < 2 ? q.correct : q.wrong));
@@ -338,7 +346,7 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
             }
 
             if (wanted.has("result-passed")) {
-              await page.getByRole("button", { name: /retake/i }).click();
+              await page.getByRole("button", { name: "Retake the quiz" }).click();
               await answer(page, questions, (q) => q.correct);
               await page.getByText(/You scored/).waitFor();
               await shoot(page, `result-passed-${suffix}`);
@@ -356,14 +364,16 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
 
 type QuizQuestion = { text: string; correct: string; wrong: string };
 
-/** Answers every question with `pick`, then submits. */
+/** Walks the quiz one question at a time, answering with `pick`, then submits. */
 async function answer(
   page: Page,
   questions: QuizQuestion[],
   pick: (q: QuizQuestion, index: number) => string,
 ) {
   for (const [index, q] of questions.entries()) {
-    await page.getByLabel(pick(q, index), { exact: true }).check();
+    await page.getByText(q.text).first().waitFor();
+    await page.getByRole("radio", { name: pick(q, index), exact: true }).check();
+    await page.getByRole("button", { name: "Next" }).click();
   }
-  await page.getByRole("button", { name: /submit quiz/i }).click();
+  await page.getByRole("button", { name: "Submit quiz" }).click();
 }

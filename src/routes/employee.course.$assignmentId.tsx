@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRequireRole } from "@/lib/use-require-role";
 import { EmployeeShell } from "@/components/EmployeeShell";
+import { CourseContent } from "@/components/CourseContent";
+import { Quiz, type Question } from "@/components/Quiz";
+import { PRACTICE_NOTE, QuizResult, type Result } from "@/components/QuizResult";
 import { submitQuiz } from "@/lib/quiz.functions";
-import { PASS_MARK } from "@/lib/scores";
+import { dueLabel, finishedDueLabel } from "@/lib/dates";
+import type { TrainingStatus } from "@/lib/training";
+import { Button } from "@/components/ui/button";
+import { Tag, type TagTone } from "@/components/ui/tag";
+import { toastFailed } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/employee/course/$assignmentId")({
   head: () => ({ meta: [{ title: "Course — SkillForge" }] }),
@@ -20,26 +28,18 @@ type Course = {
   content_url: string | null;
 };
 
-type Question = {
-  id: string;
-  question_text: string;
-  options: string[];
-};
-
-
-type ReviewItem = {
-  id: string;
-  question_text: string;
-  your_answer: string | null;
-  correct_answer: string;
-  is_correct: boolean;
-};
-
 type Assignment = {
   id: string;
-  status: "not_started" | "in_progress" | "complete";
+  status: TrainingStatus;
   due_date: string | null;
   course: Course | null;
+};
+
+const STATUS: Record<TrainingStatus, { label: string; tone: TagTone }> = {
+  not_started: { label: "Not started", tone: "quiet" },
+  in_progress: { label: "In progress", tone: "bronze" },
+  complete: { label: "Complete", tone: "blue" },
+  cancelled: { label: "Cancelled", tone: "quiet" },
 };
 
 function CoursePage() {
@@ -51,15 +51,8 @@ function CoursePage() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewed, setViewed] = useState(false);
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{
-    score: number;
-    passed: boolean;
-    review: ReviewItem[];
-    complete: boolean;
-  } | null>(null);
+  const [takingQuiz, setTakingQuiz] = useState(false);
+  const [result, setResult] = useState<Result | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -72,19 +65,22 @@ function CoursePage() {
         )
         .eq("id", assignmentId)
         .maybeSingle();
-      if (data) {
-        const a = data as any as Assignment;
-        setAssignment(a);
-        if (a.status === "complete") setViewed(true);
-        if (a.course) {
-          const { data: qs } = await supabase
+
+      const found = data as unknown as Assignment | null;
+      if (found) {
+        setAssignment(found);
+        if (found.course) {
+          // correct_answer is revoked from every signed-in user at the column
+          // level, so the columns have to be named: select("*") would fail.
+          const { data: rows } = await supabase
             .from("quiz_questions")
             .select("id, question_text, options")
-            .eq("course_id", a.course.id);
+            .eq("course_id", found.course.id);
           setQuestions(
-            (qs ?? []).map((q: any) => ({
-              ...q,
-              options: Array.isArray(q.options) ? q.options : [],
+            (rows ?? []).map((q) => ({
+              id: q.id,
+              question_text: q.question_text,
+              options: Array.isArray(q.options) ? (q.options as string[]) : [],
             })),
           );
         }
@@ -95,46 +91,59 @@ function CoursePage() {
 
   if (checking) return null;
 
-  async function markViewed() {
-    setViewed(true);
-    if (assignment && assignment.status === "not_started") {
-      await supabase
+  /**
+   * Opening the quiz is what "I've started this" means.
+   *
+   * Not started → In progress is the only status change an employee is allowed
+   * to make, and the database enforces that; everything else belongs to the
+   * grader or an admin.
+   */
+  async function startQuiz() {
+    setTakingQuiz(true);
+    setResult(null);
+    if (assignment?.status === "not_started") {
+      const { error } = await supabase
         .from("assignments")
         .update({ status: "in_progress" })
         .eq("id", assignment.id);
+      if (error) {
+        toastFailed("Couldn't mark this course as started. Your answers will still be marked.");
+        return;
+      }
+      setAssignment({ ...assignment, status: "in_progress" });
     }
   }
 
-  async function handleSubmit() {
-    if (!assignment || questions.length === 0) return;
+  async function handleSubmit(answers: Record<string, string>) {
+    if (!assignment) return false;
     setSubmitting(true);
+    const wasAlreadyComplete = assignment.status === "complete";
     try {
-      const res = await submitQuizFn({
+      const response = await submitQuizFn({
         data: { assignment_id: assignment.id, answers },
       });
       setResult({
-        score: res.score,
-        passed: res.passed,
-        review: (res as any).review ?? [],
-        complete: res.status === "complete",
+        score: response.score,
+        passed: response.passed,
+        review: response.review,
+        wasAlreadyComplete,
       });
-    } catch (err) {
-      console.error("Quiz submission failed", err);
+      setTakingQuiz(false);
+      setAssignment({ ...assignment, status: response.status as TrainingStatus });
+      return true;
+    } catch (error) {
+      console.error("Quiz submission failed", error);
+      toastFailed("Couldn't send your answers. Check your connection and submit again.");
+      return false;
     } finally {
       setSubmitting(false);
     }
   }
 
-  function retakeQuiz() {
-    setResult(null);
-    setAnswers({});
-    setShowQuiz(true);
-  }
-
   if (loading) {
     return (
       <EmployeeShell name={name}>
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-small text-ink-muted">Loading…</p>
       </EmployeeShell>
     );
   }
@@ -142,245 +151,86 @@ function CoursePage() {
   if (!assignment || !assignment.course) {
     return (
       <EmployeeShell name={name}>
-        <p className="text-sm text-muted-foreground">Course not found.</p>
-        <Link to="/employee/home" className="text-sm text-primary underline">
-          Back to home
-        </Link>
+        <h1 className="text-heading-1 font-expanded text-ink">Course not found</h1>
+        <p className="mt-2 text-body text-ink-muted">
+          This training isn't assigned to you, or it has been cancelled.
+        </p>
+        <Button asChild variant="outline" className="mt-6">
+          <Link to="/employee/home">Back to my training</Link>
+        </Button>
       </EmployeeShell>
     );
   }
 
-  const c = assignment.course;
+  const course = assignment.course;
+  const complete = assignment.status === "complete";
+  const status = STATUS[assignment.status];
+  const due = complete ? finishedDueLabel(assignment.due_date) : dueLabel(assignment.due_date);
 
   return (
     <EmployeeShell name={name}>
       <Link
         to="/employee/home"
-        className="mb-4 inline-block text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 rounded-sm text-small text-ink-muted hover:text-ink"
       >
-        ← Back
+        <ArrowLeft aria-hidden className="size-4" />
+        Back to my training
       </Link>
-      <h1 className="mb-1 font-serif text-2xl font-semibold text-foreground">{c.title}</h1>
-      {c.description && (
-        <p className="mb-6 text-sm text-muted-foreground">{c.description}</p>
-      )}
 
-      <div className="mb-6 rounded-lg border border-border bg-card p-4">
-        <CourseContent
-          type={c.content_type ?? "text"}
-          content={c.content_url ?? ""}
-        />
+      <h1 className="mt-4 text-heading-1 font-expanded text-ink">{course.title}</h1>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Tag tone={status.tone}>{status.label}</Tag>
+        <p
+          className={`text-small ${due.tone === "overdue" ? "font-medium text-oxide" : "text-ink-muted"}`}
+        >
+          {due.label}
+        </p>
       </div>
 
-      {result ? (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h2 className="mb-2 font-serif text-lg font-semibold text-foreground">
-            Quiz {result.passed ? "Passed" : "Not Passed"}
-          </h2>
-          <p className="mb-4 text-sm text-foreground">
-            You scored <span className="font-medium">{result.score}%</span>
-            {result.passed
-              ? " — nice work!"
-              : result.complete
-                ? " — this was a practice attempt. You already passed, so the course stays complete."
-                : ` — a passing score of ${PASS_MARK}% is required. You can retake the quiz.`}
-          </p>
-          {result.review.length > 0 && (
-            <div className="mb-4 space-y-3">
-              <h3 className="font-serif text-base font-semibold text-foreground">
-                Your answers
-              </h3>
-              {result.review.map((r, idx) => (
-                <div
-                  key={r.id}
-                  className="rounded-lg border border-border bg-background p-3"
-                >
-                  <div className="mb-2 flex items-start gap-2">
-                    <span
-                      className={`mt-0.5 text-sm font-semibold ${
-                        r.is_correct ? "text-success" : "text-primary"
-                      }`}
-                      aria-hidden
-                    >
-                      {r.is_correct ? "✓" : "✕"}
-                    </span>
-                    <span className="text-sm font-medium text-foreground">
-                      {idx + 1}. {r.question_text}
-                    </span>
-                  </div>
-                  {r.is_correct ? (
-                    <p className="pl-6 text-sm text-success">
-                      Correct — {r.your_answer}
-                    </p>
-                  ) : (
-                    <div className="space-y-1 pl-6 text-sm">
-                      <p className="text-muted-foreground">
-                        Your answer: {r.your_answer ?? "No answer"}
-                      </p>
-                      <p className="text-success">
-                        Correct answer: {r.correct_answer}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            {!result.passed && (
-              <button
-                onClick={retakeQuiz}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-              >
-                Retake Quiz
-              </button>
-            )}
-            <button
-              onClick={() => navigate({ to: "/employee/home" })}
-              className={
-                result.passed
-                  ? "rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-                  : "rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/40"
-              }
-            >
-              Back to my learning
-            </button>
-          </div>
-        </div>
-      ) : showQuiz ? (
-
-        <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-          <h2 className="font-serif text-lg font-semibold text-foreground">Quiz</h2>
-          {questions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              This course has no quiz questions.
-            </p>
-          ) : (
-            questions.map((q, idx) => (
-              <div key={q.id}>
-                <div className="mb-2 text-sm font-medium text-foreground">
-                  {idx + 1}. {q.question_text}
-                </div>
-                <div className="space-y-1.5">
-                  {q.options.map((opt) => (
-                    <label
-                      key={opt}
-                      className="flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted/40"
-                    >
-                      <input
-                        type="radio"
-                        name={q.id}
-                        value={opt}
-                        checked={answers[q.id] === opt}
-                        onChange={(e) =>
-                          setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
-                        }
-                      />
-                      {opt}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-          <button
-            onClick={handleSubmit}
-            disabled={
-              submitting ||
-              questions.length === 0 ||
-              questions.some((q) => !answers[q.id])
-            }
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? "Submitting…" : "Submit Quiz"}
-          </button>
-        </div>
-      ) : viewed ? (
-        <button
-          onClick={() => setShowQuiz(true)}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          Take Quiz
-        </button>
-      ) : (
-        <button
-          onClick={markViewed}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-        >
-          I've reviewed the content
-        </button>
+      {course.description && (
+        <p className="mt-4 max-w-[66ch] text-body text-ink-muted">{course.description}</p>
       )}
-    </EmployeeShell>
-  );
-}
 
-function CourseContent({ type, content }: { type: string; content: string }) {
-  if (!content) {
-    return <p className="text-sm text-muted-foreground">No content provided.</p>;
-  }
-  if (type === "video") {
-    const embed = toEmbed(content);
-    return (
-      <div className="aspect-video w-full overflow-hidden rounded-md bg-black">
-        {embed ? (
-          <iframe
-            src={embed}
-            className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+      {/* The page reads like a document: content first, quiz below. */}
+      <article className="mt-8">
+        <CourseContent type={course.content_type ?? "text"} content={course.content_url ?? ""} />
+      </article>
+
+      <div className="mt-12">
+        {result ? (
+          <QuizResult
+            result={result}
+            onRetake={startQuiz}
+            onDone={() => navigate({ to: "/employee/home" })}
           />
+        ) : takingQuiz ? (
+          questions.length === 0 ? (
+            <p className="text-body text-ink-muted">This course has no quiz questions.</p>
+          ) : (
+            <Quiz questions={questions} submitting={submitting} onSubmit={handleSubmit} />
+          )
         ) : (
-          <a
-            href={content}
-            target="_blank"
-            rel="noreferrer"
-            className="block p-4 text-sm text-white underline"
-          >
-            {content}
-          </a>
+          <section className="rounded-md border border-steel bg-surface p-4 md:p-6">
+            <h2 className="text-heading-2 text-ink">
+              {complete ? "Retake the quiz" : "Ready for the quiz?"}
+            </h2>
+            <p className="mt-2 max-w-[66ch] text-body text-ink-muted">
+              {questions.length === 0
+                ? "This course has no quiz questions."
+                : complete
+                  ? // Said before they start, not only after they finish.
+                    PRACTICE_NOTE
+                  : `There ${questions.length === 1 ? "is 1 question" : `are ${questions.length} questions`}, one at a time. You can go back and change an answer before you hand it in.`}
+            </p>
+            {questions.length > 0 && (
+              <Button className="mt-4" onClick={startQuiz}>
+                {complete ? "Retake the quiz" : "Start the quiz"}
+              </Button>
+            )}
+          </section>
         )}
       </div>
-    );
-  }
-  if (type === "pdf") {
-    return (
-      <div className="space-y-2">
-        <iframe src={content} className="h-[600px] w-full rounded-md border" />
-        <a
-          href={content}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm text-primary underline"
-        >
-          Open PDF in new tab
-        </a>
-      </div>
-    );
-  }
-  return (
-    <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-      {content}
-    </div>
+    </EmployeeShell>
   );
-}
-
-function toEmbed(url: string): string | null {
-  try {
-    const u = new URL(url);
-    if (u.hostname.includes("youtube.com")) {
-      const v = u.searchParams.get("v");
-      if (v) return `https://www.youtube.com/embed/${v}`;
-    }
-    if (u.hostname === "youtu.be") {
-      return `https://www.youtube.com/embed${u.pathname}`;
-    }
-    if (u.hostname.includes("vimeo.com")) {
-      const id = u.pathname.split("/").filter(Boolean)[0];
-      if (id) return `https://player.vimeo.com/video/${id}`;
-    }
-    return url;
-  } catch {
-    return null;
-  }
 }

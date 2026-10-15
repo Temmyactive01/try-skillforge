@@ -302,7 +302,8 @@ export { expect };
 export async function sessionTokens(email: string, password = PASSWORD) {
   const client = publicClient();
   const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error || !data.session) throw new Error(`sign in ${email}: ${error?.message ?? "no session"}`);
+  if (error || !data.session)
+    throw new Error(`sign in ${email}: ${error?.message ?? "no session"}`);
   return {
     access_token: data.session.access_token,
     refresh_token: data.session.refresh_token,

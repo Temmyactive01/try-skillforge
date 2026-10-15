@@ -2,7 +2,128 @@
 
 What has been done, why, what broke and what's next. Newest session first. Update this file at the end of every working session.
 
-## Where things stand (2026-10-09, end of session 5)
+## Where things stand (2026-10-15, end of session 6)
+
+- **Phase 3 of the redesign is done.** The employee screens and every page you sign in through now follow `DESIGN.md`, like the admin did after phases 1 and 2. Only the marketing site still has its old layout, which is phase 4.
+- **A real security hole closed in the quiz grader.** `submitQuiz` returned the correct answer to every question on _every_ attempt, so an employee could fail on purpose, read the answers and retake with a full set. The page printed them too, so it did not even need devtools.
+- **A date bug closed that affected the admin pages as well.** Due dates were read as midnight UTC rather than as calendar days, so west of Greenwich every date in the app read a day early.
+- The quiz is now **one question at a time at every width**, with a step to check your answers before handing them in, and a warning before leaving with answers unsubmitted.
+- **Forgot password has a page of its own** (`/forgot-password`) instead of a muted link on the sign-in form that failed when the field above it was empty.
+- **115 end-to-end tests pass** (65 before), and the suite got **faster**: 12.4 minutes against 14.7 for the smaller one.
+- Work is on **`redesign-phase-3`**, 9 commits, **not merged and not pushed**.
+
+## Session 6: 2026-10-15 (redesign, phase 3)
+
+### What we did
+
+1. **Captured a "before" baseline** of every employee and auth page (`docs/screenshots/before-phase-3`, 22 shots), and taught the screenshot run to walk the employee flow and the set-password page.
+2. **Redesigned the employee shell**: a single 720px column, a plain top bar, no sidebar.
+3. **Rebuilt the training list** around one question — what should I do next.
+4. **Rebuilt the course page** to read like a document, with content held under 66 characters a line and the quiz below it.
+5. **Rebuilt the quiz** as one question at a time with a summary step, and the **result** as something that announces itself and moves focus to itself.
+6. **Rebuilt every sign-in page** on a shared `AuthCard`, with per-field validation, and gave forgot password its own route.
+7. **Closed the answer-sheet leak** in `submitQuiz`.
+8. **Fixed the UTC date bug** in the shared helpers, which also corrects the admin pages.
+9. **Added 54 tests** (30 end-to-end, 24 unit) and **made the suite faster** while it grew.
+
+### Key decisions and why
+
+| Decision                                                              | Why                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **One question at a time on a desktop too** (your call to make)       | `DESIGN.md` says employee screens show "one thing at a time: the next course, **the next question**", and does not make that a phone-only rule. One code path means one set of keyboard, focus and validation behaviours rather than two that drift. What a show-everything layout would buy — checking your work before committing to it — is a summary step instead, which also works on a phone. |
+| **Cancelled training stays hidden from employees** (your default)     | Cancelling is the admin saying "you no longer need to do this". Showing it would put a row on the page the employee cannot act on or get rid of, and the only thing they could do about it is ask someone. The admin keeps the record: the row is still there, still restorable, still counted out of the dashboard figures.                                                                        |
+| **Two groups, To do and Completed**, rather than one sorted list      | A heading says "you have nothing outstanding" far more plainly than a completed item simply happening to be last.                                                                                                                                                                                                                                                                                   |
+| **Deadlines order the list; status does not**                         | Sorting by due date puts overdue work at the top for free, since a date in the past sorts before every date in the future. Something not yet started but due tomorrow beats something in progress but due next month: the deadline is the thing that can be missed.                                                                                                                                 |
+| **Only the first outstanding item gets the primary button**           | `DESIGN.md` allows one primary button per screen. Giving it to the most urgent thing satisfies that _and_ makes "what to do next" visible without a badge saying so. A screen with nothing outstanding has no primary button at all, which is the honest answer.                                                                                                                                    |
+| **The action is the only link in an item**                            | The whole row used to be a link. Two targets to the same place is an extra stop for a keyboard user and a duplicate for a screen reader.                                                                                                                                                                                                                                                            |
+| **Quiz progress is text, not a bar**                                  | A bar there would read as completion, and the temper scale means completion and nothing else.                                                                                                                                                                                                                                                                                                       |
+| **Correct answers stopped being temper-blue**                         | They were printed in the brand colour, which spends the progress language on something that is not progress. Being right is now plain ink with the word; only being wrong is coloured, in oxide.                                                                                                                                                                                                    |
+| **"Due in 2 days" is the one deadline on a temper colour**            | `DESIGN.md`'s temper table gives stage 1 a second meaning, "due soon". Straw is a fill and not a text colour in the light theme, so the tint carries it and the word stays ink — writing _in_ straw is exactly what made the old tag unreadable.                                                                                                                                                    |
+| **The employee top bar is not sticky, unlike the admin's**            | The course page is a document to read, and nothing in that bar is something you reach for while reading. On a phone a pinned bar spends 64px of a short screen on two controls you want twice a session.                                                                                                                                                                                            |
+| **Forgot password got a real route** (your call)                      | The Back button does what you expect, the address can be sent to someone, and the page has a title of its own. No Supabase change was needed: the emailed link still lands on `/accept-invite`, the origin is unchanged, and the Redirect URL entries are path wildcards.                                                                                                                           |
+| **No theme toggle on the sign-in pages**                              | The head script already honours the stored or system choice. A second button on a one-button screen costs more than it gives.                                                                                                                                                                                                                                                                       |
+| **Sign-in gives one answer for a wrong address and a wrong password** | Saying which was wrong turns the form into a way to ask whether an address has an account here.                                                                                                                                                                                                                                                                                                     |
+| **Field errors move the cursor to the first bad field**               | The error belongs beside its field and is tied to it with `aria-describedby`, but nothing announces it on its own. Moving focus reads the label and the problem together, and lands the user where the fix has to be typed.                                                                                                                                                                         |
+| **Unit tests run in the Playwright runner**                           | `dueLabel` and the ordering rule are pure functions with more cases than they look like. The runner is already here and already reads TypeScript, so this cost no new tooling, and all 24 run in a tenth of a second.                                                                                                                                                                               |
+
+### The security hole, and how it was found
+
+**The quiz grader handed the answer sheet to failed attempts.** `submitQuiz` built its review with `correct_answer` on every question and returned it whatever the score, so:
+
+- an employee could fail a quiz on purpose, read the response and retake it with every answer;
+- they did not even need devtools, because the page printed "The answer is …" under each wrong question. The committed before-screenshot shows it.
+
+It was found by reading the grader while planning what the result panel should show. A comment in `access.spec.ts` claimed `getCourseForEdit` was "the only path that returns `quiz_questions.correct_answer`" — that claim was false, and believing it is most likely how this was missed. The comment now says so and names the test that guards the other path.
+
+The fix: grade in one pass, then build the review in a second with `reveal = passed || assignment.status === "complete"`. Grading first means the decision is settled before anything is written down to send back — building the full review and stripping it afterwards would work today and leak the day someone returns it a line earlier. `assignment.status` is the status _before_ the attempt, read from the database under the caller's own RLS; the request body carries only an assignment id and the answers.
+
+A failed attempt still learns which questions it got wrong, which is the half worth having. What that leaves open is in the Stage 4 backlog: retake, change one answer, see whether it flips.
+
+### Bugs found, and what fixed them
+
+| Found                                                                               | Cause                                                                                                                                                                                                                                                                                                                | Fix                                                                                                                                                                                                                      |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **The grader returned the correct answers to failed attempts**                      | The review was built with `correct_answer` unconditionally, and a stale comment said no such path existed.                                                                                                                                                                                                           | Grade first, reveal only to an attempt that passed or an assignment already complete. Guarded by a test that watches the response body as well as the page.                                                              |
+| **Every due date read a day early west of Greenwich**                               | `new Date("2026-10-15")` is midnight **UTC**, not midnight here. In New York that is the 14th. `formatDate` and `daysLate` are shared, so the admin pages had it too.                                                                                                                                                | `parseLocalDate` pins a date-only value to the local calendar. Proved under `America/New_York`: the old reading prints "14 Oct 2026" for 2026-10-15, the new one prints 15 Oct. The 8 date tests pass in both timezones. |
+| **Field errors were never announced**                                               | They sat beside the field, correctly tied with `aria-describedby`, but nothing moved focus or spoke. Found by an existing password-reset test that had asserted on `role="alert"`.                                                                                                                                   | The cursor moves to the first field with a problem.                                                                                                                                                                      |
+| **A failed submission left unsaved answers unguarded**                              | The quiz dropped its leave-warning when submitting and never brought it back if the request failed.                                                                                                                                                                                                                  | `onSubmit` reports whether the answers were delivered; if they were not, they are unsaved work again.                                                                                                                    |
+| **The sticky employee top bar rendered mid-document** in every full-page screenshot | A `position: sticky` bar resolves against the viewport, so a stitched capture puts it a screen down.                                                                                                                                                                                                                 | The bar is static, which is the better call on a phone anyway.                                                                                                                                                           |
+| **The quiz opened below the fold**                                                  | It appears under a page of course content, so starting it left you looking at the content with the quiz half off the bottom.                                                                                                                                                                                         | Every step scrolls the quiz to the top of the screen and puts focus on the new question.                                                                                                                                 |
+| **One flake, self-inflicted**                                                       | Dropping `networkidle` from `open()` did not remove the wait for a page that fetches rows in an effect — it moved that wait inside the assertion looking for a row, whose budget had been tuned with the pre-wait in front of it. `journey.spec.ts` ran out of it under full-suite load; alone it passed every time. | The assertion budget took on what it inherited: 15s → 20s. A passing run pays nothing for it.                                                                                                                            |
+
+### Making the suite faster while it grew
+
+The suite was 14.7 minutes for 65 tests, which is at the edge of the 15-minute line, and phase 3 was going to add 50. Two changes, both coverage-neutral:
+
+1. **`open()` waits for hydration alone.** It used to wait for `networkidle` and _then_ for the hydration flag. The flag is the real signal — it is set in the effect that runs when hydration finishes — and `networkidle` in front of it is a guess at the same thing: half a second of quiet, which a page refreshing a token may never give.
+2. **Tests that are not testing sign-in get their session written straight into `localStorage`** before the first navigation, where the app's client reads it. 39 tests were filling in and submitting the real form for something they were not checking. `journey.spec.ts`, `auth.spec.ts` and `password-reset.spec.ts` keep the real form, because for them it is the thing under test.
+
+`workers` stays at 1: parallelism is what would risk Supabase's auth rate limits, which is why the run was made serial in the first place.
+
+**115 tests in 12.4 minutes**, against 65 in 14.7.
+
+### Commits
+
+|           |                                                                                                                |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| `6def2e2` | The before-phase-3 screenshots, and a screenshot run that can walk the employee flow and the set-password page |
+| `6ffe5d8` | Date, ordering and tag foundations; the UTC date bug; 24 unit tests                                            |
+| `4029e09` | The employee shell, training list, course page, quiz and result                                                |
+| `a2797f7` | The sign-in pages, and `/forgot-password` as a route of its own                                                |
+| `c54e3fb` | 30 end-to-end tests; field errors move focus; the employee's dialog joins the opacity guard                    |
+| `700997d` | The two suite speed-ups                                                                                        |
+| `1ca1357` | The assertion budget takes on what `open()` used to absorb; `focusFirstError` moves to `lib`                   |
+| `9ec35bd` | The grader stops handing the answer sheet to failed attempts                                                   |
+
+### Checks at the end of the session
+
+| Check                                   | Result                                                                                                |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `npm run test:e2e`                      | **115 passed** (65 before this session), in **10.9 minutes** — against 14.7 for the smaller suite     |
+| `npm run check:contrast`                | **all passed** — 60 checks across both themes (56 before)                                             |
+| `npx tsc --noEmit`                      | clean                                                                                                 |
+| `npx tsc --noEmit -p e2e/tsconfig.json` | clean                                                                                                 |
+| `npm run build`                         | succeeds (nitro, Cloudflare target)                                                                   |
+| `npm run lint`                          | 367 problems, down from 399 on `main`; **no errors and no warnings in any file this session touched** |
+| `npm run verify:security`               | **all passed** — 55 checks                                                                            |
+| `npm run test:mcp`                      | all passed                                                                                            |
+| secret scan                             | clean — no secret-shaped strings anywhere in the branch; `.env.local` has never been tracked          |
+
+Two failures were seen on the way and both were understood rather than retried: a `journey.spec.ts` assertion that ran out of budget under full-suite load (fixed in `1ca1357`), and one 26-second timeout on the first request after editing `quiz.functions.ts`, which was Vite transforming the changed module and passed at 14 seconds on a re-run. Worth knowing if the suite ever looks flaky immediately after a change.
+
+### Screenshots
+
+`docs/screenshots/before-phase-3` (22, light only) and `docs/screenshots/phase-3` (52: the training list with items and empty, the course page, the quiz mid-question, both results, and all six auth screens — sign in, sign up, forgot password and its confirmation, set password for an invite and for a reset, and a link that has expired — each at 1440x900 and 375x812 in both themes).
+
+The quiz shot is a viewport capture rather than a full-page one, because mid-question on a phone is the thing it exists to show.
+
+### What phase 3 did not cover
+
+- The marketing pages still have their old layout, including the centred hero and three feature cards `DESIGN.md` says to avoid. That is phase 4.
+- There is still no favicon.
+- Retaking a quiz is still unlimited. The grader no longer hands over the answers, but a patient employee can still change one answer per attempt and watch which question flips. See the Stage 4 backlog.
+
+## Where things stood (2026-10-09, end of session 5)
 
 - **Phase 2 of the redesign is done.** Courses and Employees now follow `DESIGN.md` like the admin shell, Dashboard and Assignments before them: sortable tables on a desktop, cards on a phone, kit components throughout, and no hand-built markup.
 - **Nothing in the admin uses a native browser dialog any more.** Confirmations are the kit's `AlertDialog`, messages are a toast. ESLint's `no-alert` now fails the build if one comes back.
@@ -369,7 +490,10 @@ Also added in that last fix: show/hide eye icons on the set-password page, shari
 - ~~**Row actions report failures with a browser `alert()`.**~~ Fixed in session 5: nothing in the admin uses a native dialog, and ESLint's `no-alert` keeps it that way.
 - ~~**`AssignCourseModal` is on a raw grey/green/red palette.**~~ Rebuilt on the tokens in session 5.
 - **A course that anyone has passed can never be deleted.** That is deliberate — it protects the training record — but there is also no way to archive or hide a course that is no longer taught. See the Stage 4 backlog.
-- **Cancelled assignments aren't handled everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type don't know about the `cancelled` status.
+- **Cancelled assignments aren't handled everywhere.** The MCP `list_my_assignments` status filter still doesn't know about the `cancelled` status. The employee's course page and training list now do, as of session 6.
+- ~~**The quiz grader returned the correct answers to failed attempts.**~~ Closed in session 6 (`9ec35bd`).
+- ~~**Due dates read a day early west of Greenwich.**~~ Closed in session 6 (`6ffe5d8`).
+- **Retaking a quiz is unlimited**, and a result says which questions were wrong, so a patient employee can change one answer per attempt until it passes. See the Stage 4 backlog.
 - **npm reports security advisories** in some dependencies. `npm audit fix` wasn't run, because it changes versions.
 - **About 290 old lint problems** remain, mostly formatting in the Supabase helper files and the generated `types.ts`. Session 5 brought the count down from 412 to 399 and added none.
 - **The full AI-assistant sign-in through the consent page** (manual test 6, with a real AI client) hasn't been tried. The signed-in `/mcp` call itself is tested.
@@ -400,11 +524,12 @@ Product decisions and features worth doing, none of them blocking a launch.
 - [ ] **Archive course.** Same shape of problem from the other end: a course anyone has passed can't be deleted, so a course no longer taught has nowhere to go. Archiving would hide it from the Courses list and the Assign dialog without touching what people have already earned.
 - [ ] **Decide whether admins should be able to cancel a Complete assignment** (it currently hides a completion record). Cancelling is reversible and the result rows survive, but a cancelled row drops out of the dashboard figures and the employee's list, so a completion can be made invisible without being deleted.
 - [ ] **Handle `cancelled` everywhere.** The MCP `list_my_assignments` status filter and the course page's `Assignment` type still don't know the status exists.
+- [ ] **Quiz retake abuse: employees see which questions were wrong, so they could pass by changing one answer per retake. Decide on an attempt limit or a cooldown between retakes.** Phase 3 stopped the grader returning the correct answers to a failed attempt, which closed the one-shot version of this. What remains is slower but still works: retake, change one answer, see whether that question flips to correct, repeat. Telling someone which questions they got wrong is the useful half of a result and worth keeping, so the answer is probably a limit on attempts or a wait between them rather than hiding more. Every attempt is already recorded in `quiz_results`, so the data to enforce either is there.
 
 ## What's next
 
-1. Review phase 2, then merge `redesign-phase-2` and push it.
-2. Continue the redesign: the employee screens, then the marketing pages. Run `npm run test:e2e` and `npm run check:contrast` after each.
+1. Review phase 3, then merge `redesign-phase-3` and push it.
+2. Finish the redesign with phase 4, the marketing pages: the home page still has the centred hero and three feature cards `DESIGN.md` says to avoid. Run `npm run test:e2e` and `npm run check:contrast` after it.
 3. Deploy to Netlify and confirm the build works there, then work through "Before launch".
 4. Work through the Stage 4 backlog above.
 5. Try connecting a real AI assistant through `/oauth/consent`.
@@ -421,6 +546,7 @@ npm run test:mcp          # test the AI-assistant endpoint (needs npm run dev)
 npm run check:contrast    # check the design colours meet WCAG AA, both themes
 npm run screenshots       # capture the phase-1 admin screens for review
 npm run screenshots:phase-2  # capture the phase-2 screens (Courses, Employees)
+npm run screenshots:phase-3  # capture the phase-3 screens (employee pages, sign-in pages)
 npm run test:e2e          # all browser tests (~6 min, no email, cleans up)
 npm run test:e2e:report   # open the last test report
 npx supabase db push      # apply new migrations (see README "Database changes")

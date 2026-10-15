@@ -2,7 +2,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField, TextField } from "@/components/AuthField";
+import { PasswordField, TextField, focusFirstError } from "@/components/AuthField";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -69,7 +69,10 @@ function LoginPage() {
     if (!email.trim()) found.email = "Enter the email address you were invited with.";
     if (!password) found.password = "Enter your password.";
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      focusFirstError(["email", "password"], found);
+      return;
+    }
 
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({

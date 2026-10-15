@@ -1,4 +1,4 @@
-// Every Dialog and AlertDialog in the admin must sit on an opaque surface at
+// Every Dialog and AlertDialog must sit on an opaque surface at
 // every width and in both themes. A see-through dialog puts the page's text
 // behind the form you are filling in, which is unreadable and looks broken.
 //
@@ -22,6 +22,8 @@ const COURSE = `Dialog course ${STAMP}`;
 const TEAM = `Dialog team ${STAMP}`;
 
 let adminEmail: string;
+let employeeEmail: string;
+let quizAssignmentId: string;
 
 test.beforeAll(async () => {
   const company = await createCompany("Dialogs");
@@ -35,8 +37,9 @@ test.beforeAll(async () => {
   if (teamError) throw new Error(`create team: ${teamError.message}`);
 
   const ada = await createUser(company.id, "Ada Mensah", "employee", team.id);
+  employeeEmail = ada.email;
   const course = await createCourse(company.id, COURSE);
-  await assign(course, ada.id, { dueInDays: 7 });
+  quizAssignmentId = await assign(course, ada.id, { dueInDays: 7 });
 });
 
 /** True only when nothing behind the panel can show through it. */
@@ -240,3 +243,29 @@ for (const width of [375, 1280]) {
     });
   });
 }
+
+/*
+ * The employee has exactly one dialog — the warning before leaving a quiz with
+ * unsubmitted answers — and it is held to the same rule as the admin's nine.
+ * It is checked here rather than in employee.spec.ts so that a change to the
+ * shared AlertDialog fails in the file that exists to catch exactly that.
+ */
+test.describe("the employee's one dialog", () => {
+  for (const width of [375, 1280]) {
+    for (const theme of ["light", "dark"] as const) {
+      test(`leaving the quiz is opaque at ${width}px in the ${theme} theme`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 812 });
+        await page.emulateMedia({ colorScheme: theme });
+        await signInUI(page, employeeEmail);
+
+        await open(page, `/employee/course/${quizAssignmentId}`);
+        await page.getByRole("button", { name: "Start the quiz" }).click();
+        // A warning only appears once there is something to lose.
+        await page.getByRole("radio").first().check();
+        await page.getByRole("link", { name: "Back to my training" }).click();
+
+        await expectOpaque(page.getByRole("alertdialog"), `Leave the quiz at ${width}px, ${theme}`);
+      });
+    }
+  }
+});

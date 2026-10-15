@@ -9,7 +9,7 @@ import {
 } from "@supabase/supabase-js";
 import { createTabSessionClient, supabase } from "@/integrations/supabase/client";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField } from "@/components/AuthField";
+import { PasswordField, focusFirstError } from "@/components/AuthField";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -155,7 +155,10 @@ function AcceptInvitePage() {
     if (password.length < 8) found.password = "Use at least 8 characters.";
     if (confirm !== password) found.confirm = "Both passwords must match.";
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      focusFirstError(["password", "confirm"], found);
+      return;
+    }
 
     setLoading(true);
     const client = getLinkClient();

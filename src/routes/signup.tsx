@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { signupCompanyAdmin } from "@/lib/signup.functions";
 import { AuthCard, authLink } from "@/components/AuthCard";
-import { PasswordField, TextField } from "@/components/AuthField";
+import { PasswordField, TextField, focusFirstError } from "@/components/AuthField";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
@@ -69,7 +69,10 @@ function SignupPage() {
 
     const found = validate();
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    if (Object.keys(found).length > 0) {
+      focusFirstError(["name", "company", "email", "password", "confirm"], found);
+      return;
+    }
 
     setLoading(true);
     try {

@@ -68,7 +68,10 @@ test("a fresh reset link sets a new password", async ({ page, baseURL }) => {
   await expect(page.locator("#confirm")).toHaveAttribute("type", "text");
 
   await fillSetPasswordForm(page, NEW_PASSWORD, "Something-Else-2026!");
-  await expect(page.getByRole("alert")).toHaveText("Passwords do not match.");
+  // The problem sits beside the field it belongs to, and the cursor goes there.
+  await expect(page.getByText("Both passwords must match.")).toBeVisible();
+  await expect(page.locator("#confirm")).toBeFocused();
+  await expect(page.locator("#confirm")).toHaveAttribute("aria-invalid", "true");
 
   await fillSetPasswordForm(page, NEW_PASSWORD);
   await page.waitForURL("**/employee/home");

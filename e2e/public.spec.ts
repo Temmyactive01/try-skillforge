@@ -5,7 +5,7 @@
  * sign in borrow the company the suite's helpers build, because what they are
  * checking is that the marketing header notices somebody is already signed in.
  */
-import { test } from "@playwright/test";
+import { test, type Locator } from "@playwright/test";
 import { createCompany, createUser, expect, open, signIn, waitForHydration } from "./helpers";
 
 /** Every public page, with the exact title it must carry and its one h1. */
@@ -65,6 +65,41 @@ test.describe("public pages", () => {
         `${path} is ${overflow.scrollWidth - overflow.clientWidth}px wider than the viewport`,
       ).toBeLessThanOrEqual(overflow.clientWidth);
     }
+  });
+
+  test("the page is built on one container, so edges line up", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await open(page, "/");
+
+    /*
+     * Everything on a public page sits in the same container, so the left edge
+     * runs unbroken from the header down to the footer. The home page used to
+     * put its hero in a wider one, which left the headline further left than
+     * the logo above it and the frame further right than the header beside it.
+     */
+    const box = async (locator: Locator) => (await locator.boundingBox())!;
+    const left = async (locator: Locator) => Math.round((await box(locator)).x);
+    const right = async (locator: Locator) => {
+      const b = await box(locator);
+      return Math.round(b.x + b.width);
+    };
+
+    const logo = page.locator("header").getByRole("link", { name: "SkillForge" });
+    const gutter = await left(logo);
+
+    const h1 = page.getByRole("heading", { level: 1 });
+    expect(await left(h1), "the h1 and the header logo share a left edge").toBe(gutter);
+
+    const footerMark = page.locator("footer").getByText("SkillForge").first();
+    expect(await left(footerMark), "the footer starts on that edge too").toBe(gutter);
+
+    const steps = page.getByRole("heading", { name: "From a course to a completion" });
+    expect(await left(steps), "and so does every section below the hero").toBe(gutter);
+
+    // The hero frame stops where the last control in the header stops.
+    const cta = page.locator("header").getByRole("link", { name: "Create a company account" });
+    const frame = page.locator("figure").first();
+    expect(await right(frame), "the hero frame stays inside the container").toBe(await right(cta));
   });
 
   test("the header reaches every page it names, and both calls to action", async ({ page }) => {

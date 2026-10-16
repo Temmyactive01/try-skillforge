@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { useViewer } from "@/lib/use-viewer";
+import { container } from "./PublicPage";
 import { SkillForgeWordmark } from "./SkillForgeMark";
 
 /*
@@ -32,7 +33,9 @@ export function PublicHeader() {
 
   return (
     <header className="border-b border-steel bg-ground">
-      <div className="mx-auto flex w-full max-w-[72rem] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
+      <div
+        className={`${container} flex flex-wrap items-center gap-x-6 gap-y-3 py-3 sm:h-16 sm:flex-nowrap sm:py-0`}
+      >
         <SkillForgeWordmark className="order-1" />
 
         <nav

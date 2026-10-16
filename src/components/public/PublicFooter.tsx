@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { container } from "./PublicPage";
 import { SkillForgeMark } from "./SkillForgeMark";
 
 /*
@@ -42,7 +43,7 @@ export function PublicFooter() {
 
   return (
     <footer className="mt-16 border-t border-steel bg-ground">
-      <div className="mx-auto w-full max-w-[72rem] px-4 py-12 sm:px-6">
+      <div className={`${container} py-12`}>
         <div className="grid gap-8 sm:grid-cols-[1fr_auto] sm:gap-16">
           <div>
             <p className="flex items-center gap-2 text-heading-3 font-semibold text-ink">

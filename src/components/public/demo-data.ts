@@ -56,7 +56,7 @@ export const DEMO_ASSIGNMENTS: DemoAssignment[] = [
     course: "Fire safety at work",
     status: "complete",
     score: 92,
-    due: { label: "Finished last month", tone: "plain" },
+    due: { label: "Due last month", tone: "plain" },
   },
   {
     employee: "Daniel Okafor",
@@ -70,7 +70,7 @@ export const DEMO_ASSIGNMENTS: DemoAssignment[] = [
     course: "Fire safety at work",
     status: "complete",
     score: 100,
-    due: { label: "Finished last week", tone: "plain" },
+    due: { label: "Due 3 weeks ago", tone: "plain" },
   },
   {
     employee: "Daniel Okafor",
@@ -91,21 +91,21 @@ export const DEMO_ASSIGNMENTS: DemoAssignment[] = [
     course: "Manual handling",
     status: "complete",
     score: 100,
-    due: { label: "Finished yesterday", tone: "plain" },
+    due: { label: "Due yesterday", tone: "plain" },
   },
   {
     employee: "Ruth Mensah",
     course: "Data protection essentials",
     status: "complete",
     score: 74,
-    due: { label: "Finished 3 days ago", tone: "plain" },
+    due: { label: "Due in 4 days", tone: "plain" },
   },
   {
     employee: "Tomas Kovac",
     course: "Fire safety at work",
     status: "complete",
     score: 86,
-    due: { label: "Finished 3 days ago", tone: "plain" },
+    due: { label: "Due last week", tone: "plain" },
   },
 ];
 

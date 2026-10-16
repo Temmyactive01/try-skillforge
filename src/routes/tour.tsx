@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import {
   AssignmentsView,
   CoursesView,
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/tour")({
 function TourPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <h1 className="max-w-[20ch] text-heading-1 font-expanded text-ink">A tour of SkillForge</h1>
         <p className="mt-6 max-w-[64ch] text-body text-ink-muted">
           Five screens, in the order you would meet them. Each one is built from the same components
@@ -45,10 +45,8 @@ function TourPage() {
           are looking at is the real thing with invented names in it, not a mock-up.
         </p>
         <p className="mt-4 max-w-[64ch] text-body text-ink-muted">
-          None of the screens below are clickable, and there is no demo account to sign in to. That
-          is deliberate: a public login shared by everyone who visits is an attack surface, and a
-          company whose data has to be kept away from real ones. This shows the same product without
-          either.
+          These are the real screens with example data for a company that does not exist. They are
+          for looking at, not clicking — when you are ready to try it, create a company account.
         </p>
       </section>
 
@@ -87,20 +85,21 @@ function TourPage() {
         <QuizView />
       </Stop>
 
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
-          <h2 className="max-w-[24ch] text-heading-2 text-ink">That is the whole product</h2>
-          <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
-            There is no sixth screen holding the interesting part back. If it looks like it would do
-            the job, the next step is a company account of your own.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <Link to="/signup">Create a company account</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/features">See the full feature list</Link>
-            </Button>
+      <section className={`${container} py-12 lg:py-16`}>
+        <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+          <h2 className="text-heading-2 text-ink lg:col-span-5">Ready to try it?</h2>
+          <div className="lg:col-span-7">
+            <p className="max-w-[60ch] text-body text-ink-muted">
+              If it looks like it would do the job, set up a company account and invite your team.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg">
+                <Link to="/signup">Create a company account</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/features">See the full feature list</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -111,8 +110,8 @@ function TourPage() {
 /** One stop on the tour: words on the left, the screen underneath them. */
 function Stop({ heading, body, children }: { heading: string; body: string; children: ReactNode }) {
   return (
-    <section className={`${section} border-t border-steel py-12 lg:py-16`}>
-      <div className="max-w-[80rem]">
+    <section className={`${container} border-t border-steel py-12 lg:py-16`}>
+      <div>
         <h2 className="max-w-[24ch] text-heading-2 text-ink">{heading}</h2>
         <p className="mt-4 max-w-[68ch] text-body text-ink-muted">{body}</p>
         <div className="mt-8">{children}</div>

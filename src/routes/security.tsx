@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/security")({
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/security")({
 function SecurityPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <h1 className="max-w-[24ch] text-heading-1 font-expanded text-ink">
           How SkillForge is secured
         </h1>
@@ -126,7 +126,7 @@ function SecurityPage() {
 
 function Item({ heading, children }: { heading: string; children: ReactNode }) {
   return (
-    <section className={`${section} pt-10 lg:pt-12`}>
+    <section className={`${container} pt-10 lg:pt-12`}>
       {/* Heading left, answer right. DESIGN.md: lines under 75 characters. */}
       <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
         <h2 className="text-heading-2 text-ink lg:col-span-5">{heading}</h2>

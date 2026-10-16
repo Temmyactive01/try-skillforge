@@ -82,13 +82,15 @@ function Score({ row }: { row: DemoAssignment }) {
 /**
  * The admin's assignments table, as the hero shows it.
  *
- * Six columns cannot be read at 375px, so below `md` each row becomes a card —
- * which is exactly what the real page does, for exactly the same reason.
+ * Five columns cannot be read at 375px, so below `xl` each row becomes a card —
+ * which is what the real page does too, at its own width. The hero switches
+ * later than the page does because the frame is only part of the hero: seven
+ * of twelve columns is 627px at 1440, and five columns do not fit that.
  */
 export function AssignmentsView({ className }: { className?: string }) {
   return (
     <ProductFrame title="Assignments" className={className}>
-      <ul className="divide-y divide-steel md:hidden">
+      <ul className="divide-y divide-steel xl:hidden">
         {DEMO_ASSIGNMENTS.map((row) => (
           <li key={`${row.employee}-${row.course}`} className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -106,7 +108,7 @@ export function AssignmentsView({ className }: { className?: string }) {
         ))}
       </ul>
 
-      <div className="hidden md:block">
+      <div className="hidden xl:block">
         <Table>
           <TableHeader>
             <TableRow>

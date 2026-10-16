@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { AssignmentsView, TrainingView } from "@/components/public/ProductView";
 import { Button } from "@/components/ui/button";
 import { PASS_MARK } from "@/lib/scores";
@@ -40,10 +40,10 @@ function HomePage() {
 
 function Hero() {
   return (
-    <section className="overflow-hidden border-b border-steel py-12 lg:py-16">
-      <div className="mx-auto w-full max-w-[80rem] px-4 sm:px-6">
+    <section className="border-b border-steel py-12 lg:py-16">
+      <div className={container}>
         <div className="grid items-center gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 xl:col-span-4">
             <h1 className="text-heading-1 font-expanded text-ink lg:text-display">
               Assign training and see who has finished it.
             </h1>
@@ -74,11 +74,11 @@ function Hero() {
           </div>
 
           {/*
-           * The frame runs wider than the text column and past the gutter the
-           * rest of the page keeps to, which is where the asymmetry comes
-           * from. The section clips it, so nothing scrolls sideways.
+           * The frame stays inside the page container like everything else.
+           * It used to run past the right gutter, which read as a mistake
+           * next to a header and a footer that stopped short of it.
            */}
-          <div className="lg:col-span-7 lg:-mr-10 xl:-mr-20">
+          <div className="lg:col-span-7 xl:col-span-8">
             <AssignmentsView />
           </div>
         </div>
@@ -112,10 +112,10 @@ const STEPS = [
 
 function Steps() {
   return (
-    <section className={`${section} py-12 lg:py-16`}>
+    <section className={`${container} py-12 lg:py-16`}>
       <h2 className="max-w-[32ch] text-heading-2 text-ink">From a course to a completion</h2>
 
-      <ol className="mt-8 max-w-[64rem] border-t border-steel">
+      <ol className="mt-8 border-t border-steel">
         {STEPS.map((step, index) => (
           <li
             key={step.title}
@@ -136,7 +136,7 @@ function Steps() {
 /** The mirror of the hero: product on the left this time, words on the right. */
 function EmployeeSide() {
   return (
-    <section className={`${section} py-12 lg:py-16`}>
+    <section className={`${container} py-12 lg:py-16`}>
       <div className="grid items-center gap-10 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <TrainingView />
@@ -164,7 +164,7 @@ function EmployeeSide() {
 
 function Isolation() {
   return (
-    <section className={`${section} pt-10 lg:pt-14`}>
+    <section className={`${container} pt-10 lg:pt-14`}>
       {/* Heading left, answer right: the width is used, and the split is the
           same asymmetry the hero sets up. */}
       <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
@@ -197,7 +197,7 @@ function Isolation() {
 
 function Closing() {
   return (
-    <section className={`${section} pt-10 lg:pt-14`}>
+    <section className={`${container} pt-10 lg:pt-14`}>
       <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
         <h2 className="text-heading-2 text-ink lg:col-span-5">Set your company up</h2>
         <div className="lg:col-span-7">

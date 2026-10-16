@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/seo";
 
@@ -44,7 +44,7 @@ const external = "rounded-sm font-medium text-temper-blue hover:underline";
 function AboutPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <h1 className="max-w-[18ch] text-heading-1 font-expanded text-ink">About SkillForge</h1>
 
         <p className="mt-6 max-w-[64ch] text-body text-ink">
@@ -76,7 +76,7 @@ function AboutPage() {
         </p>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
           <h2 className="text-heading-2 text-ink lg:col-span-5">Why it exists</h2>
           <div className="lg:col-span-7">
@@ -93,8 +93,8 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} py-12 lg:py-16`}>
+        <div className="border-t border-steel pt-8">
           <h2 className="text-heading-2 text-ink">What it is built around</h2>
           <ul className="mt-8">
             {BELIEFS.map((belief) => (
@@ -110,8 +110,8 @@ function AboutPage() {
         </div>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} py-12 lg:py-16`}>
+        <div className="border-t border-steel pt-8">
           <h2 className="max-w-[24ch] text-heading-2 text-ink">Have a look at it</h2>
           <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
             The tour is five screens from the product itself. If it suits how your company works,

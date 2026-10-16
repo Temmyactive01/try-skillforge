@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { Button } from "@/components/ui/button";
 import { pageHead } from "@/lib/seo";
 
@@ -48,7 +48,7 @@ const POINTS = [
 function PricingPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <h1 className="max-w-[20ch] text-heading-1 font-expanded text-ink">
           SkillForge is not priced yet
         </h1>
@@ -58,8 +58,8 @@ function PricingPage() {
         </p>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} py-12 lg:py-16`}>
+        <div className="border-t border-steel pt-8">
           <dl>
             {POINTS.map((point) => (
               <div
@@ -74,8 +74,8 @@ function PricingPage() {
         </div>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} py-12 lg:py-16`}>
+        <div className="border-t border-steel pt-8">
           <h2 className="max-w-[24ch] text-heading-2 text-ink">What to do with that</h2>
           <p className="mt-4 max-w-[62ch] text-body text-ink-muted">
             If you need a training tool with a contract and a support line behind it, SkillForge is

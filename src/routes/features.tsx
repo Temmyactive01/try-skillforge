@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { Button } from "@/components/ui/button";
 import { PASS_MARK } from "@/lib/scores";
 import { pageHead } from "@/lib/seo";
@@ -121,7 +121,7 @@ const NOT_YET = [
 function FeaturesPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <h1 className="max-w-[18ch] text-heading-1 font-expanded text-ink">What SkillForge does</h1>
         <p className="mt-6 max-w-[64ch] text-body text-ink-muted">
           Everything on this page is in the product today. What is not in it is at the bottom, in a
@@ -133,8 +133,8 @@ function FeaturesPage() {
       <Group heading="For the employee" entries={EMPLOYEE} />
       <Group heading="How it is built" entries={BUILD} />
 
-      <section className={`${section} pt-10 lg:pt-14`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} pt-10 lg:pt-14`}>
+        <div className="border-t border-steel pt-8">
           <h2 className="text-heading-2 text-ink">Not in it yet</h2>
           <p className="mt-4 max-w-[64ch] text-body text-ink-muted">
             These are planned and not built. They are here so that nobody chooses SkillForge
@@ -153,8 +153,8 @@ function FeaturesPage() {
         </div>
       </section>
 
-      <section className={`${section} pt-10 lg:pt-14`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
+      <section className={`${container} pt-10 lg:pt-14`}>
+        <div className="border-t border-steel pt-8">
           <h2 className="max-w-[24ch] text-heading-2 text-ink">See it rather than read it</h2>
           <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
             The tour walks through five screens, built from the same components as the product.
@@ -179,8 +179,8 @@ function FeaturesPage() {
  */
 function Group({ heading, entries }: { heading: string; entries: Entry[] }) {
   return (
-    <section className={`${section} pt-10 lg:pt-14`}>
-      <div className="max-w-[64rem] border-t border-steel pt-8">
+    <section className={`${container} pt-10 lg:pt-14`}>
+      <div className="border-t border-steel pt-8">
         <h2 className="text-heading-2 text-ink">{heading}</h2>
         <dl className="mt-8">
           {entries.map((entry) => (

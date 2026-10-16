@@ -34,8 +34,16 @@ export function PublicPage({ children }: { children: ReactNode }) {
 }
 
 /**
- * The page gutter, shared by every section so blocks line up down the page.
- * DESIGN.md's marketing rule is left-aligned and asymmetric, so this centres
- * the column and nothing inside it.
+ * The one container every public page is built on.
+ *
+ * The header, the hero, every section, every hairline divider and the footer
+ * all use it, so they share the same left and right edge at every width. That
+ * is the whole point: nothing on these pages sets its own width. DESIGN.md's
+ * marketing rule is left-aligned and asymmetric, so this centres the column
+ * and nothing inside it — the asymmetry comes from where content sits *within*
+ * the grid, not from blocks of different widths.
+ *
+ * A paragraph still limits its own measure with `max-w-[Nch]` for
+ * readability. That is a line length, not a container.
  */
-export const section = "mx-auto w-full max-w-[72rem] px-4 sm:px-6";
+export const container = "mx-auto w-full max-w-[72rem] px-4 sm:px-6";

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 import { ContactParagraph } from "@/components/public/ContactParagraph";
 import { pageHead } from "@/lib/seo";
 
@@ -26,8 +26,8 @@ export const Route = createFileRoute("/privacy")({
 function PrivacyPage() {
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[48rem]">
+      <section className={`${container} py-12 lg:py-16`}>
+        <div>
           <h1 className="text-heading-1 font-expanded text-ink">Privacy policy</h1>
           <p className="mt-2 text-small text-ink-muted">Last updated: 9 September 2026</p>
           <p className="mt-6 rounded-md border border-steel bg-surface px-4 py-3 text-small text-ink-muted">
@@ -105,10 +105,12 @@ function PrivacyPage() {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-steel py-8 first:border-t-0 first:pt-0">
-      <h2 className="text-heading-2 text-ink">{title}</h2>
+    <section className="grid gap-x-10 gap-y-3 border-t border-steel py-8 first:border-t-0 first:pt-0 lg:grid-cols-12">
+      <h2 className="text-heading-2 text-ink lg:col-span-5">{title}</h2>
       {/* DESIGN.md: keep lines under 75 characters. */}
-      <div className="mt-3 max-w-[70ch] space-y-4 text-body text-ink-muted">{children}</div>
+      <div className="max-w-[70ch] space-y-4 text-body text-ink-muted lg:col-span-7">
+        {children}
+      </div>
     </section>
   );
 }

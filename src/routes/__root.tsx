@@ -10,7 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { PublicPage, section } from "@/components/public/PublicPage";
+import { PublicPage, container } from "@/components/public/PublicPage";
 
 function NotFoundComponent() {
   /*
@@ -24,7 +24,7 @@ function NotFoundComponent() {
 
   return (
     <PublicPage>
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${container} py-12 lg:py-16`}>
         <p className="text-small text-ink-muted">Error 404</p>
         <h1 className="mt-2 max-w-[20ch] text-heading-1 font-expanded text-ink">
           That page isn&rsquo;t here
@@ -33,7 +33,7 @@ function NotFoundComponent() {
           The address may be mistyped, or the page may have moved. These still work:
         </p>
 
-        <ul className="mt-8 max-w-[40rem] border-t border-steel">
+        <ul className="mt-8 border-t border-steel">
           {NOT_FOUND_LINKS.map((link) => (
             <li key={link.to} className="border-b border-steel">
               <Link

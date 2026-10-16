@@ -32,6 +32,18 @@ const PHASE_3_SCREENS = [
   "set-password-expired",
 ];
 
+/** Phase 4's screens: every page a signed-out visitor can reach, and the 404. */
+const PHASE_4_SCREENS = [
+  "home",
+  "about",
+  "features",
+  "pricing",
+  "security",
+  "privacy",
+  "terms",
+  "not-found",
+];
+
 export default defineConfig({
   testDir: "e2e",
   testMatch: /screenshots\.spec\.ts/,
@@ -94,6 +106,18 @@ export default defineConfig({
     {
       name: "phase-3",
       metadata: { dir: "phase-3", themes: ["light", "dark"], screens: PHASE_3_SCREENS },
+    },
+    /*
+     * The marketing pages as they were before phase 4. Light only: the point is
+     * the layout being replaced, not the theme.
+     */
+    {
+      name: "before-phase-4",
+      metadata: { dir: "before-phase-4", themes: ["light"], screens: PHASE_4_SCREENS },
+    },
+    {
+      name: "phase-4",
+      metadata: { dir: "phase-4", themes: ["light", "dark"], screens: PHASE_4_SCREENS },
     },
   ],
   webServer: {

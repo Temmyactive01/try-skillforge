@@ -266,8 +266,39 @@ export async function waitForHydration(page: Page) {
   await page.waitForSelector("html[data-hydrated='true']", { state: "attached" });
 }
 
+/** Every route whose page fills itself from an effect and reports when it has. */
+const DATA_ROUTE = "/admin/";
+
 /**
- * Loads a page and waits until React has hydrated, so a test can interact with it.
+ * Waits until an admin page's data has settled.
+ *
+ * Hydration is not the end of the story on these pages: for a moment
+ * afterwards the page is rendered but says "Loading…", because it fills itself
+ * from an effect. `AdminShell` marks <main> with `data-loaded="true"` once
+ * that fetch has finished, whether it succeeded or failed, and this waits for
+ * that.
+ *
+ * Waiting for the attribute to be *present and true* matters: an admin page
+ * renders nothing at all while `useRequireRole` is still checking, so
+ * "no attribute means ready" would be satisfied before the page had even
+ * mounted, which is the bug this is here to fix.
+ *
+ * The other half of the condition is the redirect: somebody who is not an
+ * admin is sent to their own home, where there is no such attribute and never
+ * will be. Leaving the admin route is just as good an answer as loading it.
+ */
+export async function waitForData(page: Page) {
+  await page.waitForFunction(
+    (prefix) =>
+      !window.location.pathname.startsWith(prefix) ||
+      document.querySelector('main[data-loaded="true"]') !== null,
+    DATA_ROUTE,
+  );
+}
+
+/**
+ * Loads a page and waits until React has hydrated — and, on an admin page,
+ * until its data has arrived — so a test can interact with it.
  *
  * It waits on the hydration flag alone. It used to wait for `networkidle`
  * first, which is a guess — half a second of quiet, which a page that polls or
@@ -278,6 +309,8 @@ export async function waitForHydration(page: Page) {
 export async function open(page: Page, url: string) {
   await page.goto(url);
   await waitForHydration(page);
+  // Only the admin pages report their data; everything else is ready already.
+  if (url.startsWith(DATA_ROUTE)) await waitForData(page);
 }
 
 /**

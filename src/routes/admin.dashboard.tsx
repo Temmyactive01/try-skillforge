@@ -93,7 +93,7 @@ function AdminDashboard() {
   if (checking) return null;
 
   return (
-    <AdminShell name={name}>
+    <AdminShell name={name} loaded={!loading}>
       <div className="mx-auto max-w-6xl">
         {loading ? (
           <p className="py-12 text-ink-muted">Loading…</p>

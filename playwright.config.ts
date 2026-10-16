@@ -24,15 +24,17 @@ export default defineConfig({
   retries: 0,
   timeout: 90_000,
   /*
-   * 15s was tuned while open() waited for networkidle before handing the page
-   * back. That wait is gone — it was a guess at hydration, which the page now
-   * signals properly — but the time it absorbed hasn't disappeared: a page
-   * that fetches its rows in an effect still fetches them, and that wait now
-   * falls inside the assertion that is looking for a row. So the assertion
-   * budget takes on what the pre-wait used to cover. It costs a passing run
-   * nothing; only a genuinely failing assertion waits the extra five seconds.
+   * Back to 15s. It was raised to 20 when `open()` stopped waiting for
+   * networkidle: a page that fetches its rows in an effect still fetched them,
+   * and that wait fell inside whichever assertion was looking for a row — so
+   * the budget was covering a page load, which is not what an assertion budget
+   * is for. Under a loaded machine it ran out anyway, twice.
+   *
+   * `open()` now waits for `data-loaded`, the attribute AdminShell sets once
+   * the fetch has settled, so the wait is back where it belongs and the budget
+   * only has to cover an assertion again.
    */
-  expect: { timeout: 20_000 },
+  expect: { timeout: 15_000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,

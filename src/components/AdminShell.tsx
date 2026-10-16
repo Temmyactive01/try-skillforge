@@ -42,7 +42,33 @@ function sidebarDefaultOpen() {
   return match ? match[1] !== "false" : true;
 }
 
-export function AdminShell({ children, name }: { children: ReactNode; name?: string }) {
+export function AdminShell({
+  children,
+  name,
+  loaded = true,
+}: {
+  children: ReactNode;
+  name?: string;
+  /*
+   * Whether the fetch that fills this page has settled — succeeded *or*
+   * failed. It becomes `data-loaded` on <main>, which is the same idea as
+   * `data-hydrated` on <html>: a signal the end-to-end tests can wait on
+   * instead of guessing with a timeout.
+   *
+   * Every admin page loads its rows in an effect, so until that lands the page
+   * says "Loading…" and a test looking for a row has to out-wait the fetch on
+   * its assertion budget. Under a loaded machine that budget is the thing that
+   * runs out, which is a flake rather than a finding.
+   *
+   * It defaults to true so a page with nothing to fetch is never waited on.
+   * A page that *does* fetch must pass it; forgetting leaves that page exactly
+   * as it was before this existed, not worse.
+   *
+   * Nothing about it is visible, and nothing branches on it: it is an
+   * attribute and no more.
+   */
+  loaded?: boolean;
+}) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const current = nav.find((item) => pathname.startsWith(item.to));
@@ -116,7 +142,9 @@ export function AdminShell({ children, name }: { children: ReactNode; name?: str
             <ThemeToggle />
           </div>
         </header>
-        <main className="min-w-0 px-4 py-8 md:px-8">{children}</main>
+        <main className="min-w-0 px-4 py-8 md:px-8" data-loaded={loaded ? "true" : "false"}>
+          {children}
+        </main>
         {/* One toaster for the whole admin: see DESIGN.md → "Toast". */}
         <Toaster />
       </SidebarInset>

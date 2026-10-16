@@ -39,7 +39,9 @@ const T = {
  * The mark as a square SVG. `radius` is in the same units as the viewBox, so
  * the billet keeps DESIGN.md's radius-sm proportion at any size.
  */
-const markSvg = (size = 32) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${size}" height="${size}" role="img" aria-label="SkillForge">
+const markSvg = (
+  size = 32,
+) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="${size}" height="${size}" role="img" aria-label="SkillForge">
   <rect width="32" height="32" rx="6" fill="${T.ground}"/>
   <rect x="6" y="6" width="20" height="20" rx="3" fill="${T.blue}"/>
 </svg>`;

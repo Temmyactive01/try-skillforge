@@ -37,8 +37,8 @@ function TermsPage() {
             <Section title="Acceptance of terms">
               <p>
                 By accessing or using SkillForge, you agree to be bound by these terms of service
-                and all applicable laws and regulations. If you do not agree to these terms, you
-                may not use the service.
+                and all applicable laws and regulations. If you do not agree to these terms, you may
+                not use the service.
               </p>
             </Section>
 
@@ -63,9 +63,9 @@ function TermsPage() {
               <p>
                 You agree not to misuse the service, including but not limited to: attempting to
                 access data you are not authorised to view, interfering with other users or
-                accounts, uploading harmful or illegal content, or using SkillForge for any
-                unlawful purpose. We reserve the right to suspend or terminate accounts that
-                violate this policy.
+                accounts, uploading harmful or illegal content, or using SkillForge for any unlawful
+                purpose. We reserve the right to suspend or terminate accounts that violate this
+                policy.
               </p>
             </Section>
 
@@ -80,10 +80,10 @@ function TermsPage() {
 
             <Section title="Data ownership">
               <p>
-                You retain ownership of the content you upload to SkillForge. You grant us a
-                limited licence to host, display, and process that content solely for the purpose
-                of providing the service. We will not use your company content for any other
-                purpose without your consent.
+                You retain ownership of the content you upload to SkillForge. You grant us a limited
+                licence to host, display, and process that content solely for the purpose of
+                providing the service. We will not use your company content for any other purpose
+                without your consent.
               </p>
             </Section>
 

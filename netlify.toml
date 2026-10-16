@@ -1,0 +1,27 @@
+# Netlify build settings. Kept in the repo rather than in the Netlify UI so the
+# deploy target is reviewable and travels with the branch.
+#
+# The nitro `netlify` preset writes the static site to dist/ and the SSR handler
+# to .netlify/functions-internal/server/, where Netlify picks it up as an
+# internal function. The preset generates that function's own config (path
+# "/*", preferStatic), so there is no redirect rule to write here.
+#
+# Environment variables are NOT set here — they are per-deploy-context in the
+# Netlify UI, so a deploy preview talks to the development Supabase project and
+# production talks to the production one. The service-role key in particular
+# must never be committed. See docs/launch-plan.md, item 3.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Matches the Node that the build and the test suite are verified on locally.
+  NODE_VERSION = "24"
+  # Nitro auto-detects Netlify, and vite.config.ts defaults to it. Saying it
+  # here too means the target cannot change by accident.
+  NITRO_PRESET = "netlify"
+
+[dev]
+  command = "npm run dev"
+  port = 8080

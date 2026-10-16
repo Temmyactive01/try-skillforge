@@ -29,9 +29,20 @@ export default defineConfig(({ command, mode }) => {
           client: { files: ["**/server/**"], specifiers: ["server-only"] },
         },
       }),
-      // Build-only server bundler; deploys to Cloudflare Workers unless a
-      // NITRO_PRESET env var picks another target.
-      command === "build" && nitro({ defaultPreset: "cloudflare-module" }),
+      /*
+       * Build-only server bundler. Netlify is the deploy target as of Stage 5,
+       * so it is the default here too: a local `npm run build` then produces
+       * exactly what production runs, rather than a Cloudflare bundle nobody
+       * deploys. Nitro also auto-detects Netlify on their builder, and
+       * netlify.toml sets NITRO_PRESET as well, so the target is stated three
+       * times over rather than inferred.
+       *
+       * Cloudflare Workers still works — `NITRO_PRESET=cloudflare-module npm run
+       * build` — and that path is deliberately kept alive, because Netlify's
+       * free plan is a hard 300-credit cap that pauses the site when it runs
+       * out. See docs/launch-plan.md, item 3.
+       */
+      command === "build" && nitro({ defaultPreset: "netlify" }),
       viteReact(),
     ],
     define: envDefine,

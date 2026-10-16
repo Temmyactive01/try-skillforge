@@ -55,8 +55,12 @@ Recorded so none of this has to be re-derived later.
 
 ## Order of work
 
-- [ ] 1. CSRF middleware and its `verify:security` check (item 2) — the one hard blocker
-- [ ] 2. Netlify adapter spike, `netlify.toml`, deploy preview against the **dev** Supabase project (item 3) — **you** create the Netlify site
+- [x] 1. CSRF middleware and its `verify:security` check (item 2) — the one hard blocker.
+     Done in `b248cdc`. `verify:security` is now 59 checks, up from 55
+- [x] 1b. Netlify adapter settled and `netlify.toml` written (item 3). The nitro `netlify`
+      preset wins; 26 spike checks pass against the built bundle
+- [ ] 2. Deploy preview against the **dev** Supabase project (item 3) — **you** create the
+     Netlify site
 - [ ] 3. Production Supabase project (item 1) — **you** create it, I migrate with your approval, **you** configure Auth (item 4)
 - [ ] 4. Email (item 5) — **you**
 - [ ] 5. Keep-alive (item 6), analytics (item 7) — **you** for the Cloudflare token
@@ -153,6 +157,19 @@ internal host and refuse everything. Browsers do send `Sec-Fetch-Site`, so it sh
 fire — confirmed on a deploy preview before production. If it misbehaves, the fix is the
 middleware's explicit `origin` matcher.
 
+**Measured, not assumed.** Four probes against a running dev server, before and after:
+
+| Request to a server function                          | Before      | After                          |
+| ----------------------------------------------------- | ----------- | ------------------------------ |
+| `Origin: https://evil.example`                        | 200, routed | **403**                        |
+| `Sec-Fetch-Site: cross-site` with a matching `Origin` | 200, routed | **403**                        |
+| Own `Origin`                                          | 200, routed | routed (403 would be the bug)  |
+| Page request from a foreign `Origin`                  | 200         | **200** — navigation untouched |
+
+The third row is why `Sec-Fetch-Site` is checked explicitly: it is the header a browser
+actually sends, and the only path that never consults `request.url`. So it is also the path
+that still holds if Netlify's proxy rewrites the URL.
+
 **You do:** nothing.
 
 ---
@@ -167,14 +184,44 @@ middleware's explicit `origin` matcher.
 - Nitro's `netlify` preset is already installed, is auto-detected, keeps `src/server.ts` and
   the import-protection wiring untouched, and changes one config line.
 
-Both get spiked on this branch; whichever passes the checklist wins, defaulting to the nitro
-preset because it changes least and `src/server.ts` (the h3-500 wrapper) is load-bearing and
-untested against the Netlify plugin.
+**Settled: the nitro `netlify` preset.** It was spiked first, being the lower-risk option,
+and it passed everything — so the Netlify Vite plugin was never spiked. That is a departure
+from the plan as written ("spike both") and it is deliberate: there is nothing to compare,
+because the option that changes least already works. If the deploy preview turns up something
+the local spike could not see, the plugin is still there to fall back on.
+
+What the spike proved, by importing the built handler and driving it with real `Request`
+objects — the preset's handler takes a standard web `Request`, so the whole app can be
+exercised with no Netlify CLI and no deploy (26 checks, all passing):
+
+- all eight public pages server-render;
+- `/login`, `/signup`, `/forgot-password`, `/accept-invite`, `/oauth/consent`;
+- all four admin pages and both employee pages;
+- the 404 page;
+- `/.well-known/oauth-protected-resource` naming the right resource and the Supabase issuer;
+- `POST /mcp` → 401 with the discovery header, and 403 from a foreign Origin;
+- CSRF: 403 on a foreign Origin, 403 on `Sec-Fetch-Site: cross-site`, through on its own;
+- the h3-500 normaliser from `src/server.ts` present in the bundle.
+
+One apparent failure turned out not to be one: `/oauth/consent` answered 307, which is
+TanStack normalising the search params for a route with `validateSearch`. With an
+`authorization_id` it is 200.
+
+**What the spike cannot prove, and the preview must:** everything that depends on what
+Netlify sets as `request.url` behind its proxy. Both the CSRF fallback path and the MCP
+origin check derive an origin from it. Browsers send `Sec-Fetch-Site`, so CSRF should never
+reach that fallback — but the MCP metadata has no equivalent shortcut, so it is the one to
+check first on the preview.
 
 **I do**
 
 - `netlify.toml`: build `npm run build`, publish `dist`, `NITRO_PRESET = "netlify"`,
-  `NODE_VERSION = "22"`.
+  `NODE_VERSION = "24"` (matching the Node the build and suite are verified on locally — if
+  Netlify rejects 24, fall back to 22 and re-verify).
+- `vite.config.ts`: `defaultPreset` flips from `cloudflare-module` to `netlify`, so a plain
+  local `npm run build` produces exactly what production runs. The Cloudflare path stays
+  working via `NITRO_PRESET=cloudflare-module npm run build`, and is verified as still
+  building — it is the escape hatch if the credit cap bites.
 - `.gitignore`: add `.netlify/`.
 - Verify on a **deploy preview**, not production: all eight public pages, `/tour`, the 404,
   `/login`, `/signup`, `/forgot-password`, `/accept-invite`, the four admin pages, both

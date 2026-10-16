@@ -1,7 +1,9 @@
-// Proves the database security rules are active. Usage: npm run verify:security
+// Proves the security rules are active.
+// Usage: npm run verify:security [-- http://localhost:8080]
 // 1. Database: RLS, policies, column grants, helper functions and triggers.
 // 2. Logged-out browser: what the publishable key alone can read.
 // 3. Signed-in demo employee (after npm run seed): quiz answers, isolation, escalation.
+// 4. CSRF on server functions: needs a running app (the URL above, or the default).
 import { DEMO, adminClient, db, loadEnv, publicClient, requireEnv } from "./lib.mjs";
 
 loadEnv();
@@ -444,6 +446,82 @@ console.log("Signed-in admin");
       await admin.from("companies").delete().eq("id", other.id);
     }
     await browser.auth.signOut();
+  }
+}
+
+// 4. CSRF on server functions ----------------------------------------------
+/*
+ * Server functions are same-origin RPC endpoints that write with the service
+ * role (`createEmployee`, `submitQuiz`), so a cross-site POST reaching one
+ * would be a real hole. `src/start.ts` registers TanStack Start's CSRF
+ * middleware, filtered to server-function requests; this proves it both ways.
+ *
+ * The probe deliberately names a function that does not exist. Nothing is ever
+ * invoked, so this section is safe to run against production: the only thing
+ * being measured is whether the request was refused *before* routing, and a
+ * 403 can only come from the middleware.
+ *
+ * The negative case matters as much as the positive one. A middleware
+ * misconfigured behind a proxy — where `request.url` resolves to an internal
+ * host and never matches the browser's `Origin` — would refuse everything,
+ * which looks like working protection and is a broken app.
+ */
+console.log("CSRF on server functions");
+{
+  const base = (process.argv[2] ?? "http://localhost:8080").replace(/\/$/, "");
+  const origin = new URL(base).origin;
+  const probe = `${base}/_serverFn/csrf-probe-no-such-function`;
+
+  const post = async (headers) => {
+    const res = await fetch(probe, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...headers },
+      body: "{}",
+      signal: AbortSignal.timeout(15_000),
+      redirect: "manual",
+    });
+    return res.status;
+  };
+
+  let reachable = true;
+  try {
+    await fetch(base, { signal: AbortSignal.timeout(10_000), redirect: "manual" });
+  } catch {
+    reachable = false;
+  }
+
+  if (!reachable) {
+    console.log(`  SKIP  no app answering at ${base} — these checks did not run.`);
+    console.log("        Start it (npm run dev) or name one:");
+    console.log("        npm run verify:security -- https://your-site.netlify.app");
+    failures++;
+  } else {
+    check((await post({ origin: "https://evil.example" })) === 403, "foreign Origin: refused");
+
+    // The header a browser actually sends, and the one path that never consults
+    // request.url — so this is the check that still holds behind a proxy.
+    check(
+      (await post({ origin, "sec-fetch-site": "cross-site" })) === 403,
+      "Sec-Fetch-Site: cross-site refused even with a matching Origin",
+    );
+
+    const sameOrigin = await post({ origin, "sec-fetch-site": "same-origin" });
+    check(
+      sameOrigin !== 403,
+      `own Origin: allowed through to routing (HTTP ${sameOrigin}, and anything but 403 is right here)`,
+    );
+
+    // The filter leaves page requests alone: a 403 here would break an ordinary
+    // visit from a link on somebody else's site.
+    const page = await fetch(base, {
+      headers: { origin: "https://evil.example" },
+      signal: AbortSignal.timeout(15_000),
+      redirect: "manual",
+    });
+    check(
+      page.status === 200,
+      `page request from a foreign Origin still served (HTTP ${page.status})`,
+    );
   }
 }
 

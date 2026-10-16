@@ -5,6 +5,8 @@
 //   npm run screenshots:phase-2         → docs/screenshots/phase-2 (light and dark)
 //   npm run screenshots:before-phase-3  → docs/screenshots/before-phase-3 (employee and auth pages as they were)
 //   npm run screenshots:phase-3         → docs/screenshots/phase-3 (light and dark)
+//   npm run screenshots:before-phase-4  → docs/screenshots/before-phase-4 (the marketing pages as they were)
+//   npm run screenshots:phase-4         → docs/screenshots/phase-4 (light and dark)
 //
 // A "before" project is a record of one moment, not a thing to re-run: it walks
 // the screens with the labels they had on the day, so once the redesign lands,
@@ -42,13 +44,39 @@ type Screen =
   | "forgot-password-sent"
   | "set-password-invite"
   | "set-password-reset"
-  | "set-password-expired";
+  | "set-password-expired"
+  // Public marketing pages, and the 404 (phase 4)
+  | "home"
+  | "about"
+  | "features"
+  | "tour"
+  | "pricing"
+  | "security"
+  | "privacy"
+  | "terms"
+  | "not-found";
 type Meta = { dir: string; themes: Theme[]; screens: Screen[] };
 
 const VIEWPORTS = [
   { label: "desktop", width: 1440, height: 900 },
   { label: "mobile", width: 375, height: 812 },
 ];
+
+/*
+ * Every page a signed-out visitor can reach, with the URL to reach it at. The
+ * last one is deliberately not a route: it is how the 404 gets captured.
+ */
+const PUBLIC_PAGES = [
+  ["home", "/"],
+  ["about", "/about"],
+  ["features", "/features"],
+  ["tour", "/tour"],
+  ["pricing", "/pricing"],
+  ["security", "/security"],
+  ["privacy", "/privacy"],
+  ["terms", "/terms"],
+  ["not-found", "/no-such-page"],
+] as const satisfies readonly (readonly [Screen, string])[];
 
 const ADMIN_SCREENS: Screen[] = [
   "dashboard",
@@ -71,7 +99,11 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
   const taken: string[] = [];
 
   const needsAdmin = ADMIN_SCREENS.some((name) => wanted.has(name));
-  const needsEmployee = screens.some((name) => !ADMIN_SCREENS.includes(name));
+  // The public pages need no data at all, so they must not pull a seed in with them.
+  const needsEmployee = screens.some(
+    (name) =>
+      !ADMIN_SCREENS.includes(name) && !PUBLIC_PAGES.some(([publicName]) => publicName === name),
+  );
   const adminData = needsAdmin ? await createAdminScreenshotData() : null;
   const employeeData = needsEmployee ? await createEmployeeScreenshotData() : null;
 
@@ -237,6 +269,20 @@ test("capture the design screenshots", async ({ browser, baseURL }, info) => {
             }
           });
         }
+      }
+
+      // --- Public pages: nobody signed in, no data needed ------------------
+      const publicWanted = PUBLIC_PAGES.filter(([name]) => wanted.has(name));
+      if (publicWanted.length) {
+        await withPage(browser, theme, vp, async (page) => {
+          for (const [name, url] of publicWanted) {
+            await open(page, url);
+            // One h1 per page is the rule these pages are held to, so it is also
+            // the signal that the page itself (not just the shell) has rendered.
+            await page.getByRole("heading", { level: 1 }).first().waitFor();
+            await shoot(page, `${name}-${suffix}`);
+          }
+        });
       }
 
       // --- Auth: nobody signed in ------------------------------------------

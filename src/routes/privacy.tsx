@@ -1,136 +1,114 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
-import { Footer } from "@/components/Footer";
+import { createFileRoute } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+
+import { PublicPage, container } from "@/components/public/PublicPage";
+import { ContactParagraph } from "@/components/public/ContactParagraph";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/privacy")({
-  head: () => ({
-    meta: [
-      { title: "Privacy Policy — SkillForge" },
-      { name: "description", content: "SkillForge's privacy policy: how we collect, use, store, and protect your data." },
-      { property: "og:title", content: "Privacy Policy — SkillForge" },
-      { property: "og:description", content: "SkillForge's privacy policy: how we collect, use, store, and protect your data." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Privacy policy — SkillForge",
+      description:
+        "What SkillForge collects, how it is used, and how each company's data is kept separate. A draft, to be reviewed with legal counsel before launch.",
+      path: "/privacy",
+    }),
   component: PrivacyPage,
 });
 
+/*
+ * Restyled onto the design tokens in phase 4; the wording is unchanged apart
+ * from British spelling and the contact line. The address that used to be here
+ * (privacy@skillforge.example) was never real, so the page now says that
+ * contact details are coming rather than printing one that bounces. See
+ * CONTACT_EMAIL in src/lib/seo.ts.
+ */
 function PrivacyPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-          </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
-            <Link
-              to="/features"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1">
-        <section className="mx-auto max-w-3xl px-4 py-16">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Privacy Policy
-          </h1>
-          <p className="mt-2 text-sm font-normal text-muted-foreground">
-            Last updated: September 9, 2026
+    <PublicPage>
+      <section className={`${container} py-12 lg:py-16`}>
+        <div>
+          <h1 className="text-heading-1 font-expanded text-ink">Privacy policy</h1>
+          <p className="mt-2 text-small text-ink-muted">Last updated: 9 September 2026</p>
+          <p className="mt-6 rounded-md border border-steel bg-surface px-4 py-3 text-small text-ink-muted">
+            This is a draft. It will be reviewed and finalised with legal counsel before launch.
           </p>
 
-          <div className="mt-10 space-y-10">
-            <PolicySection title="Information We Collect">
+          <div className="mt-10">
+            <Section title="Information we collect">
               <p>
-                We collect information you provide directly to us, such as your name, email address, company name, and any content you upload while creating courses or managing your team. We also collect usage information about how you and your team interact with SkillForge, including log data, device information, and cookies.
+                We collect information you provide directly to us, such as your name, email address,
+                company name, and any content you upload while creating courses or managing your
+                team. We also collect usage information about how you and your team interact with
+                SkillForge, including log data, device information, and cookies.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="How We Use Your Information">
+            <Section title="How we use your information">
               <p>
-                We use the information we collect to provide, maintain, and improve SkillForge, to communicate with you, to authenticate users, to process assignments and quiz results, and to enforce our agreements. We do not sell personal information to third parties.
+                We use the information we collect to provide, maintain, and improve SkillForge, to
+                communicate with you, to authenticate users, to process assignments and quiz
+                results, and to enforce our agreements. We do not sell personal information to third
+                parties.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="Data Storage & Multi-Tenancy">
+            <Section title="Data storage and multi-tenancy">
               <p>
-                SkillForge is built on a multi-tenant architecture. Each company's data is stored in a logically isolated environment and protected by row-level security policies, so your courses, employees, quiz answers, and progress data are never accessible to other companies on the platform. Our infrastructure providers maintain industry-standard physical and network security controls.
+                SkillForge is built on a multi-tenant architecture. Each company&rsquo;s data is
+                stored in a logically isolated environment and protected by row-level security
+                policies, so your courses, employees, quiz answers, and progress data are never
+                accessible to other companies on the platform. Our infrastructure providers maintain
+                industry-standard physical and network security controls.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="Data Sharing">
+            <Section title="Data sharing">
               <p>
-                We share data only with service providers who help us operate SkillForge, such as hosting and authentication services. All providers are contractually bound to use your data only for the services they provide to us. We may also disclose information if required by law or to protect our rights.
+                We share data only with service providers who help us operate SkillForge, such as
+                hosting and authentication services. All providers are contractually bound to use
+                your data only for the services they provide to us. We may also disclose information
+                if required by law or to protect our rights.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="Data Security">
+            <Section title="Data security">
               <p>
-                We implement reasonable administrative, technical, and physical safeguards to protect your information. This includes encryption in transit, access controls, role-based permissions, and regular security reviews. No method of transmission over the internet is completely secure, and we cannot guarantee absolute security.
+                We implement reasonable administrative, technical, and physical safeguards to
+                protect your information. This includes encryption in transit, access controls,
+                role-based permissions, and regular security reviews. No method of transmission over
+                the internet is completely secure, and we cannot guarantee absolute security.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="Your Rights">
+            <Section title="Your rights">
               <p>
-                Depending on your location, you may have the right to access, correct, delete, or export your personal information. You may also have the right to object to or restrict certain processing. To exercise these rights, contact us using the information below.
+                Depending on your location, you may have the right to access, correct, delete, or
+                export your personal information. You may also have the right to object to or
+                restrict certain processing. To exercise these rights, contact us using the details
+                below.
               </p>
-            </PolicySection>
+            </Section>
 
-            <PolicySection title="Contact Us">
-              <p>
-                If you have questions or concerns about this Privacy Policy or our data practices, please contact us at privacy@skillforge.example. We will review and finalize this policy with legal counsel and update it as needed.
-              </p>
-            </PolicySection>
+            <Section title="Contact us">
+              <ContactParagraph
+                lead="If you have questions or concerns about this privacy policy or our data practices"
+                subject="Privacy"
+              />
+            </Section>
           </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        </div>
+      </section>
+    </PublicPage>
   );
 }
 
-function PolicySection({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section>
-      <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-        {title}
-      </h2>
-      <div className="mt-3 text-base leading-relaxed text-foreground">
+    <section className="grid gap-x-10 gap-y-3 border-t border-steel py-8 first:border-t-0 first:pt-0 lg:grid-cols-12">
+      <h2 className="text-heading-2 text-ink lg:col-span-5">{title}</h2>
+      {/* DESIGN.md: keep lines under 75 characters. */}
+      <div className="max-w-[70ch] space-y-4 text-body text-ink-muted lg:col-span-7">
         {children}
       </div>
     </section>

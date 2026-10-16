@@ -10,28 +10,53 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { PublicPage, container } from "@/components/public/PublicPage";
 
 function NotFoundComponent() {
+  /*
+   * The root head() is static, and a not-found render is not a route, so there
+   * is no head to attach a title to. Setting it here is the honest version of
+   * the same thing: the tab says what happened rather than "SkillForge".
+   */
+  useEffect(() => {
+    document.title = "Page not found — SkillForge";
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <PublicPage>
+      <section className={`${container} py-12 lg:py-16`}>
+        <p className="text-small text-ink-muted">Error 404</p>
+        <h1 className="mt-2 max-w-[20ch] text-heading-1 font-expanded text-ink">
+          That page isn&rsquo;t here
+        </h1>
+        <p className="mt-6 max-w-[60ch] text-body text-ink-muted">
+          The address may be mistyped, or the page may have moved. These still work:
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
-    </div>
+
+        <ul className="mt-8 border-t border-steel">
+          {NOT_FOUND_LINKS.map((link) => (
+            <li key={link.to} className="border-b border-steel">
+              <Link
+                to={link.to}
+                className="flex items-baseline gap-4 py-4 text-body font-medium text-temper-blue hover:underline"
+              >
+                {link.label}
+                <span className="text-small font-normal text-ink-muted">{link.detail}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </PublicPage>
   );
 }
+
+const NOT_FOUND_LINKS = [
+  { to: "/", label: "Home", detail: "What SkillForge does" },
+  { to: "/tour", label: "Take the tour", detail: "Five screens from the product" },
+  { to: "/features", label: "Features", detail: "What is in it, and what is not" },
+  { to: "/login", label: "Sign in", detail: "If you already have an account" },
+] as const;
 
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
@@ -100,6 +125,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      /*
+       * The tempered billet, the same mark the shells and the sign-in pages
+       * use. The .ico is there for browsers that still ask for /favicon.ico by
+       * name — which also stops the 404 that used to clutter the dev log.
+       */
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

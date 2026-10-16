@@ -8,7 +8,7 @@ SkillForge is a multi-tenant B2B learning & development app: a company admin cre
 
 This GitHub repo is the only home for SkillForge. Keep `main` working and don't rewrite pushed history. `AGENTS.md` only points other coding agents here, so keep guidance in this file.
 
-`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is phased: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table; phase 2 covered Courses and Employees; phase 3 covered the employee screens and every page you sign in through. **Only the marketing pages still have their old hand-built layout**, which is phase 4; they inherit the new tokens meanwhile.
+`DESIGN.md` is the official design system and **is now the source of truth for every visual decision**. Its tokens are live in `src/styles.css`; the old cream/terracotta/Fraunces palette is gone. The redesign is finished: phase 1 covered the foundations, the admin shell, the admin dashboard and the Assignments table; phase 2 covered Courses and Employees; phase 3 covered the employee screens and every page you sign in through; phase 4 covered the public marketing pages and the 404. **Every screen now follows `DESIGN.md`.**
 
 ## Progress log
 
@@ -28,6 +28,8 @@ npm run check:contrast   # WCAG AA check on the design tokens, both themes
 npm run screenshots      # design screenshots → docs/screenshots/phase-1
 npm run screenshots:phase-2  # design screenshots → docs/screenshots/phase-2
 npm run screenshots:phase-3  # design screenshots → docs/screenshots/phase-3
+npm run screenshots:phase-4  # design screenshots → docs/screenshots/phase-4
+npm run build:brand      # regenerate public/ favicons and the Open Graph image
 ```
 
 **After any visual change**, run `npm run check:contrast` — it reads the tokens straight out of `styles.css` and fails if a pair drops below AA. Re-run `npm run screenshots` when a redesigned screen changes; it uses its own config and port (8091) and seeds its own data.
@@ -41,6 +43,7 @@ npm run screenshots:phase-3  # design screenshots → docs/screenshots/phase-3
 - **`dates.spec.ts` and `training.spec.ts` are unit tests** on pure functions, run by the same Playwright runner because it is already here and already reads TypeScript. They need no browser and take a tenth of a second.
 - **Dialogs must not fade their own opacity.** `DialogContent` and `AlertDialogContent` fade only their backdrop; animating the panel makes the page behind readable straight through the form while it opens. `e2e/dialogs.spec.ts` measures the rendered opacity and background alpha of every admin dialog, so re-adding `fade-in-0` fails the suite.
 - **Courses and Employees keep a table and a card list in the DOM at once** and show whichever fits the width, so a name appears twice. Scope to `getByRole("row")` or the card list by its `aria-label`, or filter to the visible one.
+- **The public pages' links name their destination _and_ describe it**, so the 404's way home has the accessible name "Home What SkillForge does", not "Home". Match the whole name rather than reaching for a regex.
 - `npm run verify:security` and `npm run test:mcp` are separate script checks (see the README).
 
 ## Stack
@@ -60,11 +63,17 @@ npm run screenshots:phase-3  # design screenshots → docs/screenshots/phase-3
 
 Routes are files in `src/routes/` (see `src/routes/README.md` for conventions: `admin.courses.tsx` → `/admin/courses`, `$param` for dynamic segments). `src/routeTree.gen.ts` is generated — never edit it. `__root.tsx` is the only layout and must keep `<Outlet />`.
 
-- Public marketing: `/`, `/about`, `/features`, `/pricing`, `/security`, `/privacy`, `/terms` (static, share `Footer`).
+- **Public marketing:** `/`, `/tour`, `/features`, `/about`, `/pricing`, `/security`, `/privacy`, `/terms`. All of them, and the 404, are wrapped in `PublicPage` (`src/components/public/`), which supplies the skip link, `PublicHeader`, one `<main id="main">` and `PublicFooter`. Don't hand-build a header into a new public page — that is what left the old nav unreachable below 640px in five copies.
+  - Head tags come from `pageHead()` in `src/lib/seo.ts`: title, description, canonical, Open Graph and Twitter in one call, so a page can't disagree with its own share card. Two constants there are waiting on launch decisions — `SITE_URL` (a `.example` placeholder until the deployed address is settled) and `CONTACT_EMAIL` (empty, so the legal pages say details are coming rather than print an address that bounces).
+  - The hero and `/tour` are built from the **real** kit components (`Table`, `Tag`, `TemperProgress`) fed by `src/components/public/demo-data.ts`, so they cannot drift from the product the way a screenshot does. The dashboard figures and per-course completion in that file are _derived_ from the assignment list rather than typed beside it, so editing one row keeps the whole tour consistent.
+  - **Nothing on the public site may claim a customer, a count, a rating or a feature that does not exist**, and every product view is labelled "Example data". `/features` carries a "Not in it yet" list for the same reason. This is a rule, not a tone.
+  - `/tour` is the demo a visitor gets **instead of** a public login. Don't add a shared demo account without reading the security notes in the Stage 4 backlog first.
 - Auth: `/login` (email+password, role-based redirect, safe `?next=`), `/forgot-password` (asks Supabase for a reset link, which lands on `/accept-invite`), `/signup` (creates a new company + its admin), `/accept-invite` (invited employee sets password; also where a reset link lands). All four are built on `AuthCard`.
 - Admin (wrapped in `AdminShell`): `/admin/dashboard`, `/admin/courses`, `/admin/assignments`, `/admin/employees`.
 - Employee (wrapped in `EmployeeShell`): `/employee/home`, `/employee/course/$assignmentId`.
 - Machine endpoints: `/mcp`, `/.well-known/oauth-protected-resource`, `/oauth/consent` (see MCP below).
+- The **404** is `notFoundComponent` in `__root.tsx`, on the same public shell. It sets its own `document.title` in an effect, because the root `head()` is static and a not-found render is not a route.
+- `public/` holds the favicons and `og.png`. They are generated by `scripts/make-brand-assets.mjs` (`npm run build:brand`), which renders HTML in the installed Edge, rather than checked in by hand — re-run it if the mark or the tokens change.
 
 Page guarding is client-side via `useRequireRole("admin" | "employee")` in `src/lib/use-require-role.ts`, which redirects to `/login` or to the other role's home. This is UX only — **the real security boundary is RLS in the database**.
 

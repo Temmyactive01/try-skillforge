@@ -193,7 +193,7 @@ function AdminEmployeesPage() {
   if (checking) return null;
 
   return (
-    <AdminShell name={name}>
+    <AdminShell name={name} loaded={!loading}>
       <div className="mx-auto max-w-6xl space-y-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-heading-1 font-expanded text-ink">Employees</h1>

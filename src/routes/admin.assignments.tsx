@@ -234,7 +234,7 @@ function AdminAssignments() {
   const filtersApplied = Boolean(teamFilter || courseFilter || statusFilter);
 
   return (
-    <AdminShell name={name}>
+    <AdminShell name={name} loaded={!loading}>
       <div className="mx-auto max-w-6xl">
         <h1 className="mb-8 text-heading-1 font-expanded text-ink">Assignments</h1>
 

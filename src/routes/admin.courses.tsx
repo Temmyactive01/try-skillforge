@@ -173,7 +173,7 @@ function AdminCoursesPage() {
   }
 
   return (
-    <AdminShell name={name}>
+    <AdminShell name={name} loaded={!loading}>
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-heading-1 font-expanded text-ink">Courses</h1>

@@ -10,6 +10,8 @@ import {
   inviteLink,
   testCompanyName,
   testEmail,
+  waitForData,
+  waitForHydration,
 } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
@@ -93,7 +95,10 @@ test("the employee accepts the invite and sets a password", async ({ baseURL }) 
   await expect(employee.getByRole("heading", { name: "My training" })).toBeVisible();
   await expect(employee.getByText("No training assigned yet.")).toBeVisible();
 
-  await admin.reload({ waitUntil: "networkidle" });
+  // A reload is not open(), so it waits for the data signal on its own.
+  await admin.reload();
+  await waitForHydration(admin);
+  await waitForData(admin);
   await expect(admin.getByRole("row").filter({ hasText: employeeEmail })).toContainText("Active");
 });
 

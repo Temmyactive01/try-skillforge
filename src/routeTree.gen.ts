@@ -21,6 +21,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TourRouteImport } from './routes/tour'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminAssignmentsRouteImport } from './routes/admin.assignments'
 import { Route as AdminCoursesRouteImport } from './routes/admin.courses'
@@ -90,6 +91,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TourRoute = TourRouteImport.update({
+  id: '/tour',
+  path: '/tour',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/tour': typeof TourRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/tour': typeof TourRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/security': typeof SecurityRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/tour': typeof TourRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/assignments': typeof AdminAssignmentsRoute
   '/admin/courses': typeof AdminCoursesRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
+    | '/tour'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -237,6 +247,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
+    | '/tour'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/signup'
     | '/terms'
+    | '/tour'
     | '/.well-known/oauth-protected-resource'
     | '/admin/assignments'
     | '/admin/courses'
@@ -282,6 +294,7 @@ export interface RootRouteChildren {
   SecurityRoute: typeof SecurityRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
+  TourRoute: typeof TourRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminAssignmentsRoute: typeof AdminAssignmentsRoute
   AdminCoursesRoute: typeof AdminCoursesRoute
@@ -378,6 +391,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tour': {
+      id: '/tour'
+      path: '/tour'
+      fullPath: '/tour'
+      preLoaderRoute: typeof TourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -450,6 +470,7 @@ const rootRouteChildren: RootRouteChildren = {
   SecurityRoute: SecurityRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
+  TourRoute: TourRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminAssignmentsRoute: AdminAssignmentsRoute,

@@ -1,154 +1,136 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
-import { Footer } from "@/components/Footer";
+import { createFileRoute } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+
+import { ContactParagraph } from "@/components/public/ContactParagraph";
+import { PublicPage, container } from "@/components/public/PublicPage";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/terms")({
-  head: () => ({
-    meta: [
-      { title: "Terms of Service — SkillForge" },
-      { name: "description", content: "SkillForge's terms of service and acceptable use policy." },
-      { property: "og:title", content: "Terms of Service — SkillForge" },
-      { property: "og:description", content: "SkillForge's terms of service and acceptable use policy." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Terms of service — SkillForge",
+      description:
+        "The terms covering use of SkillForge: accounts, acceptable use, data ownership and termination. A draft, to be reviewed with legal counsel before launch.",
+      path: "/terms",
+    }),
   component: TermsPage,
 });
 
+/*
+ * Restyled onto the design tokens in phase 4; the wording is unchanged apart
+ * from British spelling and the contact line, which no longer prints an
+ * address that was never real. See CONTACT_EMAIL in src/lib/seo.ts.
+ */
 function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-          </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
-            <Link
-              to="/features"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="flex-1">
-        <section className="mx-auto max-w-3xl px-4 py-16">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Terms of Service
-          </h1>
-          <p className="mt-2 text-sm font-normal text-muted-foreground">
-            Last updated: September 9, 2026
+    <PublicPage>
+      <section className={`${container} py-12 lg:py-16`}>
+        <div>
+          <h1 className="text-heading-1 font-expanded text-ink">Terms of service</h1>
+          <p className="mt-2 text-small text-ink-muted">Last updated: 9 September 2026</p>
+          <p className="mt-6 rounded-md border border-steel bg-surface px-4 py-3 text-small text-ink-muted">
+            These terms are a draft. They will be reviewed and finalised with legal counsel before
+            launch.
           </p>
 
-          <div className="mt-10 space-y-10">
-            <TermsSection title="Acceptance of Terms">
+          <div className="mt-10">
+            <Section title="Acceptance of terms">
               <p>
-                By accessing or using SkillForge, you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree to these terms, you may not use the service.
+                By accessing or using SkillForge, you agree to be bound by these terms of service
+                and all applicable laws and regulations. If you do not agree to these terms, you may
+                not use the service.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Description of Service">
+            <Section title="Description of service">
               <p>
-                SkillForge is a learning and development platform that allows companies to create courses, assign training to employees or teams, administer quizzes, and track completion and progress. We may update or modify features over time.
+                SkillForge is a learning and development platform that allows companies to create
+                courses, assign training to employees or teams, administer quizzes, and track
+                completion and progress. We may update or modify features over time.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Account Registration & Company Data">
+            <Section title="Account registration and company data">
               <p>
-                To use SkillForge, you must register an account associated with a company. You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account. You represent that you have the authority to bind your company to these terms.
+                To use SkillForge, you must register an account associated with a company. You are
+                responsible for maintaining the confidentiality of your account credentials and for
+                all activity that occurs under your account. You represent that you have the
+                authority to bind your company to these terms.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Acceptable Use">
+            <Section title="Acceptable use">
               <p>
-                You agree not to misuse the service, including but not limited to: attempting to access data you are not authorized to view, interfering with other users or accounts, uploading harmful or illegal content, or using SkillForge for any unlawful purpose. We reserve the right to suspend or terminate accounts that violate this policy.
+                You agree not to misuse the service, including but not limited to: attempting to
+                access data you are not authorised to view, interfering with other users or
+                accounts, uploading harmful or illegal content, or using SkillForge for any unlawful
+                purpose. We reserve the right to suspend or terminate accounts that violate this
+                policy.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Subscription & Payment">
+            <Section title="Subscription and payment">
               <p>
-                SkillForge may offer paid subscription plans. Pricing, billing cycles, and payment terms will be displayed before purchase and are subject to change with notice. All fees are non-refundable unless otherwise stated. This section contains placeholder language and will be finalized before any paid plans go live.
+                SkillForge may offer paid subscription plans in future. There is no billing in the
+                service today, and nothing on it is charged for. If pricing is introduced, the
+                terms, billing cycles and payment arrangements will be shown before any purchase,
+                and this section will be finalised before any paid plan goes live.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Data Ownership">
+            <Section title="Data ownership">
               <p>
-                You retain ownership of the content you upload to SkillForge. You grant us a limited licence to host, display, and process that content solely for the purpose of providing the service. We will not use your company content for any other purpose without your consent.
+                You retain ownership of the content you upload to SkillForge. You grant us a limited
+                licence to host, display, and process that content solely for the purpose of
+                providing the service. We will not use your company content for any other purpose
+                without your consent.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Termination">
+            <Section title="Termination">
               <p>
-                You may stop using SkillForge at any time. We may suspend or terminate your access if you violate these terms or if required by law. Upon termination, your right to use the service ceases immediately, and we may delete your data in accordance with our data retention practices.
+                You may stop using SkillForge at any time. We may suspend or terminate your access
+                if you violate these terms or if required by law. Upon termination, your right to
+                use the service ceases immediately, and we may delete your data in accordance with
+                our data retention practices.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Limitation of Liability">
+            <Section title="Limitation of liability">
               <p>
-                To the maximum extent permitted by law, SkillForge and its affiliates will not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of the service.
+                To the maximum extent permitted by law, SkillForge and its affiliates will not be
+                liable for any indirect, incidental, special, consequential, or punitive damages
+                arising out of or related to your use of the service.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Changes to Terms">
+            <Section title="Changes to these terms">
               <p>
-                We may update these Terms of Service from time to time. We will notify you of material changes by email or through the service. Continued use of SkillForge after changes become effective constitutes acceptance of the updated terms.
+                We may update these terms of service from time to time. We will notify you of
+                material changes by email or through the service. Continued use of SkillForge after
+                changes become effective constitutes acceptance of the updated terms.
               </p>
-            </TermsSection>
+            </Section>
 
-            <TermsSection title="Contact Us">
-              <p>
-                If you have any questions about these Terms of Service, please contact us at legal@skillforge.example. These terms are draft placeholders and will be reviewed and finalized with legal counsel.
-              </p>
-            </TermsSection>
+            <Section title="Contact us">
+              <ContactParagraph
+                lead="If you have any questions about these terms of service"
+                subject="Terms of service"
+              />
+            </Section>
           </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        </div>
+      </section>
+    </PublicPage>
   );
 }
 
-function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section>
-      <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-        {title}
-      </h2>
-      <div className="mt-3 text-base leading-relaxed text-foreground">
+    <section className="grid gap-x-10 gap-y-3 border-t border-steel py-8 first:border-t-0 first:pt-0 lg:grid-cols-12">
+      <h2 className="text-heading-2 text-ink lg:col-span-5">{title}</h2>
+      {/* DESIGN.md: keep lines under 75 characters. */}
+      <div className="max-w-[70ch] space-y-4 text-body text-ink-muted lg:col-span-7">
         {children}
       </div>
     </section>

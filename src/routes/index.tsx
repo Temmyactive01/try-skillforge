@@ -1,179 +1,220 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BarChart3, BookOpen, CheckCircle2, ClipboardList, GraduationCap, ShieldCheck, Users } from "lucide-react";
-import { Footer } from "@/components/Footer";
+
+import { PublicPage, container } from "@/components/public/PublicPage";
+import { AssignmentsView, TrainingView } from "@/components/public/ProductView";
+import { Button } from "@/components/ui/button";
+import { PASS_MARK } from "@/lib/scores";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "SkillForge — B2B Learning & Development Platform" },
-      { name: "description", content: "Assign training, track completion, and see who's done what — all in one place." },
-      { property: "og:title", content: "SkillForge — B2B Learning & Development Platform" },
-      { property: "og:description", content: "Assign training, track completion, and see who's done what — all in one place." },
-    ],
-  }),
-  component: LandingPage,
+  head: () =>
+    pageHead({
+      title: "SkillForge — assign training and see who has finished it",
+      description:
+        "SkillForge is training software for one company at a time: build a course with a quiz, assign it to a person or a team with a due date, and see who has finished.",
+      path: "",
+    }),
+  component: HomePage,
 });
 
-function LandingPage() {
+/*
+ * DESIGN.md's marketing rules: left-aligned and asymmetric, and the hero shows
+ * a real admin table with temper progress bars rather than an illustration.
+ * The frame is the one place on the site that uses radius-lg, which DESIGN.md
+ * reserves for dialogs and the marketing hero.
+ *
+ * Nothing here claims a customer, a count or a rating. Where a section would
+ * have needed social proof we do not have, there is no section.
+ */
+function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-          </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
-            <Link
-              to="/features"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
+    <PublicPage>
+      <Hero />
+      <Steps />
+      <EmployeeSide />
+      <Isolation />
+      <Closing />
+    </PublicPage>
+  );
+}
+
+function Hero() {
+  return (
+    <section className="border-b border-steel py-12 lg:py-16">
+      <div className={container}>
+        <div className="grid items-center gap-10 lg:grid-cols-12">
+          <div className="lg:col-span-5 xl:col-span-4">
+            <h1 className="text-heading-1 font-expanded text-ink lg:text-display">
+              Assign training and see who has finished it.
+            </h1>
+
+            <p className="mt-6 max-w-[46ch] text-body text-ink-muted">
+              An admin writes a course, adds a multiple-choice quiz, and assigns it to one person or
+              a whole team with a due date. Employees see what is outstanding, read it and take the
+              quiz. The assignments table shows where everybody is.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg">
+                <Link to="/signup">Create a company account</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/tour">Take the tour</Link>
+              </Button>
+            </div>
+
+            <p className="mt-6 max-w-[52ch] text-small text-ink-muted">
+              Employees do not sign up. Your admin invites them by email, and that invite is where
+              they set their password. Already have an account?{" "}
+              <Link to="/login" className="rounded-sm font-medium text-temper-blue hover:underline">
+                Sign in
+              </Link>
+              .
+            </p>
+          </div>
+
+          {/*
+           * The frame stays inside the page container like everything else.
+           * It used to run past the right gutter, which read as a mistake
+           * next to a header and a footer that stopped short of it.
+           */}
+          <div className="lg:col-span-7 xl:col-span-8">
+            <AssignmentsView />
           </div>
         </div>
-      </header>
+      </div>
+    </section>
+  );
+}
 
-      {/* Hero */}
-      <section className="bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Training your team can actually finish
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Assign courses, track completion, and see who’s done what — all in one place. No more scattered spreadsheets or chasing people down.
+/*
+ * A real sequence, so it is numbered. The numbers are information here, not
+ * decoration: they say these four things happen in this order.
+ */
+const STEPS = [
+  {
+    title: "Build the course",
+    body: "Write the content in the editor, or point at a video or a PDF. Add multiple-choice questions and mark which option is the right one.",
+  },
+  {
+    title: "Invite your people",
+    body: "Employees never sign up themselves. You invite them by email from the Employees page, and that invite is where they set their password. Group them into teams if you want to assign by team later.",
+  },
+  {
+    title: "Assign it",
+    body: "Choose one person, several, or a whole team, and set a due date if there is one. A team assignment goes to everyone who is in that team when you assign it.",
+  },
+  {
+    title: "See where everyone is",
+    body: "Every assignment carries a status, the best quiz score and the due date. Anything late says how late it is in words, not in colour alone.",
+  },
+];
+
+function Steps() {
+  return (
+    <section className={`${container} py-12 lg:py-16`}>
+      <h2 className="max-w-[32ch] text-heading-2 text-ink">From a course to a completion</h2>
+
+      <ol className="mt-8 border-t border-steel">
+        {STEPS.map((step, index) => (
+          <li
+            key={step.title}
+            className="grid gap-x-6 gap-y-2 border-b border-steel py-6 sm:grid-cols-[3rem_14rem_1fr]"
+          >
+            <span aria-hidden className="text-heading-3 tabular-nums text-ink-muted">
+              {index + 1}
+            </span>
+            <h3 className="text-heading-3 text-ink">{step.title}</h3>
+            <p className="max-w-[62ch] text-body text-ink-muted">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+/** The mirror of the hero: product on the left this time, words on the right. */
+function EmployeeSide() {
+  return (
+    <section className={`${container} py-12 lg:py-16`}>
+      <div className="grid items-center gap-10 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <TrainingView />
+        </div>
+
+        <div className="lg:col-span-5">
+          <h2 className="max-w-[22ch] text-heading-2 text-ink">
+            Nothing for your team to learn first
+          </h2>
+          <p className="mt-4 max-w-[52ch] text-body text-ink-muted">
+            There is no employee dashboard to get used to. One list, ordered by deadline, with a
+            button on the single thing to do next. The course reads like a document, and the quiz
+            asks one question at a time with a chance to check the answers before handing them in.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Get started free
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-base font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-          </div>
+          <p className="mt-4 max-w-[52ch] text-body text-ink-muted">
+            Passing the quiz is the only thing that completes a course, so nobody ticks their own
+            box. The pass mark is {PASS_MARK}%, and a course that has been passed stays passed —
+            later attempts are practice and are recorded as such.
+          </p>
         </div>
-      </section>
-
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-center text-2xl font-semibold text-foreground">How it works</h2>
-        <div className="mt-10 grid gap-8 sm:grid-cols-3">
-          <StepCard
-            icon={<ClipboardList className="h-8 w-8 text-primary" />}
-            title="Assign courses"
-            description="Admins create courses with content and quizzes, then assign them to individuals or entire teams with a due date."
-          />
-          <StepCard
-            icon={<BookOpen className="h-8 w-8 text-primary" />}
-            title="Employees complete training"
-            description="Team members review course content, take built-in quizzes, and mark training as complete — all in one flow."
-          />
-          <StepCard
-            icon={<BarChart3 className="h-8 w-8 text-primary" />}
-            title="Track in real time"
-            description="See completion rates, overdue assignments, and quiz scores on a live dashboard — no manual follow-up needed."
-          />
-        </div>
-      </section>
-
-      {/* Why SkillForge */}
-      <section className="bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center text-2xl font-semibold text-foreground">Why SkillForge?</h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
-            <BenefitCard
-              icon={<Users className="h-7 w-7 text-primary" />}
-              title="Centralized training"
-              description="Everything lives in one platform. No more lost documents, broken video links, or separate tools."
-            />
-            <BenefitCard
-              icon={<CheckCircle2 className="h-7 w-7 text-primary" />}
-              title="Automatic progress tracking"
-              description="Completion status updates the moment an employee finishes a course. Admins see it instantly."
-            />
-            <BenefitCard
-              icon={<ShieldCheck className="h-7 w-7 text-primary" />}
-              title="Quiz-based verification"
-              description="Built-in multiple-choice quizzes ensure employees actually understood the material, not just clicked through."
-            />
-          </div>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
+      </div>
+    </section>
   );
 }
 
-function StepCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+function Isolation() {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-shadow hover:shadow-md">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary">
-        {icon}
+    <section className={`${container} pt-10 lg:pt-14`}>
+      {/* Heading left, answer right: the width is used, and the split is the
+          same asymmetry the hero sets up. */}
+      <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+        <h2 className="text-heading-2 text-ink lg:col-span-5">
+          One company&rsquo;s data cannot reach another&rsquo;s
+        </h2>
+        <div className="lg:col-span-7">
+          <p className="max-w-[68ch] text-body text-ink-muted">
+            Isolation is enforced in the database with row-level security, not in the pages. Every
+            query a signed-in person makes is scoped to their own company before it returns
+            anything, so a changed address or a hand-written request gets nothing extra.
+          </p>
+          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
+            Correct quiz answers are not sent to the browser while a quiz is open. The server marks
+            every attempt and sends back only what that attempt has earned.
+          </p>
+          <p className="mt-6">
+            <Link
+              to="/security"
+              className="rounded-sm text-body font-medium text-temper-blue hover:underline"
+            >
+              How SkillForge is secured
+            </Link>
+          </p>
+        </div>
       </div>
-      <h3 className="mt-4 text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </div>
+    </section>
   );
 }
 
-function BenefitCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
+function Closing() {
   return (
-    <div className="flex flex-col items-center text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
-        {icon}
+    <section className={`${container} pt-10 lg:pt-14`}>
+      <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+        <h2 className="text-heading-2 text-ink lg:col-span-5">Set your company up</h2>
+        <div className="lg:col-span-7">
+          <p className="max-w-[60ch] text-body text-ink-muted">
+            You will name the company, create the admin account, and land on an empty dashboard with
+            three things to do. Inviting people is the second of them.
+          </p>
+          <div className="mt-8">
+            <Button asChild size="lg">
+              <Link to="/signup">Create a company account</Link>
+            </Button>
+          </div>
+          <p className="mt-4 max-w-[60ch] text-small text-ink-muted">
+            This page is for the person setting SkillForge up. Everyone else joins from an invite.
+          </p>
+        </div>
       </div>
-      <h3 className="mt-4 text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{description}</p>
-    </div>
+    </section>
   );
 }

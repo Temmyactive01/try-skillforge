@@ -113,7 +113,7 @@ const STEPS = [
 function Steps() {
   return (
     <section className={`${section} py-12 lg:py-16`}>
-      <h2 className="max-w-[20ch] text-heading-2 text-ink">From a course to a completion</h2>
+      <h2 className="max-w-[32ch] text-heading-2 text-ink">From a course to a completion</h2>
 
       <ol className="mt-8 max-w-[64rem] border-t border-steel">
         {STEPS.map((step, index) => (
@@ -164,28 +164,32 @@ function EmployeeSide() {
 
 function Isolation() {
   return (
-    <section className={`${section} py-12 lg:py-16`}>
-      <div className="max-w-[64rem] border-t border-steel pt-8">
-        <h2 className="max-w-[24ch] text-heading-2 text-ink">
+    <section className={`${section} pt-10 lg:pt-14`}>
+      {/* Heading left, answer right: the width is used, and the split is the
+          same asymmetry the hero sets up. */}
+      <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+        <h2 className="text-heading-2 text-ink lg:col-span-5">
           One company&rsquo;s data cannot reach another&rsquo;s
         </h2>
-        <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
-          Isolation is enforced in the database with row-level security, not in the pages. Every
-          query a signed-in person makes is scoped to their own company before it returns anything,
-          so a changed address or a hand-written request gets nothing extra.
-        </p>
-        <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
-          Correct quiz answers are not sent to the browser while a quiz is open. The server marks
-          every attempt and sends back only what that attempt has earned.
-        </p>
-        <p className="mt-6">
-          <Link
-            to="/security"
-            className="rounded-sm text-body font-medium text-temper-blue hover:underline"
-          >
-            How SkillForge is secured
-          </Link>
-        </p>
+        <div className="lg:col-span-7">
+          <p className="max-w-[68ch] text-body text-ink-muted">
+            Isolation is enforced in the database with row-level security, not in the pages. Every
+            query a signed-in person makes is scoped to their own company before it returns
+            anything, so a changed address or a hand-written request gets nothing extra.
+          </p>
+          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
+            Correct quiz answers are not sent to the browser while a quiz is open. The server marks
+            every attempt and sends back only what that attempt has earned.
+          </p>
+          <p className="mt-6">
+            <Link
+              to="/security"
+              className="rounded-sm text-body font-medium text-temper-blue hover:underline"
+            >
+              How SkillForge is secured
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -193,21 +197,23 @@ function Isolation() {
 
 function Closing() {
   return (
-    <section className={`${section} py-12 lg:py-16`}>
-      <div className="max-w-[64rem] border-t border-steel pt-8">
-        <h2 className="max-w-[20ch] text-heading-2 text-ink">Set your company up</h2>
-        <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
-          You will name the company, create the admin account, and land on an empty dashboard with
-          three things to do. Inviting people is the second of them.
-        </p>
-        <div className="mt-8">
-          <Button asChild size="lg">
-            <Link to="/signup">Create a company account</Link>
-          </Button>
+    <section className={`${section} pt-10 lg:pt-14`}>
+      <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+        <h2 className="text-heading-2 text-ink lg:col-span-5">Set your company up</h2>
+        <div className="lg:col-span-7">
+          <p className="max-w-[60ch] text-body text-ink-muted">
+            You will name the company, create the admin account, and land on an empty dashboard with
+            three things to do. Inviting people is the second of them.
+          </p>
+          <div className="mt-8">
+            <Button asChild size="lg">
+              <Link to="/signup">Create a company account</Link>
+            </Button>
+          </div>
+          <p className="mt-4 max-w-[60ch] text-small text-ink-muted">
+            This page is for the person setting SkillForge up. Everyone else joins from an invite.
+          </p>
         </div>
-        <p className="mt-4 max-w-[60ch] text-small text-ink-muted">
-          This page is for the person setting SkillForge up. Everyone else joins from an invite.
-        </p>
       </div>
     </section>
   );

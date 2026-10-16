@@ -133,16 +133,19 @@ function FeaturesPage() {
       <Group heading="For the employee" entries={EMPLOYEE} />
       <Group heading="How it is built" entries={BUILD} />
 
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${section} pt-10 lg:pt-14`}>
         <div className="max-w-[64rem] border-t border-steel pt-8">
           <h2 className="text-heading-2 text-ink">Not in it yet</h2>
           <p className="mt-4 max-w-[64ch] text-body text-ink-muted">
             These are planned and not built. They are here so that nobody chooses SkillForge
             expecting one of them.
           </p>
-          <ul className="mt-6 max-w-[64ch] space-y-2">
+          <ul className="mt-6">
             {NOT_YET.map((item) => (
-              <li key={item} className="border-b border-steel py-2 text-body text-ink">
+              <li
+                key={item}
+                className="border-b border-steel py-3 text-body text-ink last:border-b-0"
+              >
                 {item}
               </li>
             ))}
@@ -150,7 +153,7 @@ function FeaturesPage() {
         </div>
       </section>
 
-      <section className={`${section} py-12 lg:py-16`}>
+      <section className={`${section} pt-10 lg:pt-14`}>
         <div className="max-w-[64rem] border-t border-steel pt-8">
           <h2 className="max-w-[24ch] text-heading-2 text-ink">See it rather than read it</h2>
           <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
@@ -176,14 +179,14 @@ function FeaturesPage() {
  */
 function Group({ heading, entries }: { heading: string; entries: Entry[] }) {
   return (
-    <section className={`${section} py-12 lg:py-16`}>
+    <section className={`${section} pt-10 lg:pt-14`}>
       <div className="max-w-[64rem] border-t border-steel pt-8">
         <h2 className="text-heading-2 text-ink">{heading}</h2>
         <dl className="mt-8">
           {entries.map((entry) => (
             <div
               key={entry.term}
-              className="grid gap-x-6 gap-y-1 border-b border-steel py-5 sm:grid-cols-[18rem_1fr]"
+              className="grid gap-x-6 gap-y-1 border-b border-steel py-5 last:border-b-0 sm:grid-cols-[18rem_1fr]"
             >
               <dt className="text-heading-3 text-ink">{entry.term}</dt>
               <dd className="max-w-[62ch] text-body text-ink-muted">{entry.detail}</dd>

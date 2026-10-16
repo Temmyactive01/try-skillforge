@@ -24,7 +24,8 @@
     "screenshots:phase-3": "playwright test -c playwright.screenshots.config.ts --project=phase-3",
     "screenshots:before-phase-4": "playwright test -c playwright.screenshots.config.ts --project=before-phase-4",
     "screenshots:phase-4": "playwright test -c playwright.screenshots.config.ts --project=phase-4",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "build:brand": "node scripts/make-brand-assets.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

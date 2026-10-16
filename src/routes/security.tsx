@@ -40,8 +40,8 @@ function SecurityPage() {
           Every table in the database has row-level security switched on, and every policy scopes
           the rows to the company of whoever is asking. That check is in the database, not in the
           pages: the browser talks to the database directly, so a rule that only lived in the app
-          could be stepped around by writing the request by hand. Changing an address or a
-          identifier in a request returns nothing extra, because the rows were never in scope.
+          could be stepped around by writing the request by hand. Changing an address or an
+          identifier in a request returns nothing extra, because those rows were never in scope.
         </p>
         <p>
           Where a record links two things — an assignment links a person to a course — the policy
@@ -61,22 +61,22 @@ function SecurityPage() {
         <p>
           What a person may change about themselves is narrower still. A user may edit only their
           own name; an admin may change only a colleague&rsquo;s team, and only inside their own
-          company. Both rules are written as lists of what is allowed rather than what is
-          forbidden, so a column added later is protected the day it arrives.
+          company. Both rules are written as lists of what is allowed rather than what is forbidden,
+          so a column added later is protected the day it arrives.
         </p>
       </Item>
 
       <Item heading="Quizzes are marked by the server">
         <p>
-          The correct answers are not readable by a signed-in user at all: the column is not
-          granted to them, so a page cannot fetch it even by asking for every column. A quiz in
-          progress does not contain its own answer sheet.
+          The correct answers are not readable by a signed-in user at all: the column is not granted
+          to them, so a page cannot fetch it even by asking for every column. A quiz in progress
+          does not contain its own answer sheet.
         </p>
         <p>
           When an attempt is submitted, the server marks it and writes the result. An attempt that
           passed is shown the correct answers afterwards; an attempt that failed is told which
-          questions were wrong but not what the right answer was, so failing on purpose is not a
-          way to read the answers.
+          questions were wrong but not what the right answer was, so failing on purpose is not a way
+          to read the answers.
         </p>
       </Item>
 
@@ -99,18 +99,18 @@ function SecurityPage() {
         <p>
           Both have found real holes, which is the reason for mentioning them: an admin who could
           reach another company&rsquo;s quiz answers through an assignment, a user who could move
-          themselves into another company&rsquo;s team, and a marker that handed the answer sheet
-          to a failed attempt. Each was closed and then covered by a check that would catch it
-          coming back.
+          themselves into another company&rsquo;s team, and a marker that handed the answer sheet to
+          a failed attempt. Each was closed and then covered by a check that would catch it coming
+          back.
         </p>
       </Item>
 
       <Item heading="What this is not">
         <p>
-          SkillForge has not been through an external penetration test or a compliance audit, and
-          it holds no certification. It is in active development and is written by one person. If
-          your procurement needs any of those, it is not there yet — saying so is cheaper for both
-          of us than finding out later.
+          SkillForge has not been through an external penetration test or a compliance audit, and it
+          holds no certification. It is in active development and is written by one person. If your
+          procurement needs any of those, it is not there yet — saying so is cheaper for both of us
+          than finding out later.
         </p>
         <p>
           If you find something wrong, the{" "}
@@ -126,11 +126,11 @@ function SecurityPage() {
 
 function Item({ heading, children }: { heading: string; children: ReactNode }) {
   return (
-    <section className={`${section} py-10 lg:py-12`}>
-      <div className="max-w-[64rem] border-t border-steel pt-8">
-        <h2 className="max-w-[28ch] text-heading-2 text-ink">{heading}</h2>
-        {/* DESIGN.md: keep text lines under 75 characters. */}
-        <div className="mt-4 max-w-[68ch] space-y-4 text-body text-ink-muted">{children}</div>
+    <section className={`${section} pt-10 lg:pt-12`}>
+      {/* Heading left, answer right. DESIGN.md: lines under 75 characters. */}
+      <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+        <h2 className="text-heading-2 text-ink lg:col-span-5">{heading}</h2>
+        <div className="space-y-4 text-body text-ink-muted lg:col-span-7">{children}</div>
       </div>
     </section>
   );

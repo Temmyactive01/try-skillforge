@@ -77,17 +77,19 @@ function AboutPage() {
       </section>
 
       <section className={`${section} py-12 lg:py-16`}>
-        <div className="max-w-[64rem] border-t border-steel pt-8">
-          <h2 className="max-w-[24ch] text-heading-2 text-ink">Why it exists</h2>
-          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
-            Assigning training is the easy half. Finding out who actually did it is where it comes
-            apart, and it usually ends in a spreadsheet, a chase, and a number nobody trusts.
-          </p>
-          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
-            SkillForge is the smallest thing that answers that question properly: give the work a
-            deadline, make a quiz the proof it was done, and put the answer on one page that is
-            true the moment you look at it.
-          </p>
+        <div className="grid gap-x-10 gap-y-4 border-t border-steel pt-8 lg:grid-cols-12">
+          <h2 className="text-heading-2 text-ink lg:col-span-5">Why it exists</h2>
+          <div className="lg:col-span-7">
+            <p className="max-w-[68ch] text-body text-ink-muted">
+              Assigning training is the easy half. Finding out who actually did it is where it comes
+              apart, and it usually ends in a spreadsheet, a chase, and a number nobody trusts.
+            </p>
+            <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
+              SkillForge is the smallest thing that answers that question properly: give the work a
+              deadline, make a quiz the proof it was done, and put the answer on one page that is
+              true the moment you look at it.
+            </p>
+          </div>
         </div>
       </section>
 

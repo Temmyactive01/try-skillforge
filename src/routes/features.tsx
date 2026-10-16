@@ -1,142 +1,196 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
-import { Footer } from "@/components/Footer";
-import { StampCheck } from "@/components/StampCheck";
+
+import { PublicPage, section } from "@/components/public/PublicPage";
+import { Button } from "@/components/ui/button";
+import { PASS_MARK } from "@/lib/scores";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/features")({
-  head: () => ({
-    meta: [
-      { title: "Features — SkillForge" },
-      { name: "description", content: "Explore SkillForge features: course creation, quizzes, assignments, tracking, and secure team learning." },
-      { property: "og:title", content: "Features — SkillForge" },
-      { property: "og:description", content: "Explore SkillForge features: course creation, quizzes, assignments, tracking, and secure team learning." },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "Features — SkillForge",
+      description:
+        "What SkillForge does today: courses with multiple-choice quizzes, assignments to people or teams with due dates, a sortable assignments table, and a training record only the server can write.",
+      path: "/features",
+    }),
   component: FeaturesPage,
 });
 
+/*
+ * Every line on this page describes something that exists in the code today.
+ * The page it replaced listed four things that did not: reminder emails to
+ * learners, single sign-on, priority support and custom integrations. The
+ * honest replacement for them is the "Not in it yet" list at the bottom.
+ */
+type Entry = { term: string; detail: string };
+
+const ADMIN: Entry[] = [
+  {
+    term: "Courses",
+    detail:
+      "Write the content in the editor, or point at a video or a PDF. Each course carries a category and a description.",
+  },
+  {
+    term: "Quizzes",
+    detail: `Multiple-choice questions with one correct option each. ${PASS_MARK}% passes. The questions belong to the course, so everyone sitting it gets the same test.`,
+  },
+  {
+    term: "Assigning",
+    detail:
+      "To one person, to several, or to a whole team, with a due date or without one. A team assignment reaches everyone in that team at the moment you assign it.",
+  },
+  {
+    term: "The assignments table",
+    detail:
+      "Who, which course, the status, the best quiz score and the due date. Sortable by any of those, filterable by status, and anything late says how late it is in words.",
+  },
+  {
+    term: "Teams",
+    detail: "Create, rename and delete teams, and move people between them.",
+  },
+  {
+    term: "Employees",
+    detail:
+      "Invite by email, see who has accepted the invite and who has not, and see how far each person has got.",
+  },
+  {
+    term: "Cancelling",
+    detail:
+      "An assignment that no longer applies is cancelled rather than deleted. It leaves the employee's list and the dashboard figures, the record stays, and it can be restored.",
+  },
+];
+
+const EMPLOYEE: Entry[] = [
+  {
+    term: "One list",
+    detail:
+      "Ordered by deadline with the outstanding work first, and a button on the single next thing to do. Finished training moves to the bottom and keeps its score.",
+  },
+  {
+    term: "The course page",
+    detail:
+      "Reads like a document: the content first, held to a comfortable line length, and the quiz underneath it.",
+  },
+  {
+    term: "One question at a time",
+    detail:
+      "At every width, with a step to check the answers before handing them in, and a warning before leaving the page with answers unsubmitted.",
+  },
+  {
+    term: "Your result",
+    detail:
+      "Your score, whether you passed, and which questions you got wrong. An attempt that failed is not shown the correct answers.",
+  },
+  {
+    term: "Practice",
+    detail:
+      "A course that has been passed stays passed. Later attempts are recorded, but they cannot undo a completion.",
+  },
+];
+
+const BUILD: Entry[] = [
+  {
+    term: "A training record that cannot be faked",
+    detail:
+      "Only the server's marking can complete a course or write a score. An employee may move their own assignment from Not started to In progress and nothing else; the database refuses the rest, whoever sends it and however they send it.",
+  },
+  {
+    term: "One company's data stays its own",
+    detail:
+      "Row-level security scopes every table to the signed-in person's company, in the database rather than in the pages.",
+  },
+  {
+    term: "Light and dark",
+    detail:
+      "Both themes, chosen from your system setting before the first paint, with a toggle in the app.",
+  },
+  {
+    term: "Keyboard and screen reader",
+    detail:
+      "Visible focus on everything, status announced in words rather than shown in colour alone, and a skip link on every public page.",
+  },
+];
+
+const NOT_YET = [
+  "Reminder emails before a due date",
+  "Archiving a course that is no longer taught",
+  "Deactivating an employee while keeping their training record",
+  "Exporting reports",
+];
+
 function FeaturesPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-          </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
-            <Link
-              to="/features"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
+    <PublicPage>
+      <section className={`${section} py-12 lg:py-16`}>
+        <h1 className="max-w-[18ch] text-heading-1 font-expanded text-ink">What SkillForge does</h1>
+        <p className="mt-6 max-w-[64ch] text-body text-ink-muted">
+          Everything on this page is in the product today. What is not in it is at the bottom, in a
+          list of its own.
+        </p>
+      </section>
 
-      {/* Hero */}
-      <section className="bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Everything your team needs to keep learning
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            SkillForge is a complete learning and development platform that helps you build courses, verify knowledge, and track progress — all in one place.
+      <Group heading="For the admin" entries={ADMIN} />
+      <Group heading="For the employee" entries={EMPLOYEE} />
+      <Group heading="How it is built" entries={BUILD} />
+
+      <section className={`${section} py-12 lg:py-16`}>
+        <div className="max-w-[64rem] border-t border-steel pt-8">
+          <h2 className="text-heading-2 text-ink">Not in it yet</h2>
+          <p className="mt-4 max-w-[64ch] text-body text-ink-muted">
+            These are planned and not built. They are here so that nobody chooses SkillForge
+            expecting one of them.
           </p>
+          <ul className="mt-6 max-w-[64ch] space-y-2">
+            {NOT_YET.map((item) => (
+              <li key={item} className="border-b border-steel py-2 text-body text-ink">
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* Feature sections */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="flex flex-col gap-4 lg:gap-6">
-          <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-            <FeatureCard
-              title="Course Creation"
-              description="Build rich courses with text lessons, embedded video, and downloadable PDFs. Organise content into a clear flow so employees know exactly what to do next."
-            />
-            <FeatureCard
-              title="Quiz & Grading"
-              description="Add multiple-choice quizzes to any course and let SkillForge grade them automatically. Correct answers stay protected so employees can't game the system."
-            />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3 lg:gap-6">
-            <FeatureCard
-              title="Assignment & Tracking"
-              description="Assign training to individuals or whole teams, set due dates, and watch completion roll in. Employees get reminders before deadlines so nothing slips through."
-            />
-            <FeatureCard
-              title="Admin Dashboard"
-              description="Get real-time visibility into team progress, overdue assignments, and quiz scores — no spreadsheets, no manual follow-up, no guesswork."
-            />
-            <FeatureCard
-              title="Security"
-              description="Role-based access keeps admin tools separate from the employee experience. Quiz answers and sensitive data are locked down by default."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="mt-auto bg-card px-4 py-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Ready to upgrade your team's training?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Get started free and see how easy it is to build, assign, and track learning in one place.
+      <section className={`${section} py-12 lg:py-16`}>
+        <div className="max-w-[64rem] border-t border-steel pt-8">
+          <h2 className="max-w-[24ch] text-heading-2 text-ink">See it rather than read it</h2>
+          <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
+            The tour walks through five screens, built from the same components as the product.
           </p>
-          <div className="mt-8">
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Get started free
-            </Link>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg">
+              <Link to="/tour">Take the tour</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/signup">Create a company account</Link>
+            </Button>
           </div>
         </div>
       </section>
-
-      <Footer />
-    </div>
+    </PublicPage>
   );
 }
 
-function FeatureCard({ title, description }: { title: string; description: string }) {
+/*
+ * A description list, not a grid of cards: the term and what it means are a
+ * pair, and a pair is what a <dl> is for.
+ */
+function Group({ heading, entries }: { heading: string; entries: Entry[] }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-center gap-3">
-        <StampCheck variant="primary" />
-        <h3 className="font-serif text-lg font-semibold text-foreground">{title}</h3>
+    <section className={`${section} py-12 lg:py-16`}>
+      <div className="max-w-[64rem] border-t border-steel pt-8">
+        <h2 className="text-heading-2 text-ink">{heading}</h2>
+        <dl className="mt-8">
+          {entries.map((entry) => (
+            <div
+              key={entry.term}
+              className="grid gap-x-6 gap-y-1 border-b border-steel py-5 sm:grid-cols-[18rem_1fr]"
+            >
+              <dt className="text-heading-3 text-ink">{entry.term}</dt>
+              <dd className="max-w-[62ch] text-body text-ink-muted">{entry.detail}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-    </div>
+    </section>
   );
 }

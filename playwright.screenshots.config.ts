@@ -37,6 +37,7 @@ const PHASE_4_SCREENS = [
   "home",
   "about",
   "features",
+  "tour",
   "pricing",
   "security",
   "privacy",

@@ -1,200 +1,130 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
-import { Footer } from "@/components/Footer";
+
+import { PublicPage, section } from "@/components/public/PublicPage";
+import { Button } from "@/components/ui/button";
+import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/about")({
-  head: () => ({
-    meta: [
-      { title: "About — SkillForge" },
-      {
-        name: "description",
-        content:
-          "Learn why SkillForge was built and the team behind the modern learning and development platform.",
-      },
-      { property: "og:title", content: "About — SkillForge" },
-      {
-        property: "og:description",
-        content:
-          "Learn why SkillForge was built and the team behind the modern learning and development platform.",
-      },
-    ],
-  }),
+  head: () =>
+    pageHead({
+      title: "About — SkillForge",
+      description:
+        "SkillForge is designed and built by Temitope Ilesanmi-Ojo, a product designer moving into product management. It is in active development.",
+      path: "/about",
+    }),
   component: AboutPage,
 });
 
+/*
+ * What this page used to say, and no longer does: that "we" started SkillForge
+ * after watching companies buy software nobody used, and that there are teams
+ * already using it. One person built it, and there is no public user base to
+ * point at. DESIGN.md's honesty rule applies to the marketing site as much as
+ * to the product, so the invented story and the invented traction are gone
+ * rather than reworded.
+ */
+const BELIEFS = [
+  {
+    title: "Assigning should take a minute",
+    body: "Pick the people, pick the date, send it. If setting up a piece of training is an afternoon's work, it will not happen often enough to matter.",
+  },
+  {
+    title: "Progress should be visible before the deadline",
+    body: "A completion report that arrives after the date has passed tells you what you failed to do. The point of the table is that you can still act on it.",
+  },
+  {
+    title: "Completing training should mean something",
+    body: "A tick box records that somebody clicked. A quiz that only the server can mark records that they knew the material on the day.",
+  },
+];
+
+/** Opens in a new tab, so a reader does not lose the page they were on. */
+const external = "rounded-sm font-medium text-temper-blue hover:underline";
+
 function AboutPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background font-sans">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <GraduationCap className="h-6 w-6 text-primary" />
-            <span className="font-serif text-lg font-semibold text-foreground">SkillForge</span>
-          </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
-            <Link
-              to="/features"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Features
-            </Link>
-            <Link
-              to="/pricing"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              Pricing
-            </Link>
-            <Link
-              to="/about"
-              className="text-sm font-medium text-foreground hover:text-muted-foreground"
-            >
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
+    <PublicPage>
+      <section className={`${section} py-12 lg:py-16`}>
+        <h1 className="max-w-[18ch] text-heading-1 font-expanded text-ink">About SkillForge</h1>
 
-      {/* Hero */}
-      <section className="bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-20 text-center">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            About SkillForge
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            We're building the learning platform we wish existed — one that companies actually use
-            and employees actually finish.
-          </p>
-        </div>
-      </section>
-
-      {/* Our Story */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Our story
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            We started SkillForge after watching too many companies buy powerful L&D software that
-            employees never used. The tools were clunky, progress tracking lived in scattered
-            spreadsheets, and completion rates stayed stubbornly low. We set out to build something
-            different: a platform that makes assigning, completing, and tracking training feel
-            effortless for everyone involved.
-          </p>
-        </div>
-      </section>
-
-      {/* What We Believe */}
-      <section className="bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-16">
-          <h2 className="text-center font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            What we believe
-          </h2>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3">
-            <PrincipleCard
-              title="Simple to assign"
-              description="Admins should be able to create a course, pick a team, and set a due date in minutes — not days."
-            />
-            <PrincipleCard
-              title="Easy to track"
-              description="Progress should be visible in real time, so managers can follow up before things slip."
-            />
-            <PrincipleCard
-              title="Built to finish"
-              description="Training only works if employees complete it. Every design choice pushes toward the finish line."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <h2 className="text-center font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Meet the founder
-        </h2>
-        <p className="mx-auto mt-4 max-w-2xl text-center text-base text-muted-foreground">
-          SkillForge is built by a solo founder focused on making workplace learning actually work.
+        <p className="mt-6 max-w-[64ch] text-body text-ink">
+          SkillForge is designed and built by Temitope Ilesanmi-Ojo, a product designer moving into
+          product management.
         </p>
-        <div className="mt-10 flex justify-center">
-          <div className="max-w-sm rounded-xl border border-border bg-card p-6 text-center shadow-sm">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-2xl font-semibold text-foreground">
-              IT
-            </div>
-            <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">
-              Ilesanmi-Ojo Temitope
-            </h3>
-            <p className="text-sm font-medium text-temper-blue">Founder</p>
-            <p className="mt-2 text-sm leading-relaxed text-ink-muted">
-              Building SkillForge to make workplace training something teams actually finish.
-            </p>
-          </div>
-        </div>
+
+        <p className="mt-4 max-w-[64ch] text-body text-ink-muted">
+          SkillForge is in active development.
+        </p>
+
+        <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+          <a
+            href="https://ilesanmi-ojo-temitope-portfolio.netlify.app"
+            target="_blank"
+            rel="noopener"
+            className={external}
+          >
+            Portfolio
+          </a>
+          <a
+            href="https://www.linkedin.com/in/temitope-ilesanmi-ojo/"
+            target="_blank"
+            rel="noopener"
+            className={external}
+          >
+            LinkedIn
+          </a>
+        </p>
       </section>
 
-      {/* Closing CTA */}
-      <section className="mt-auto bg-card px-4 py-16">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Want to see what we're building?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Join the teams already using SkillForge to turn training from a chore into a competitive
-            advantage.
+      <section className={`${section} py-12 lg:py-16`}>
+        <div className="max-w-[64rem] border-t border-steel pt-8">
+          <h2 className="max-w-[24ch] text-heading-2 text-ink">Why it exists</h2>
+          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
+            Assigning training is the easy half. Finding out who actually did it is where it comes
+            apart, and it usually ends in a spreadsheet, a chase, and a number nobody trusts.
           </p>
-          <div className="mt-8">
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Get started free
-            </Link>
-          </div>
+          <p className="mt-4 max-w-[68ch] text-body text-ink-muted">
+            SkillForge is the smallest thing that answers that question properly: give the work a
+            deadline, make a quiz the proof it was done, and put the answer on one page that is
+            true the moment you look at it.
+          </p>
         </div>
       </section>
 
-      <Footer />
-    </div>
-  );
-}
+      <section className={`${section} py-12 lg:py-16`}>
+        <div className="max-w-[64rem] border-t border-steel pt-8">
+          <h2 className="text-heading-2 text-ink">What it is built around</h2>
+          <ul className="mt-8">
+            {BELIEFS.map((belief) => (
+              <li
+                key={belief.title}
+                className="grid gap-x-6 gap-y-1 border-b border-steel py-5 sm:grid-cols-[22rem_1fr]"
+              >
+                <h3 className="text-heading-3 text-ink">{belief.title}</h3>
+                <p className="max-w-[62ch] text-body text-ink-muted">{belief.body}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-function PrincipleCard({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
-        <span className="font-serif text-xl font-semibold text-primary">{title.charAt(0)}</span>
-      </div>
-      <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
-    </div>
-  );
-}
-
-function TeamMember({ name, role, bio }: { name: string; role: string; bio: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-shadow hover:shadow-md">
-      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary text-2xl font-semibold text-foreground">
-        {name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")}
-      </div>
-      <h3 className="mt-4 font-serif text-lg font-semibold text-foreground">{name}</h3>
-      <p className="text-sm font-medium text-primary">{role}</p>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{bio}</p>
-    </div>
+      <section className={`${section} py-12 lg:py-16`}>
+        <div className="max-w-[64rem] border-t border-steel pt-8">
+          <h2 className="max-w-[24ch] text-heading-2 text-ink">Have a look at it</h2>
+          <p className="mt-4 max-w-[60ch] text-body text-ink-muted">
+            The tour is five screens from the product itself. If it suits how your company works,
+            the next step is an account.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg">
+              <Link to="/tour">Take the tour</Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/signup">Create a company account</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+    </PublicPage>
   );
 }

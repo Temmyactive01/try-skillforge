@@ -49,6 +49,7 @@ type Screen =
   | "home"
   | "about"
   | "features"
+  | "tour"
   | "pricing"
   | "security"
   | "privacy"
@@ -69,6 +70,7 @@ const PUBLIC_PAGES = [
   ["home", "/"],
   ["about", "/about"],
   ["features", "/features"],
+  ["tour", "/tour"],
   ["pricing", "/pricing"],
   ["security", "/security"],
   ["privacy", "/privacy"],

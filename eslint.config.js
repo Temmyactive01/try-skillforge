@@ -6,7 +6,13 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  /*
+   * Build output. `dist` and `.netlify` are where the netlify preset writes
+   * (the static site and the SSR handler); `.output` is the Cloudflare target,
+   * still supported. Without `.netlify` here, `npm run lint` reports tens of
+   * thousands of formatting problems in a generated bundle.
+   */
+  { ignores: ["dist", ".netlify", ".output", ".vinxi"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
